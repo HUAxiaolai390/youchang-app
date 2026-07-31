@@ -1,4 +1,5 @@
 .superpowers/
+.worktrees/
 work/
 outputs/
 node_modules/
