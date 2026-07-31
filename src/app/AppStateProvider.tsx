@@ -25,6 +25,26 @@ export type AppStateContextValue = {
 };
 
 const AppStateContext = createContext<AppStateContextValue | null>(null);
+const FALLBACK_ERROR_MESSAGE = "操作失败，请稍后重试";
+const knownErrorMessages = new Set([
+  "请输入任务名称",
+  "请输入分类名称",
+  "请选择有效分类",
+  "分类名称已存在",
+  "这个任务现在不能改期",
+  "请选择本周内的日期",
+  "备份文件格式无效",
+  "备份文件版本不受支持",
+  "保存失败，请立即导出备份"
+]);
+
+function getDisplayError(error: unknown): string {
+  if (error instanceof Error && knownErrorMessages.has(error.message)) {
+    return error.message;
+  }
+
+  return FALLBACK_ERROR_MESSAGE;
+}
 
 export function reduceAppState(state: AppState, action: AppAction, now: Date): AppState {
   switch (action.type) {
@@ -68,7 +88,7 @@ function readInitialState(repository: AppRepository): { state: AppState; error?:
   } catch (error) {
     return {
       state: createInitialState(new Date()),
-      error: error instanceof Error ? error.message : "读取数据失败"
+      error: getDisplayError(error)
     };
   }
 }
@@ -95,7 +115,7 @@ export function AppStateProvider({ repository, children }: { repository: AppRepo
       setState(nextState);
       setError(undefined);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "操作失败");
+      setError(getDisplayError(caught));
     }
   }, [repository]);
 
