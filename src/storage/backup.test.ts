@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createInitialState } from "../domain/defaults";
 import { downloadBackup, parseBackup, serializeBackup } from "./backup";
 
@@ -69,13 +69,16 @@ describe("versioned backups", () => {
     URL.revokeObjectURL = (value) => expect(value).toBe(url);
     HTMLAnchorElement.prototype.click = function click() {
       clicked = true;
-      expect(this.download).toBe("有常备份-2026-07-31.json");
+      expect(this.download).toBe("有常备份-2026-08-01.json");
     };
 
     try {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 7, 1, 12));
       downloadBackup(state);
       expect(clicked).toBe(true);
     } finally {
+      vi.useRealTimers();
       URL.createObjectURL = createObjectUrl;
       URL.revokeObjectURL = revokeObjectUrl;
       HTMLAnchorElement.prototype.click = originalClick;

@@ -14,13 +14,15 @@ export interface AppRepository {
 }
 
 export function createLocalRepository(storage: Storage, now: () => Date): AppRepository {
-  const save = (state: AppState): void => {
+  const write = (key: string, value: string): void => {
     try {
-      storage.setItem(STATE_KEY, serializeBackup(state));
+      storage.setItem(key, value);
     } catch {
       throw new Error(SAVE_ERROR);
     }
   };
+
+  const save = (state: AppState): void => write(STATE_KEY, serializeBackup(state));
 
   return {
     load(): AppState {
@@ -34,11 +36,7 @@ export function createLocalRepository(storage: Storage, now: () => Date): AppRep
       try {
         state = parseBackup(raw);
       } catch {
-        try {
-          storage.setItem(`${RECOVERY_PREFIX}${current.toISOString()}`, raw);
-        } catch {
-          // The primary data is still left untouched when recovery storage is unavailable.
-        }
+        write(`${RECOVERY_PREFIX}${current.toISOString()}`, raw);
         return createInitialState(current);
       }
 

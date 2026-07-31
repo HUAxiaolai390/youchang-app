@@ -75,6 +75,15 @@ describe("local repository", () => {
     expect(storage.getItem("youchang:recovery:2026-07-31T01:00:00.000Z")).toBe("{");
   });
 
+  it("reports the save warning when a malformed-data recovery copy cannot be written", () => {
+    const storage = new MemoryStorage();
+    storage.setItem("youchang:state", "{");
+    storage.failWrites = true;
+    const repository = createLocalRepository(storage, () => today);
+
+    expect(() => repository.load()).toThrow("保存失败，请立即导出备份");
+  });
+
   it("reports a Chinese recovery warning when saving fails", () => {
     const storage = new MemoryStorage();
     storage.failWrites = true;
