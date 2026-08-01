@@ -87,7 +87,7 @@ describe("task and category rules", () => {
     expect(result).toBe(original);
   });
 
-  it("creates fixed task templates with category snapshots", () => {
+  it("creates a fixed task template and one record for its active day", () => {
     const result = addFixedTask(state(), {
       title: "  背英语单词 ",
       categoryId: "study",
@@ -102,6 +102,13 @@ describe("task and category rules", () => {
       order: 0,
       createdAt: now.toISOString()
     });
+    expect(result.fixedRecords).toMatchObject([{
+      templateId: result.fixedTasks[0]?.id,
+      date: "2026-07-31",
+      titleSnapshot: "背英语单词",
+      categoryId: "study",
+      categoryNameSnapshot: "学习"
+    }]);
   });
 
   it("editing a fixed task changes its future template but not historical snapshots", () => {

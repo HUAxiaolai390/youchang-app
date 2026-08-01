@@ -20,7 +20,7 @@ import type { AppAction } from "./app-actions";
 
 export type AppStateContextValue = {
   state: AppState;
-  dispatch(action: AppAction): void;
+  dispatch(action: AppAction): boolean;
   error?: string;
 };
 
@@ -102,7 +102,7 @@ export function AppStateProvider({ repository, children }: { repository: AppRepo
   const dispatch = useCallback((action: AppAction) => {
     if (action.type === "error/dismiss") {
       setError(undefined);
-      return;
+      return true;
     }
 
     try {
@@ -114,8 +114,10 @@ export function AppStateProvider({ repository, children }: { repository: AppRepo
       stateRef.current = nextState;
       setState(nextState);
       setError(undefined);
+      return true;
     } catch (caught) {
       setError(getDisplayError(caught));
+      return false;
     }
   }, [repository]);
 

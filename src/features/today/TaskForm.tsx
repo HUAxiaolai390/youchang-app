@@ -12,6 +12,7 @@ type TaskFormProps = {
   categories: Category[];
   today: DateKey;
   initialValues?: TaskFormValues;
+  error?: string;
   onSubmit(values: TaskFormValues): void;
   onCancel(): void;
 };
@@ -35,7 +36,7 @@ function FormSurface({ children }: { children: ReactNode }) {
   return <dialog ref={dialogRef} className="task-form-panel" aria-labelledby="task-form-title">{children}</dialog>;
 }
 
-export function TaskForm({ categories, today, initialValues, onSubmit, onCancel }: TaskFormProps) {
+export function TaskForm({ categories, today, initialValues, error, onSubmit, onCancel }: TaskFormProps) {
   const [values, setValues] = useState<TaskFormValues>(initialValues ?? {
     title: "",
     kind: "scheduled",
@@ -44,6 +45,7 @@ export function TaskForm({ categories, today, initialValues, onSubmit, onCancel 
   });
   const [formError, setFormError] = useState<string>();
   const isEditing = Boolean(initialValues);
+  const displayedError = formError ?? error;
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -71,7 +73,7 @@ export function TaskForm({ categories, today, initialValues, onSubmit, onCancel 
           className="field-control"
           value={values.title}
           onChange={(event) => setValues((current) => ({ ...current, title: event.target.value }))}
-          aria-describedby={formError ? "task-form-error" : undefined}
+          aria-describedby={displayedError ? "task-form-error" : undefined}
           autoFocus
         />
         <fieldset className="choice-group">
@@ -94,7 +96,7 @@ export function TaskForm({ categories, today, initialValues, onSubmit, onCancel 
           <label className="field-label" htmlFor="task-date">执行日期</label>
           <input id="task-date" className="field-control" type="date" value={values.date} onChange={(event) => setValues((current) => ({ ...current, date: event.target.value as DateKey }))} />
         </>}
-        {formError && <p id="task-form-error" role="alert" className="form-error">{formError}</p>}
+        {displayedError && <p id="task-form-error" role="alert" className="form-error">{displayedError}</p>}
         <div className="task-form__actions">
           <button type="button" className="button" onClick={onCancel}>取消</button>
           <button type="submit" className="button button--primary">{isEditing ? "保存修改" : "保存任务"}</button>

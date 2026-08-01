@@ -1,6 +1,6 @@
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createInitialState } from "../domain/defaults";
 import type { AppState } from "../domain/types";
@@ -67,6 +67,21 @@ function ErrorMessage() {
     : <p>没有错误</p>;
 }
 
+function DispatchResultButton() {
+  const { dispatch } = useAppState();
+  const [result, setResult] = useState("未提交");
+
+  function submit() {
+    const outcome = dispatch({
+      type: "scheduled/add",
+      input: { title: "结果任务", categoryId: "study", scheduledDate: "2026-07-31" }
+    });
+    setResult(String(outcome));
+  }
+
+  return <><button onClick={submit}>提交并显示结果</button><p>{result}</p></>;
+}
+
 afterEach(() => {
   vi.useRealTimers();
 });
@@ -124,6 +139,16 @@ describe("AppStateProvider", () => {
 
     expect(screen.getByRole("button", { name: "保存失败，请立即导出备份" })).toBeInTheDocument();
     expect(repository.load().scheduledTasks).toEqual([]);
+  });
+
+  it("returns whether a dispatched action was persisted", async () => {
+    const repository = new InMemoryRepository(createInitialState(new Date(2026, 6, 31, 9)));
+    const user = userEvent.setup();
+
+    render(<Harness repository={repository}><DispatchResultButton /></Harness>);
+    await user.click(screen.getByRole("button", { name: "提交并显示结果" }));
+
+    expect(screen.getByText("true")).toBeInTheDocument();
   });
 
   it("replaces an unknown repository error with a safe message", async () => {

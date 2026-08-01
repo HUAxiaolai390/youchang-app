@@ -6,6 +6,7 @@ import type {
   FixedTaskTemplate,
   ScheduledTask
 } from "./types";
+import { toDateKey } from "./date";
 
 export interface AddCategoryInput {
   name: string;
@@ -109,14 +110,26 @@ export function addFixedTask(state: AppState, input: AddFixedTaskInput, now: Dat
     createdAt: now.toISOString()
   };
 
-  return { ...state, fixedTasks: [...state.fixedTasks, task] };
+  const record: FixedTaskRecord = {
+    id: crypto.randomUUID(),
+    templateId: task.id,
+    date: toDateKey(now),
+    titleSnapshot: task.title,
+    ...categorySnapshot(category)
+  };
+
+  return {
+    ...state,
+    fixedTasks: [...state.fixedTasks, task],
+    fixedRecords: [...state.fixedRecords, record]
+  };
 }
 
 export function updateFixedTask(
   state: AppState,
   id: string,
   input: UpdateFixedTaskInput,
-  _today: DateKey
+  today: DateKey
 ): AppState {
   const title = requireTitle(input.title);
   const category = requireCategory(state, input.categoryId);
@@ -127,7 +140,10 @@ export function updateFixedTask(
     ...state,
     fixedTasks: state.fixedTasks.map((item) => item.id === id
       ? { ...item, title, ...categorySnapshot(category) }
-      : item)
+      : item),
+    fixedRecords: state.fixedRecords.map((record) => record.templateId === id && record.date === today
+      ? { ...record, titleSnapshot: title, ...categorySnapshot(category) }
+      : record)
   };
 }
 

@@ -26,4 +26,12 @@ describe("TaskForm", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("请输入任务名称");
     expect(onSubmit).not.toHaveBeenCalled();
   });
+
+  it("shows a save error supplied by the state layer beside the form", () => {
+    const state = createInitialState(new Date(2026, 6, 31, 9));
+
+    render(<TaskForm categories={state.categories} today="2026-07-31" error="保存失败，请立即导出备份" onCancel={() => {}} onSubmit={() => {}} />);
+
+    expect(screen.getByRole("alert")).toHaveTextContent("保存失败，请立即导出备份");
+  });
 });

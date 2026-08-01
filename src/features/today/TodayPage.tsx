@@ -25,8 +25,16 @@ export function TodayPage() {
 
   const { fixedTasks, scheduledTasks } = useMemo(() => {
     const visible = (categoryId: string) => filter === "all" || filter === categoryId;
+    const templatesById = new Map(state.fixedTasks.map((task) => [task.id, task]));
     return {
-      fixedTasks: state.fixedRecords.filter((record) => record.date === today && visible(record.categoryId)).map((record): TodayTask => ({
+      fixedTasks: state.fixedRecords.filter((record) => {
+        const template = templatesById.get(record.templateId);
+        if (!template) return false;
+        return record.date === today
+          && visible(record.categoryId)
+          && template.activeFrom <= today
+          && (!template.inactiveFrom || today < template.inactiveFrom);
+      }).map((record): TodayTask => ({
         id: record.id, taskId: record.templateId, kind: "fixed", title: record.titleSnapshot, categoryId: record.categoryId,
         categoryName: record.categoryNameSnapshot, completed: Boolean(record.completedAt), editable: true
       })),
@@ -35,7 +43,7 @@ export function TodayPage() {
         categoryName: task.categoryNameSnapshot, completed: task.status === "completed", editable: task.status === "pending"
       }))
     };
-  }, [filter, state.fixedRecords, state.scheduledTasks, today]);
+  }, [filter, state.fixedRecords, state.fixedTasks, state.scheduledTasks, today]);
 
   function openEdit(task: TodayTask) {
     setEditing({ ...task, date: task.kind === "scheduled" ? today : today });
@@ -43,19 +51,22 @@ export function TodayPage() {
   }
 
   function saveTask(values: TaskFormValues) {
+    let saved: boolean;
     if (editing) {
       if (editing.kind === "fixed") {
-        dispatch({ type: "fixed/update", id: editing.taskId, input: { title: values.title, categoryId: values.categoryId } });
+        saved = dispatch({ type: "fixed/update", id: editing.taskId, input: { title: values.title, categoryId: values.categoryId } });
       } else {
-        dispatch({ type: "scheduled/update", id: editing.taskId, input: { title: values.title, categoryId: values.categoryId, scheduledDate: values.date } });
+        saved = dispatch({ type: "scheduled/update", id: editing.taskId, input: { title: values.title, categoryId: values.categoryId, scheduledDate: values.date } });
       }
     } else if (values.kind === "fixed") {
-      dispatch({ type: "fixed/add", input: { title: values.title, categoryId: values.categoryId, activeFrom: today } });
+      saved = dispatch({ type: "fixed/add", input: { title: values.title, categoryId: values.categoryId, activeFrom: today } });
     } else {
-      dispatch({ type: "scheduled/add", input: { title: values.title, categoryId: values.categoryId, scheduledDate: values.date } });
+      saved = dispatch({ type: "scheduled/add", input: { title: values.title, categoryId: values.categoryId, scheduledDate: values.date } });
     }
-    setFormOpen(false);
-    setEditing(undefined);
+    if (saved) {
+      setFormOpen(false);
+      setEditing(undefined);
+    }
   }
 
   function closeForm() {
@@ -99,8 +110,7 @@ export function TodayPage() {
       <TaskList title="每日固定" tasks={fixedTasks} onToggle={toggle} onEdit={openEdit} onDelete={setDeleting} />
       <TaskList title="今日安排" tasks={scheduledTasks} onToggle={toggle} onEdit={openEdit} onDelete={setDeleting} />
       <button type="button" className="add-task-button" aria-label="添加任务" onClick={() => { setEditing(undefined); setFormOpen(true); }}>＋<span>添加任务</span></button>
-      {formOpen && <TaskForm categories={state.categories} today={today} initialValues={formValues} onSubmit={saveTask} onCancel={closeForm} />}
-      {formOpen && error && <p className="form-error" role="alert">{error}</p>}
+      {formOpen && <TaskForm categories={state.categories} today={today} initialValues={formValues} error={error} onSubmit={saveTask} onCancel={closeForm} />}
       {deleting && <ConfirmDialog title="删除任务？" message={`确定删除“${deleting.title}”吗？`} confirmLabel="删除" onConfirm={confirmDelete} onCancel={() => setDeleting(undefined)} />}
     </div>
   );
