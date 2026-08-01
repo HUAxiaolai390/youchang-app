@@ -284,6 +284,26 @@ button:focus-visible {
 .category-option input { position: absolute; opacity: 0; }
 .form-error { margin: 0; color: #a22; font-size: 14px; }
 .task-form__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 5px; }
+.backlog-panel { display: grid; gap: 11px; border-top: 1px solid var(--line); padding-top: 18px; }
+.backlog-panel__header { display: flex; align-items: baseline; justify-content: space-between; }
+.backlog-panel__header h2 { margin: 0; font-size: 18px; letter-spacing: -0.03em; }
+.backlog-panel__header span, .backlog-panel__empty, .backlog-card__copy span { color: var(--muted); font-size: 13px; }
+.backlog-panel__empty { margin: 0; padding: 7px 0; }
+.backlog-list { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
+.backlog-card { display: flex; align-items: center; gap: 12px; min-height: 66px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 17px; background: var(--surface); }
+.backlog-card__copy { min-width: 0; flex: 1; }
+.backlog-card__copy p { margin: 0 0 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.backlog-card__actions { display: flex; gap: 4px; }
+.backlog-card__actions button, .archived-tasks summary, .reschedule-picker button { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; }
+.archived-tasks { border-top: 1px solid var(--line); padding-top: 13px; }
+.archived-tasks summary { color: var(--ink); font-weight: 700; }
+.archived-tasks[open] { display: grid; gap: 10px; }
+.reschedule-picker { display: grid; gap: 9px; padding: 13px; border-radius: var(--radius-control); background: #f0efea; }
+.reschedule-picker p { margin: 0; font-size: 14px; font-weight: 700; }
+.reschedule-picker > div { display: flex; flex-wrap: wrap; gap: 7px; }
+.reschedule-picker > div button { min-height: 34px; padding: 0 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); }
+.reschedule-picker > div button:disabled { cursor: not-allowed; opacity: .45; }
+.reschedule-picker > button { justify-self: start; padding: 0; }
 
 @media (min-width: 640px) {
   .app-shell {

@@ -6,6 +6,7 @@ import { getCatMessage, getTodayProgress } from "../../domain/stats";
 import type { DateKey } from "../../domain/types";
 import { TaskForm, type TaskFormValues } from "./TaskForm";
 import { TaskList, type TodayTask } from "./TaskList";
+import { Backlog } from "../backlog/Backlog";
 
 type EditingTask = TodayTask & { date: DateKey };
 
@@ -109,6 +110,7 @@ export function TodayPage() {
       </section>
       <TaskList title="每日固定" tasks={fixedTasks} onToggle={toggle} onEdit={openEdit} onDelete={setDeleting} />
       <TaskList title="今日安排" tasks={scheduledTasks} onToggle={toggle} onEdit={openEdit} onDelete={setDeleting} />
+      <Backlog now={now} />
       <button type="button" className="add-task-button" aria-label="添加任务" onClick={() => { setEditing(undefined); setFormOpen(true); }}>＋<span>添加任务</span></button>
       {formOpen && <TaskForm categories={state.categories} today={today} initialValues={formValues} error={error} onSubmit={saveTask} onCancel={closeForm} />}
       {deleting && <ConfirmDialog title="删除任务？" message={`确定删除“${deleting.title}”吗？`} confirmLabel="删除" onConfirm={confirmDelete} onCancel={() => setDeleting(undefined)} />}

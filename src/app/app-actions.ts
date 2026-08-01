@@ -12,6 +12,7 @@ export type AppAction =
   | { type: "scheduled/toggle"; id: string }
   | { type: "scheduled/delete"; id: string }
   | { type: "scheduled/reschedule"; id: string; targetDate: DateKey }
+  | { type: "scheduled/move-archived"; id: string; targetDate: DateKey }
   | { type: "fixed/add"; input: AddFixedTaskInput }
   | { type: "fixed/update"; id: string; input: UpdateFixedTaskInput }
   | { type: "fixed/toggle"; recordId: string }

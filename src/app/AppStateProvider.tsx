@@ -13,7 +13,7 @@ import {
   updateFixedTask,
   updateScheduledTask
 } from "../domain/tasks";
-import { rescheduleTask, rollover } from "../domain/rollover";
+import { moveArchivedTaskToCurrentWeek, rescheduleTask, rollover } from "../domain/rollover";
 import type { AppState } from "../domain/types";
 import type { AppRepository } from "../storage/repository";
 import type { AppAction } from "./app-actions";
@@ -58,6 +58,8 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
       return deleteTask(state, "scheduled", action.id);
     case "scheduled/reschedule":
       return rescheduleTask(state, action.id, action.targetDate, now);
+    case "scheduled/move-archived":
+      return moveArchivedTaskToCurrentWeek(state, action.id, action.targetDate, now);
     case "fixed/add":
       return addFixedTask(state, action.input, now);
     case "fixed/update":
