@@ -162,6 +162,7 @@ describe("TodayPage", () => {
 
     expect(screen.queryByText("晨间拉伸")).not.toBeInTheDocument();
     expect(screen.queryByRole("checkbox", { name: "完成：晨间拉伸" })).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "今日完成进度" })).toHaveTextContent("0 / 0");
     expect(repository.load().fixedRecords).toHaveLength(1);
   });
 

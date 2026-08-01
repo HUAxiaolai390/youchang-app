@@ -13,8 +13,16 @@ export interface DayStat {
 
 export type Progress = Pick<DayStat, "completed" | "total" | "ratio">;
 
+function isCountableFixedRecord(state: AppState, record: AppState["fixedRecords"][number]): boolean {
+  const template = state.fixedTasks.find((task) => task.id === record.templateId);
+  if (!template) return true;
+
+  return template.activeFrom <= record.date
+    && (!template.inactiveFrom || record.date < template.inactiveFrom);
+}
+
 function getDayStat(state: AppState, date: DateKey): DayStat {
-  const fixedRecords = state.fixedRecords.filter((record) => record.date === date);
+  const fixedRecords = state.fixedRecords.filter((record) => record.date === date && isCountableFixedRecord(state, record));
   const scheduledTasks = state.scheduledTasks.filter((task) => task.scheduledDate === date);
   const completed = fixedRecords.filter((record) => record.completedAt).length
     + scheduledTasks.filter((task) => task.status === "completed").length;
@@ -58,7 +66,7 @@ export function getCurrentStreak(state: AppState, today: Date): number {
   const dates = new Set<DateKey>();
 
   for (const record of state.fixedRecords) {
-    if (record.date <= todayKey) dates.add(record.date);
+    if (record.date <= todayKey && isCountableFixedRecord(state, record)) dates.add(record.date);
   }
   for (const task of state.scheduledTasks) {
     if (task.scheduledDate <= todayKey) dates.add(task.scheduledDate);

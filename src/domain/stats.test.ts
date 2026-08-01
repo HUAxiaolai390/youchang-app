@@ -134,6 +134,40 @@ describe("progress and growth statistics", () => {
     expect(result).toBe(2);
   });
 
+  it("excludes records on or after a template's inactive date from day and streak statistics", () => {
+    const template = {
+      id: "template-active",
+      title: "拉伸",
+      categoryId: "exercise",
+      categoryNameSnapshot: "运动",
+      activeFrom: "2026-07-30" as const,
+      inactiveFrom: "2026-07-31" as const,
+      order: 0,
+      createdAt: today.toISOString()
+    };
+    const history = {
+      ...state(),
+      fixedTasks: [template],
+      fixedRecords: [
+        { ...fixedRecord("2026-07-30", true), templateId: template.id },
+        { ...fixedRecord("2026-07-31", false), templateId: template.id }
+      ]
+    };
+
+    expect(getTodayProgress(history, today)).toEqual({ completed: 0, total: 0, ratio: 0 });
+    expect(getSevenDayStats(history, today).find((day) => day.date === "2026-07-30")).toMatchObject({ completed: 1, total: 1 });
+    expect(getCurrentStreak(history, today)).toBe(1);
+  });
+
+  it("counts a record whose template no longer exists as compatible historical data", () => {
+    const history = {
+      ...state(),
+      fixedRecords: [{ ...fixedRecord("2026-07-31", true), templateId: "deleted-template" }]
+    };
+
+    expect(getTodayProgress(history, today)).toEqual({ completed: 1, total: 1, ratio: 1 });
+  });
+
   it("returns the three cat message states", () => {
     expect(getCatMessage({ completed: 0, total: 3, ratio: 0 })).toContain("一件小事");
     expect(getCatMessage({ completed: 1, total: 3, ratio: 1 / 3 })).toContain("已经开始");
