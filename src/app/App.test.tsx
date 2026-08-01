@@ -30,4 +30,13 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "关闭" }));
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
+
+  it("opens the growth summary from the main navigation", async () => {
+    const user = userEvent.setup();
+
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "成长" }));
+
+    expect(screen.getByText("累计完成 0 项")).toBeInTheDocument();
+  });
 });

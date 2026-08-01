@@ -305,6 +305,24 @@ button:focus-visible {
 .reschedule-picker > div button:disabled { cursor: not-allowed; opacity: .45; }
 .reschedule-picker > button { justify-self: start; padding: 0; }
 
+.growth-page { display: grid; gap: 18px; }
+.growth-card { padding: 22px; }
+.growth-card p { margin: 0; color: var(--muted); font-size: 14px; }
+.growth-card--streak { display: grid; gap: 8px; background: var(--ink); color: var(--surface); }
+.growth-card--streak p { color: color-mix(in srgb, var(--surface) 75%, transparent); }
+.growth-card--streak strong { font-size: clamp(28px, 7vw, 38px); letter-spacing: -0.05em; }
+.growth-card__heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
+.growth-card__heading h2 { margin: 0; font-size: 18px; letter-spacing: -0.03em; }
+.growth-card__heading span { color: var(--muted); font-size: 13px; }
+.growth-bars { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.growth-bars__day { display: grid; min-width: 0; gap: 7px; text-align: center; }
+.growth-bars__track { display: flex; align-items: end; height: 92px; overflow: hidden; border-radius: 10px; background: #e8e7e1; }
+.growth-bars__track span { width: 100%; min-height: 4px; border-radius: inherit; background: var(--ink); }
+.growth-bars__fraction { color: var(--ink); font-size: 12px; font-weight: 700; line-height: 1; }
+.growth-bars__date { overflow: hidden; color: var(--muted); font-size: 11px; line-height: 1.1; white-space: nowrap; }
+.growth-card--total { text-align: center; }
+.growth-card--total p { color: var(--ink); font-size: 18px; font-weight: 700; }
+
 @media (min-width: 640px) {
   .app-shell {
     padding-top: 34px;
