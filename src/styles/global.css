@@ -1,0 +1,244 @@
+@import "./tokens.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: var(--paper);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+button:focus-visible {
+  outline: 3px solid #171717;
+  outline-offset: 3px;
+}
+
+.app-shell {
+  min-height: 100vh;
+  padding: 20px 16px calc(100px + env(safe-area-inset-bottom));
+}
+
+.app-shell__content {
+  width: min(100%, 720px);
+  margin: 0 auto;
+}
+
+.app-shell__masthead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 2px 28px;
+}
+
+.app-shell__mark {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.app-shell__brand {
+  margin: 0;
+  font-size: 19px;
+  letter-spacing: 0.08em;
+}
+
+.app-shell__main {
+  min-width: 0;
+}
+
+.bottom-nav {
+  position: fixed;
+  z-index: 10;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  border-top: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
+  background: color-mix(in srgb, var(--paper) 91%, transparent);
+  backdrop-filter: blur(18px);
+}
+
+.bottom-nav__inner {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: min(100%, 720px);
+  margin: 0 auto;
+}
+
+.bottom-nav__item {
+  display: grid;
+  min-height: 55px;
+  place-items: center;
+  gap: 3px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.bottom-nav__item[aria-current="page"] {
+  background: var(--surface);
+  box-shadow: 0 5px 18px rgba(22, 22, 22, 0.06);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.bottom-nav__icon {
+  width: 20px;
+  height: 20px;
+}
+
+.surface-card,
+.empty-state {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.page-intro {
+  padding: 26px;
+}
+
+.page-intro h1,
+.empty-state h2,
+.confirm-dialog h2 {
+  margin: 0;
+  letter-spacing: -0.03em;
+}
+
+.page-intro p,
+.empty-state p,
+.confirm-dialog p {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.empty-state {
+  padding: 34px 26px;
+  text-align: center;
+}
+
+.empty-state__cat {
+  width: 46px;
+  height: 38px;
+  margin: 0 auto 16px;
+  border-radius: 18px 18px 16px 16px;
+  background: var(--ink);
+  position: relative;
+}
+
+.empty-state__cat::before,
+.empty-state__cat::after {
+  position: absolute;
+  top: -5px;
+  width: 15px;
+  height: 15px;
+  background: var(--ink);
+  content: "";
+}
+
+.empty-state__cat::before {
+  left: 4px;
+  clip-path: polygon(0 100%, 20% 0, 100% 100%);
+}
+
+.empty-state__cat::after {
+  right: 4px;
+  clip-path: polygon(0 100%, 80% 0, 100% 100%);
+}
+
+.empty-state__cat span,
+.empty-state__cat span::after {
+  position: absolute;
+  top: 16px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--surface);
+  content: "";
+}
+
+.empty-state__cat span {
+  left: 13px;
+}
+
+.empty-state__cat span::after {
+  top: 0;
+  left: 16px;
+}
+
+.confirm-backdrop {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  padding: 24px;
+  place-items: center;
+  background: rgba(23, 23, 23, 0.35);
+}
+
+.confirm-dialog {
+  width: min(100%, 380px);
+  padding: 26px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.confirm-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.button--primary {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--surface);
+}
+
+@media (min-width: 640px) {
+  .app-shell {
+    padding-top: 34px;
+  }
+}
