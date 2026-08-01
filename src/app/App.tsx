@@ -2,6 +2,7 @@ import { AppStateProvider, useAppState } from "./AppStateProvider";
 import type { AppRepository } from "../storage/repository";
 import { AppShell, type PageKey } from "../components/AppShell";
 import { EmptyState } from "../components/EmptyState";
+import { TodayPage } from "../features/today/TodayPage";
 
 import { useState } from "react";
 import { createLocalRepository } from "../storage/repository";
@@ -35,7 +36,8 @@ function AppContents() {
         <h2 id="page-title">{page.title}</h2>
         <p>{page.description}</p>
       </section>
-      {activePage === "today" && <EmptyState title="今天还没有安排" description="留一点空间给自己。" />}
+      {activePage === "today" && <TodayPage />}
+      {activePage !== "today" && <EmptyState title={page.title} description={page.description} />}
       {error && (
         <div role="alert">
           <p>{error}</p>
