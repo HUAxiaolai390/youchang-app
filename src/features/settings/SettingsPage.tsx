@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { useAppState } from "../../app/AppStateProvider";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { toDateKey } from "../../domain/date";
@@ -18,6 +18,10 @@ function categoryName(categories: Category[], categoryId: string): string {
   return categories.find((category) => category.id === categoryId)?.name ?? "其他";
 }
 
+function fallbackCategoryId(categories: Category[]): string {
+  return categories.find((category) => category.id === "other")?.id ?? categories[0]?.id ?? "";
+}
+
 export function SettingsPage() {
   const { state, dispatch } = useAppState();
   const [displayName, setDisplayName] = useState(state.settings.displayName);
@@ -25,6 +29,7 @@ export function SettingsPage() {
   const [categoryIconInput, setCategoryIconInput] = useState("分");
   const [fixedTitle, setFixedTitle] = useState("");
   const [fixedCategoryId, setFixedCategoryId] = useState("study");
+  const [fixedTaskError, setFixedTaskError] = useState<string>();
   const [editingFixedId, setEditingFixedId] = useState<string>();
   const [editingFixedTitle, setEditingFixedTitle] = useState("");
   const [editingFixedCategoryId, setEditingFixedCategoryId] = useState("study");
@@ -34,6 +39,20 @@ export function SettingsPage() {
   const [clearPhrase, setClearPhrase] = useState("");
   const [clearArmed, setClearArmed] = useState(false);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
+
+  useEffect(() => {
+    setDisplayName(state.settings.displayName);
+  }, [state.settings.displayName]);
+
+  useEffect(() => {
+    const fallback = fallbackCategoryId(state.categories);
+    setFixedCategoryId((current) => state.categories.some((category) => category.id === current) ? current : fallback);
+    setEditingFixedCategoryId((current) => state.categories.some((category) => category.id === current) ? current : fallback);
+  }, [state.categories]);
+
+  useEffect(() => {
+    if (editingFixedId && !state.fixedTasks.some((task) => task.id === editingFixedId)) setEditingFixedId(undefined);
+  }, [editingFixedId, state.fixedTasks]);
 
   function saveDisplayName(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -50,6 +69,11 @@ export function SettingsPage() {
 
   function addFixedTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!state.categories.some((category) => category.id === fixedCategoryId)) {
+      setFixedTaskError("没有可用分类，请先添加分类");
+      return;
+    }
+    setFixedTaskError(undefined);
     if (dispatch({
       type: "fixed/add",
       input: { title: fixedTitle, categoryId: fixedCategoryId, activeFrom: toDateKey(new Date()) }
@@ -65,6 +89,11 @@ export function SettingsPage() {
   function saveFixedTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!editingFixedId) return;
+    if (!state.categories.some((category) => category.id === editingFixedCategoryId)) {
+      setFixedTaskError("没有可用分类，请先添加分类");
+      return;
+    }
+    setFixedTaskError(undefined);
     if (dispatch({ type: "fixed/update", id: editingFixedId, input: { title: editingFixedTitle, categoryId: editingFixedCategoryId } })) {
       setEditingFixedId(undefined);
     }
@@ -114,9 +143,11 @@ export function SettingsPage() {
           <input id="fixed-title" className="field-control" value={fixedTitle} onChange={(event) => setFixedTitle(event.target.value)} />
           <label className="field-label" htmlFor="fixed-category">固定任务分类</label>
           <select id="fixed-category" className="field-control" value={fixedCategoryId} onChange={(event) => setFixedCategoryId(event.target.value)}>
+            {state.categories.length === 0 && <option value="">暂无可用分类</option>}
             {state.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
           </select>
           <button className="button" type="submit">新增固定任务</button>
+          {fixedTaskError && <p className="form-error" role="alert">{fixedTaskError}</p>}
         </form>
         <ul className="settings-list" aria-label="固定任务列表">
           {state.fixedTasks.length === 0 && <li className="settings-muted">还没有固定任务</li>}
@@ -135,8 +166,10 @@ export function SettingsPage() {
           <input id="editing-fixed-title" className="field-control" value={editingFixedTitle} onChange={(event) => setEditingFixedTitle(event.target.value)} />
           <label className="field-label" htmlFor="editing-fixed-category">编辑固定任务分类</label>
           <select id="editing-fixed-category" className="field-control" value={editingFixedCategoryId} onChange={(event) => setEditingFixedCategoryId(event.target.value)}>
+            {state.categories.length === 0 && <option value="">暂无可用分类</option>}
             {state.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
           </select>
+          {fixedTaskError && <p className="form-error" role="alert">{fixedTaskError}</p>}
           <div className="settings-inline-actions"><button className="button" type="button" onClick={() => setEditingFixedId(undefined)}>取消编辑</button><button className="button button--primary" type="submit">保存固定任务</button></div>
         </form>}
       </section>

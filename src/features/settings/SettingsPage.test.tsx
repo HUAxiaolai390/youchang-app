@@ -79,6 +79,37 @@ describe("SettingsPage", () => {
     expect(repository.load().settings.displayName).toBe("备份里的我");
   });
 
+  it("synchronizes the name draft after importing a new display name", async () => {
+    const current = createInitialState(new Date(2026, 6, 31, 9));
+    current.settings.displayName = "旧称呼";
+    const repository = renderSettings(current);
+    const imported = createInitialState(new Date(2026, 6, 30, 9));
+    imported.settings.displayName = "新的称呼";
+    const user = userEvent.setup();
+
+    await user.upload(screen.getByLabelText("导入备份"), backupFile(JSON.stringify(imported)));
+    await user.click(screen.getByRole("button", { name: "确认导入" }));
+
+    expect(screen.getByLabelText("我的称呼")).toHaveValue("新的称呼");
+    await user.click(screen.getByRole("button", { name: "保存称呼" }));
+    expect(repository.load().settings.displayName).toBe("新的称呼");
+  });
+
+  it("falls back to an imported other category before adding a fixed task", async () => {
+    const repository = renderSettings();
+    const imported = createInitialState(new Date(2026, 6, 30, 9));
+    imported.categories = [imported.categories.find((category) => category.id === "other")!];
+    const user = userEvent.setup();
+
+    await user.upload(screen.getByLabelText("导入备份"), backupFile(JSON.stringify(imported)));
+    await user.click(screen.getByRole("button", { name: "确认导入" }));
+
+    expect(screen.getByLabelText("固定任务分类")).toHaveValue("other");
+    await user.type(screen.getByLabelText("固定任务名称"), "备份后的固定任务");
+    await user.click(screen.getByRole("button", { name: "新增固定任务" }));
+    expect(repository.load().fixedTasks[0]).toMatchObject({ title: "备份后的固定任务", categoryId: "other" });
+  });
+
   it("requires typing 清空 before clearing data", async () => {
     const state = createInitialState(new Date(2026, 6, 31, 9));
     state.scheduledTasks.push({
