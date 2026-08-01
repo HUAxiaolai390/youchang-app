@@ -39,9 +39,17 @@ describe("versioned backups", () => {
     }))).toThrow("备份文件格式无效");
   });
 
-  it("falls back to other when a task references a deleted category", () => {
+  it("falls back invalid live category IDs to other without overwriting historical snapshots", () => {
     const result = parseBackup(JSON.stringify({
       ...state,
+      fixedRecords: [{
+        id: "fixed-record-1",
+        templateId: "fixed-1",
+        date: "2026-07-30",
+        titleSnapshot: "读完旧书",
+        categoryId: "deleted-category",
+        categoryNameSnapshot: "阅读"
+      }],
       scheduledTasks: [{
         id: "task-1",
         title: "整理桌面",
@@ -55,7 +63,11 @@ describe("versioned backups", () => {
 
     expect(result.scheduledTasks[0]).toMatchObject({
       categoryId: "other",
-      categoryNameSnapshot: "其他"
+      categoryNameSnapshot: "已删除"
+    });
+    expect(result.fixedRecords[0]).toMatchObject({
+      categoryId: "other",
+      categoryNameSnapshot: "阅读"
     });
   });
 

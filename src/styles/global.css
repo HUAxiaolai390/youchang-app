@@ -279,6 +279,7 @@ button:focus-visible {
 .field-control { width: 100%; min-height: 46px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--surface); }
 .choice-group { display: grid; gap: 9px; margin: 0; padding: 0; border: 0; }
 .choice-group > label { display: inline-flex; align-items: center; gap: 6px; margin-right: 15px; }
+.task-form__kind-note { margin: 0; color: var(--muted); font-size: 13px; }
 .category-options { display: flex; flex-wrap: wrap; gap: 8px; }
 .category-option { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; font-size: 14px; }
 .category-option:has(input:checked) { border-color: var(--ink); background: var(--ink); color: var(--surface); }

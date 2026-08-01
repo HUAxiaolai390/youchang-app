@@ -86,6 +86,24 @@ describe("Backlog", () => {
     expect(screen.getByRole("button", { name: "星期日 8月2日" })).toBeEnabled();
   });
 
+  it("shows a current live category label instead of a historical snapshot", () => {
+    const state = createInitialState(now);
+    state.scheduledTasks.push({
+      id: "task-reading",
+      title: "完成阅读笔记",
+      categoryId: "other",
+      categoryNameSnapshot: "阅读",
+      scheduledDate: "2026-07-30",
+      status: "backlog",
+      createdAt: "2026-07-30T09:00:00.000Z"
+    });
+
+    render(<AppStateProvider repository={new MemoryRepository(state)}><Backlog now={now} /></AppStateProvider>);
+
+    expect(screen.getByText(/原定：7月30日 · 其他/)).toBeVisible();
+    expect(screen.queryByText(/原定：7月30日 · 阅读/)).not.toBeInTheDocument();
+  });
+
   it("keeps an out-of-week backlog task out of this week's panel", () => {
     renderBacklogWithTask("backlog", "2026-07-20");
 
@@ -106,11 +124,33 @@ describe("Backlog", () => {
     expect(screen.queryByRole("button", { name: "移入本周：完成实验报告" })).not.toBeInTheDocument();
   });
 
-  it("deletes a backlog task", async () => {
+  it("cancels and confirms deletion of a weekly backlog task", async () => {
     const { repository, user } = renderBacklogWithTask();
 
     await user.click(screen.getByRole("button", { name: "删除：完成实验报告" }));
+    expect(screen.getByRole("dialog", { name: "删除待安排任务？" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "取消" }));
+    expect(repository.load().scheduledTasks).toHaveLength(1);
+    expect(screen.getByText("完成实验报告")).toBeVisible();
 
+    await user.click(screen.getByRole("button", { name: "删除：完成实验报告" }));
+    await user.click(screen.getByRole("button", { name: "删除任务" }));
+    expect(repository.load().scheduledTasks).toEqual([]);
+    expect(screen.queryByText("完成实验报告")).not.toBeInTheDocument();
+  });
+
+  it("cancels and confirms deletion of an archived backlog task", async () => {
+    const { repository, user } = renderBacklogWithTask("archived");
+
+    await user.click(screen.getByText(/^上周未处理/));
+    await user.click(screen.getByRole("button", { name: "删除：完成实验报告" }));
+    expect(screen.getByRole("dialog", { name: "删除历史任务？" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "取消" }));
+    expect(repository.load().scheduledTasks).toHaveLength(1);
+    expect(screen.getByText("完成实验报告")).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "删除：完成实验报告" }));
+    await user.click(screen.getByRole("button", { name: "删除任务" }));
     expect(repository.load().scheduledTasks).toEqual([]);
     expect(screen.queryByText("完成实验报告")).not.toBeInTheDocument();
   });

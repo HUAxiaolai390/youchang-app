@@ -94,6 +94,9 @@ export function deleteCategory(state: AppState, categoryId: string): AppState {
     ...state,
     categories: state.categories.filter((item) => item.id !== categoryId),
     fixedTasks: state.fixedTasks.map(reassignFixedTask),
+    fixedRecords: state.fixedRecords.map((record) => record.categoryId === categoryId
+      ? { ...record, categoryId: "other" }
+      : record),
     scheduledTasks: state.scheduledTasks.map(reassignScheduledTask)
   };
 }
@@ -151,15 +154,53 @@ export function setFixedTaskActive(
   state: AppState,
   id: string,
   active: boolean,
-  today: DateKey
+  now: Date
 ): AppState {
-  if (!state.fixedTasks.some((task) => task.id === id)) return state;
+  const today = toDateKey(now);
+  const task = state.fixedTasks.find((item) => item.id === id);
+  if (!task) return state;
+
+  if (!active) {
+    if (task.inactiveFrom) return state;
+    return {
+      ...state,
+      fixedTasks: state.fixedTasks.map((item) => item.id === id
+        ? { ...item, inactiveFrom: today }
+        : item)
+    };
+  }
+
+  if (!task.inactiveFrom || task.successorId) return state;
+
+  const successorId = crypto.randomUUID();
+  const currentCategoryName = state.categories.find((category) => category.id === task.categoryId)?.name
+    ?? state.categories.find((category) => category.id === "other")?.name
+    ?? "其他";
+  const successor: FixedTaskTemplate = {
+    ...task,
+    id: successorId,
+    categoryNameSnapshot: currentCategoryName,
+    activeFrom: today,
+    inactiveFrom: undefined,
+    successorId: undefined,
+    order: state.fixedTasks.length,
+    createdAt: now.toISOString()
+  };
+  const record: FixedTaskRecord = {
+    id: crypto.randomUUID(),
+    templateId: successor.id,
+    date: today,
+    titleSnapshot: successor.title,
+    categoryId: successor.categoryId,
+    categoryNameSnapshot: successor.categoryNameSnapshot
+  };
 
   return {
     ...state,
-    fixedTasks: state.fixedTasks.map((task) => task.id === id
-      ? { ...task, inactiveFrom: active ? undefined : today }
-      : task)
+    fixedTasks: state.fixedTasks.map((item) => item.id === id
+      ? { ...item, successorId }
+      : item).concat(successor),
+    fixedRecords: [...state.fixedRecords, record]
   };
 }
 

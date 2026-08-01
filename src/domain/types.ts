@@ -23,6 +23,7 @@ export interface FixedTaskTemplate {
   categoryNameSnapshot: string;
   activeFrom: DateKey;
   inactiveFrom?: DateKey;
+  successorId?: string;
   order: number;
   createdAt: string;
 }

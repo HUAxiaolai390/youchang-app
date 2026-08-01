@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState } from "./defaults";
+import { rollover } from "./rollover";
+import { getSevenDayStats } from "./stats";
 import {
   addCategory,
   addFixedTask,
@@ -64,8 +66,15 @@ describe("task and category rules", () => {
       categoryId: category.id,
       scheduledDate: "2026-07-31"
     }, now);
+    const withHistoricalRecord = {
+      ...withTask,
+      fixedRecords: withTask.fixedRecords.map((record) => ({
+        ...record,
+        date: "2026-07-30" as const
+      }))
+    };
 
-    const result = deleteCategory(withTask, category.id);
+    const result = deleteCategory(withHistoricalRecord, category.id);
 
     expect(result.categories.some((item) => item.id === category.id)).toBe(false);
     expect(result.fixedTasks[0]).toMatchObject({
@@ -73,6 +82,10 @@ describe("task and category rules", () => {
       categoryNameSnapshot: "阅读"
     });
     expect(result.scheduledTasks[0]).toMatchObject({
+      categoryId: "other",
+      categoryNameSnapshot: "阅读"
+    });
+    expect(result.fixedRecords[0]).toMatchObject({
       categoryId: "other",
       categoryNameSnapshot: "阅读"
     });
@@ -141,7 +154,7 @@ describe("task and category rules", () => {
     });
   });
 
-  it("sets a fixed template inactive from today and can reactivate it", () => {
+  it("reactivates a paused fixed task as a new activation period without corrupting paused history", () => {
     const withTemplate = addFixedTask(state(), {
       title: "拉伸",
       categoryId: "exercise",
@@ -149,11 +162,36 @@ describe("task and category rules", () => {
     }, now);
     const templateId = withTemplate.fixedTasks[0]!.id;
 
-    const inactive = setFixedTaskActive(withTemplate, templateId, false, "2026-08-01");
-    const active = setFixedTaskActive(inactive, templateId, true, "2026-08-02");
+    const inactive = setFixedTaskActive(withTemplate, templateId, false, new Date(2026, 7, 1, 8));
+    const rolled = rollover(inactive, new Date(2026, 7, 2, 8));
+    const withPausedRecord = {
+      ...rolled,
+      fixedRecords: [...rolled.fixedRecords, {
+        id: "record-during-pause",
+        templateId,
+        date: "2026-08-02" as const,
+        titleSnapshot: "拉伸",
+        categoryId: "exercise",
+        categoryNameSnapshot: "运动"
+      }]
+    };
+    const active = setFixedTaskActive(withPausedRecord, templateId, true, new Date(2026, 7, 3, 8));
+    const successor = active.fixedTasks.find((task) => task.id !== templateId);
+    const stats = getSevenDayStats(active, new Date(2026, 7, 3, 8));
 
     expect(inactive.fixedTasks[0]?.inactiveFrom).toBe("2026-08-01");
-    expect(active.fixedTasks[0]?.inactiveFrom).toBeUndefined();
+    expect(active.fixedTasks.find((task) => task.id === templateId)?.inactiveFrom).toBe("2026-08-01");
+    expect(successor).toMatchObject({
+      title: "拉伸",
+      categoryId: "exercise",
+      categoryNameSnapshot: "运动",
+      activeFrom: "2026-08-03"
+    });
+    expect(active.fixedRecords).toEqual(expect.arrayContaining([
+      expect.objectContaining({ templateId: successor?.id, date: "2026-08-03" })
+    ]));
+    expect(stats.find((day) => day.date === "2026-08-02")).toMatchObject({ total: 0, hasData: false });
+    expect(stats.find((day) => day.date === "2026-08-03")).toMatchObject({ total: 1, hasData: true });
   });
 
   it("updates only pending and backlog scheduled tasks", () => {

@@ -82,6 +82,17 @@ function DispatchResultButton() {
   return <><button onClick={submit}>提交并显示结果</button><p>{result}</p></>;
 }
 
+function ImportOlderBackupButton({ imported }: { imported: AppState }) {
+  const { dispatch, state } = useAppState();
+  const todayRecord = state.fixedRecords.find((record) => record.date === "2026-08-01");
+
+  return <>
+    <button onClick={() => dispatch({ type: "backup/import", state: imported })}>导入旧备份</button>
+    <p>今日固定：{todayRecord?.titleSnapshot ?? "无"}</p>
+    <p>逾期状态：{state.scheduledTasks.find((task) => task.id === "overdue")?.status ?? "无"}</p>
+  </>;
+}
+
 afterEach(() => {
   vi.useRealTimers();
 });
@@ -198,6 +209,41 @@ describe("AppStateProvider", () => {
 
     expect(repository.load().fixedRecords).toHaveLength(1);
     expect(repository.load().fixedRecords[0].date).toBe("2026-08-01");
+  });
+
+  it("rolls an older imported backup forward before persisting and displaying it", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date(2026, 7, 1, 9));
+    const imported = createInitialState(new Date(2026, 6, 30, 9));
+    imported.fixedTasks.push({
+      id: "fixed-imported",
+      title: "晨间拉伸",
+      categoryId: "exercise",
+      categoryNameSnapshot: "运动",
+      activeFrom: "2026-07-31",
+      order: 0,
+      createdAt: "2026-07-30T01:00:00.000Z"
+    });
+    imported.scheduledTasks.push({
+      id: "overdue",
+      title: "整理旧资料",
+      categoryId: "work",
+      categoryNameSnapshot: "工作",
+      scheduledDate: "2026-07-30",
+      status: "pending",
+      createdAt: "2026-07-30T01:00:00.000Z"
+    });
+    const repository = new InMemoryRepository(createInitialState(new Date(2026, 7, 1, 9)));
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    render(<Harness repository={repository}><ImportOlderBackupButton imported={imported} /></Harness>);
+    await user.click(screen.getByRole("button", { name: "导入旧备份" }));
+
+    expect(screen.getByText("今日固定：晨间拉伸")).toBeVisible();
+    expect(screen.getByText("逾期状态：backlog")).toBeVisible();
+    expect(repository.state.settings.lastOpenedDate).toBe("2026-08-01");
+    expect(repository.state.fixedRecords.map((record) => record.date)).toEqual(["2026-07-31", "2026-08-01"]);
+    expect(repository.state.scheduledTasks[0]?.status).toBe("backlog");
   });
 });
 

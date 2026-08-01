@@ -78,8 +78,9 @@ export function TaskForm({ categories, today, initialValues, error, onSubmit, on
         />
         <fieldset className="choice-group">
           <legend>计划方式</legend>
-          <label><input type="radio" name="task-kind" checked={values.kind === "fixed"} onChange={() => setValues((current) => ({ ...current, kind: "fixed" }))} /> 每日固定</label>
-          <label><input type="radio" name="task-kind" checked={values.kind === "scheduled"} onChange={() => setValues((current) => ({ ...current, kind: "scheduled" }))} /> 临时任务</label>
+          <label><input type="radio" name="task-kind" checked={values.kind === "fixed"} disabled={isEditing} onChange={() => setValues((current) => ({ ...current, kind: "fixed" }))} /> 每日固定</label>
+          <label><input type="radio" name="task-kind" checked={values.kind === "scheduled"} disabled={isEditing} onChange={() => setValues((current) => ({ ...current, kind: "scheduled" }))} /> 临时任务</label>
+          {isEditing && <p className="task-form__kind-note">编辑时不能更改计划方式。</p>}
         </fieldset>
         <fieldset className="choice-group">
           <legend>任务分类</legend>

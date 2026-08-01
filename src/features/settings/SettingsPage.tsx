@@ -120,6 +120,7 @@ export function SettingsPage() {
   }
 
   const customCategories = state.categories.filter((category) => !category.builtIn);
+  const managedFixedTasks = state.fixedTasks.filter((task) => !task.successorId);
   const categoryHistory = [
     ...state.scheduledTasks.map((task) => ({ id: task.id, label: "当前任务", title: task.title, categoryId: task.categoryId, originalCategory: task.categoryNameSnapshot })),
     ...state.fixedRecords.map((record) => ({ id: record.id, label: "历史任务", title: record.titleSnapshot, categoryId: record.categoryId, originalCategory: record.categoryNameSnapshot }))
@@ -150,8 +151,8 @@ export function SettingsPage() {
           {fixedTaskError && <p className="form-error" role="alert">{fixedTaskError}</p>}
         </form>
         <ul className="settings-list" aria-label="固定任务列表">
-          {state.fixedTasks.length === 0 && <li className="settings-muted">还没有固定任务</li>}
-          {state.fixedTasks.map((task) => (
+          {managedFixedTasks.length === 0 && <li className="settings-muted">还没有固定任务</li>}
+          {managedFixedTasks.map((task) => (
             <li key={task.id} className="settings-list__item">
               <span><strong>{task.title}</strong><small>{categoryName(state.categories, task.categoryId)} · {task.inactiveFrom ? "已停用" : "进行中"}</small></span>
               <span className="settings-inline-actions">

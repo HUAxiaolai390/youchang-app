@@ -27,6 +27,8 @@ export function TodayPage() {
   const { fixedTasks, scheduledTasks } = useMemo(() => {
     const visible = (categoryId: string) => filter === "all" || filter === categoryId;
     const templatesById = new Map(state.fixedTasks.map((task) => [task.id, task]));
+    const categoriesById = new Map(state.categories.map((category) => [category.id, category.name]));
+    const liveCategoryName = (categoryId: string) => categoriesById.get(categoryId) ?? categoriesById.get("other") ?? "其他";
     return {
       fixedTasks: state.fixedRecords.filter((record) => {
         const template = templatesById.get(record.templateId);
@@ -37,14 +39,14 @@ export function TodayPage() {
           && (!template.inactiveFrom || today < template.inactiveFrom);
       }).map((record): TodayTask => ({
         id: record.id, taskId: record.templateId, kind: "fixed", title: record.titleSnapshot, categoryId: record.categoryId,
-        categoryName: record.categoryNameSnapshot, completed: Boolean(record.completedAt), editable: true
+        categoryName: liveCategoryName(record.categoryId), completed: Boolean(record.completedAt), editable: true
       })),
       scheduledTasks: state.scheduledTasks.filter((task) => task.scheduledDate === today && visible(task.categoryId)).map((task): TodayTask => ({
         id: task.id, taskId: task.id, kind: "scheduled", title: task.title, categoryId: task.categoryId,
-        categoryName: task.categoryNameSnapshot, completed: task.status === "completed", editable: task.status === "pending"
+        categoryName: liveCategoryName(task.categoryId), completed: task.status === "completed", editable: task.status === "pending"
       }))
     };
-  }, [filter, state.fixedRecords, state.fixedTasks, state.scheduledTasks, today]);
+  }, [filter, state.categories, state.fixedRecords, state.fixedTasks, state.scheduledTasks, today]);
 
   function openEdit(task: TodayTask) {
     setEditing({ ...task, date: task.kind === "scheduled" ? today : today });

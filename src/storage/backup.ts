@@ -42,6 +42,7 @@ function isFixedTask(value: unknown): boolean {
   return hasStrings(value, ["id", "title", "categoryId", "categoryNameSnapshot", "createdAt"])
     && isDateKey(value.activeFrom)
     && (value.inactiveFrom === undefined || isDateKey(value.inactiveFrom))
+    && (value.successorId === undefined || isString(value.successorId))
     && typeof value.order === "number";
 }
 
@@ -106,8 +107,7 @@ function normalizeCategoryReferences(state: AppState): AppState {
     }
     return {
       ...task,
-      categoryId: fallback.id,
-      categoryNameSnapshot: fallback.name
+      categoryId: fallback.id
     };
   };
 

@@ -67,7 +67,7 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
     case "fixed/toggle":
       return toggleFixedRecord(state, action.recordId, now);
     case "fixed/set-active":
-      return setFixedTaskActive(state, action.id, action.active, toDateKey(now));
+      return setFixedTaskActive(state, action.id, action.active, now);
     case "category/add":
       return addCategory(state, { name: action.name, icon: action.icon }, now);
     case "category/delete":
@@ -75,7 +75,7 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
     case "settings/name":
       return { ...state, settings: { ...state.settings, displayName: action.value } };
     case "backup/import":
-      return action.state;
+      return rollover(action.state, now);
     case "system/rollover":
       return rollover(state, action.now);
     case "data/clear":

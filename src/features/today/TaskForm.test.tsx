@@ -34,4 +34,24 @@ describe("TaskForm", () => {
 
     expect(screen.getByRole("alert")).toHaveTextContent("保存失败，请立即导出备份");
   });
+
+  it.each([
+    { kind: "fixed" as const, title: "晨间拉伸", checkedName: "每日固定" },
+    { kind: "scheduled" as const, title: "整理书桌", checkedName: "临时任务" }
+  ])("locks both plan-mode choices when editing a $kind task", ({ kind, title, checkedName }) => {
+    const state = createInitialState(new Date(2026, 6, 31, 9));
+
+    render(<TaskForm
+      categories={state.categories}
+      today="2026-07-31"
+      initialValues={{ title, kind, categoryId: "study", date: "2026-07-31" }}
+      onCancel={() => {}}
+      onSubmit={() => {}}
+    />);
+
+    expect(screen.getByRole("radio", { name: "每日固定" })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: "临时任务" })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: checkedName })).toBeChecked();
+    expect(screen.getByText("编辑时不能更改计划方式。")).toBeVisible();
+  });
 });

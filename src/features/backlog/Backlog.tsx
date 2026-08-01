@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useAppState } from "../../app/AppStateProvider";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { fromDateKey, getWeek, isWithinWeek, toDateKey } from "../../domain/date";
 import type { DateKey, ScheduledTask } from "../../domain/types";
 
@@ -37,8 +38,9 @@ function getWeekDates(now: Date): DateKey[] {
   return dates;
 }
 
-function TaskCard({ task, actionLabel, onReschedule, onDelete }: {
+function TaskCard({ task, categoryName, actionLabel, onReschedule, onDelete }: {
   task: ScheduledTask;
+  categoryName: string;
   actionLabel: string;
   onReschedule(): void;
   onDelete(): void;
@@ -47,7 +49,7 @@ function TaskCard({ task, actionLabel, onReschedule, onDelete }: {
     <li className="backlog-card">
       <div className="backlog-card__copy">
         <p>{task.title}</p>
-        <span>原定：{formatDate(task.scheduledDate)} · {task.categoryNameSnapshot}</span>
+        <span>原定：{formatDate(task.scheduledDate)} · {categoryName}</span>
       </div>
       <div className="backlog-card__actions">
         <button type="button" onClick={onReschedule} aria-label={`${actionLabel}：${task.title}`}>{actionLabel}</button>
@@ -61,9 +63,12 @@ export function Backlog({ now = new Date() }: BacklogProps) {
   const { state, dispatch } = useAppState();
   const today = toDateKey(now);
   const [rescheduling, setRescheduling] = useState<ReschedulingTask>();
+  const [pendingDelete, setPendingDelete] = useState<{ task: ScheduledTask; archived: boolean }>();
   const weekDates = useMemo(() => getWeekDates(now), [now]);
   const backlogTasks = state.scheduledTasks.filter((task) => task.status === "backlog" && isWithinWeek(task.scheduledDate, now));
   const archivedTasks = state.scheduledTasks.filter((task) => task.status === "archived");
+  const categoriesById = new Map(state.categories.map((category) => [category.id, category.name]));
+  const liveCategoryName = (categoryId: string) => categoriesById.get(categoryId) ?? categoriesById.get("other") ?? "其他";
 
   function openReschedule(task: ScheduledTask, archived: boolean) {
     setRescheduling({ id: task.id, archived });
@@ -77,6 +82,11 @@ export function Backlog({ now = new Date() }: BacklogProps) {
     if (saved) setRescheduling(undefined);
   }
 
+  function confirmDelete() {
+    if (!pendingDelete) return;
+    if (dispatch({ type: "scheduled/delete", id: pendingDelete.task.id })) setPendingDelete(undefined);
+  }
+
   return (
     <section className="backlog-panel" aria-labelledby="backlog-title">
       <div className="backlog-panel__header">
@@ -85,7 +95,7 @@ export function Backlog({ now = new Date() }: BacklogProps) {
       </div>
       {backlogTasks.length === 0 ? <p className="backlog-panel__empty">本周没有待安排任务</p> : (
         <ul className="backlog-list">
-          {backlogTasks.map((task) => <TaskCard key={task.id} task={task} actionLabel="改期" onReschedule={() => openReschedule(task, false)} onDelete={() => dispatch({ type: "scheduled/delete", id: task.id })} />)}
+          {backlogTasks.map((task) => <TaskCard key={task.id} task={task} categoryName={liveCategoryName(task.categoryId)} actionLabel="改期" onReschedule={() => openReschedule(task, false)} onDelete={() => setPendingDelete({ task, archived: false })} />)}
         </ul>
       )}
       {rescheduling && (
@@ -101,10 +111,17 @@ export function Backlog({ now = new Date() }: BacklogProps) {
         <summary>上周未处理{archivedTasks.length > 0 ? `（${archivedTasks.length}）` : ""}</summary>
         {archivedTasks.length === 0 ? <p className="backlog-panel__empty">没有历史未处理任务</p> : (
           <ul className="backlog-list">
-            {archivedTasks.map((task) => <TaskCard key={task.id} task={task} actionLabel="移入本周" onReschedule={() => openReschedule(task, true)} onDelete={() => dispatch({ type: "scheduled/delete", id: task.id })} />)}
+            {archivedTasks.map((task) => <TaskCard key={task.id} task={task} categoryName={liveCategoryName(task.categoryId)} actionLabel="移入本周" onReschedule={() => openReschedule(task, true)} onDelete={() => setPendingDelete({ task, archived: true })} />)}
           </ul>
         )}
       </details>
+      {pendingDelete && <ConfirmDialog
+        title={pendingDelete.archived ? "删除历史任务？" : "删除待安排任务？"}
+        message={`确定删除“${pendingDelete.task.title}”吗？`}
+        confirmLabel="删除任务"
+        onCancel={() => setPendingDelete(undefined)}
+        onConfirm={confirmDelete}
+      />}
     </section>
   );
 }

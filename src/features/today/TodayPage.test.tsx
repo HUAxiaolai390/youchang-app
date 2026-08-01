@@ -122,6 +122,29 @@ describe("TodayPage", () => {
     expect(repository.load().scheduledTasks).toHaveLength(2);
   });
 
+  it("uses live category labels for current fixed and temporary tasks while preserving snapshots", async () => {
+    const state = createInitialState(new Date());
+    addFixedRecord(state, "晨间阅读", "other");
+    state.fixedRecords[0]!.categoryNameSnapshot = "阅读";
+    state.fixedTasks[0]!.categoryNameSnapshot = "阅读";
+    addTask(state, "reading-1", "整理读书笔记", "other");
+    state.scheduledTasks[0]!.categoryNameSnapshot = "阅读";
+    const { user, repository } = renderToday(state);
+
+    const fixedCategory = screen.getByText("晨间阅读").parentElement?.querySelector("span");
+    const scheduledCategory = screen.getByText("整理读书笔记").parentElement?.querySelector("span");
+    expect(fixedCategory).toHaveTextContent("其他");
+    expect(scheduledCategory).toHaveTextContent("其他");
+    expect(fixedCategory).not.toHaveTextContent("阅读");
+    expect(scheduledCategory).not.toHaveTextContent("阅读");
+
+    await user.click(screen.getByRole("button", { name: "只看其他" }));
+    expect(screen.getByText("晨间阅读")).toBeVisible();
+    expect(screen.getByText("整理读书笔记")).toBeVisible();
+    expect(repository.load().fixedRecords[0]?.categoryNameSnapshot).toBe("阅读");
+    expect(repository.load().scheduledTasks[0]?.categoryNameSnapshot).toBe("阅读");
+  });
+
   it("edits a pending task", async () => {
     const state = createInitialState(new Date());
     addTask(state, "study-1", "背单词", "study");
