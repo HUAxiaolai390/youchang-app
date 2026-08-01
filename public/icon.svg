@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">有常猫爪图标</title>
+  <desc id="description">米白色方形底面、圆角黑色方块和居中的白色猫爪</desc>
+  <rect width="512" height="512" fill="#f6f5f0" />
+  <rect x="56" y="56" width="400" height="400" rx="96" fill="#111111" />
+  <g fill="#ffffff">
+    <ellipse cx="183" cy="210" rx="34" ry="42" transform="rotate(-22 183 210)" />
+    <ellipse cx="238" cy="183" rx="34" ry="44" transform="rotate(-7 238 183)" />
+    <ellipse cx="294" cy="183" rx="34" ry="44" transform="rotate(7 294 183)" />
+    <ellipse cx="349" cy="210" rx="34" ry="42" transform="rotate(22 349 210)" />
+    <path d="M266 235c-55 0-105 46-105 104 0 40 28 66 65 55 15-5 25-16 40-16s25 11 40 16c37 11 65-15 65-55 0-58-50-104-105-104Z" />
+  </g>
+</svg>

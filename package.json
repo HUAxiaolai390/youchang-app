@@ -9,23 +9,29 @@
     "test": "vitest",
     "test:run": "vitest run",
     "typecheck": "tsc -b --pretty false",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "e2e": "playwright test",
+    "check": "pnpm typecheck && pnpm test:run && pnpm build && pnpm e2e"
   },
   "dependencies": {
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "workbox-window": "^7.4.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@testing-library/dom": "latest",
     "@testing-library/jest-dom": "latest",
     "@testing-library/react": "latest",
     "@testing-library/user-event": "^14.0.0",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "@vite-pwa/assets-generator": "^1.0.2",
     "@vitejs/plugin-react": "latest",
     "jsdom": "latest",
     "typescript": "latest",
     "vite": "latest",
+    "vite-plugin-pwa": "^1.3.0",
     "vitest": "latest"
   }
 }

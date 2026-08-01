@@ -4,6 +4,7 @@ import { AppShell, type PageKey } from "../components/AppShell";
 import { TodayPage } from "../features/today/TodayPage";
 import { GrowthPage } from "../features/growth/GrowthPage";
 import { SettingsPage } from "../features/settings/SettingsPage";
+import { PwaUpdatePrompt } from "../components/PwaUpdatePrompt";
 
 import { useState } from "react";
 import { createLocalRepository } from "../storage/repository";
@@ -32,20 +33,23 @@ function AppContents() {
   const page = pageContent[activePage];
 
   return (
-    <AppShell activePage={activePage} onNavigate={setActivePage}>
-      <section className="surface-card page-intro" aria-labelledby="page-title">
-        <h2 id="page-title">{page.title}</h2>
-        <p>{page.description}</p>
-      </section>
-      {activePage === "today" && <TodayPage />}
-      {activePage === "growth" && <GrowthPage />}
-      {activePage === "settings" && <SettingsPage />}
-      {error && (
-        <div role="alert">
-          <p>{error}</p>
-          <button onClick={() => dispatch({ type: "error/dismiss" })}>关闭</button>
-        </div>
-      )}
-    </AppShell>
+    <>
+      <AppShell activePage={activePage} onNavigate={setActivePage}>
+        <section className="surface-card page-intro" aria-labelledby="page-title">
+          <h2 id="page-title">{page.title}</h2>
+          <p>{page.description}</p>
+        </section>
+        {activePage === "today" && <TodayPage />}
+        {activePage === "growth" && <GrowthPage />}
+        {activePage === "settings" && <SettingsPage />}
+        {error && (
+          <div role="alert">
+            <p>{error}</p>
+            <button onClick={() => dispatch({ type: "error/dismiss" })}>关闭</button>
+          </div>
+        )}
+      </AppShell>
+      <PwaUpdatePrompt />
+    </>
   );
 }

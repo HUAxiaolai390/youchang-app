@@ -262,6 +262,7 @@ button:focus-visible {
 .task-item__check input { position: absolute; opacity: 0; }
 .task-item__check span { display: block; width: 22px; height: 22px; border: 1.5px solid var(--ink); border-radius: 50%; cursor: pointer; }
 .task-item__check input:checked + span { background: var(--ink); box-shadow: inset 0 0 0 5px var(--surface); }
+.task-item__check input:focus + span { outline: 3px solid #171717; outline-offset: 3px; }
 .task-item__copy { min-width: 0; flex: 1; }
 .task-item__copy p { margin: 0 0 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .task-item--completed .task-item__copy p { color: var(--muted); text-decoration: line-through; }
@@ -282,6 +283,7 @@ button:focus-visible {
 .category-option { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; font-size: 14px; }
 .category-option:has(input:checked) { border-color: var(--ink); background: var(--ink); color: var(--surface); }
 .category-option input { position: absolute; opacity: 0; }
+.category-option:has(input:focus) { outline: 3px solid #171717; outline-offset: 3px; }
 .form-error { margin: 0; color: #a22; font-size: 14px; }
 .task-form__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 5px; }
 .backlog-panel { display: grid; gap: 11px; border-top: 1px solid var(--line); padding-top: 18px; }
@@ -347,6 +349,10 @@ button:focus-visible {
 .clear-confirmation { margin-top: -4px; }
 .settings-version { padding: 0 4px 12px; text-align: center; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; clip-path: inset(50%); }
+.settings-inline-actions:has(#backup-file:focus) > label[for="backup-file"] { outline: 3px solid #171717; outline-offset: 3px; }
+.pwa-update-prompt { position: fixed; z-index: 30; top: max(16px, env(safe-area-inset-top)); left: 50%; display: flex; width: min(calc(100% - 32px), 560px); min-width: 0; align-items: center; justify-content: space-between; gap: 14px; padding: 13px 14px 13px 17px; transform: translateX(-50%); border: 1px solid #333; border-radius: var(--radius-control); background: var(--ink); box-shadow: 0 10px 30px rgba(23, 23, 23, .24); color: var(--surface); font-size: 14px; }
+.pwa-update-prompt span { min-width: 0; }
+.pwa-update-prompt button { flex: 0 0 auto; min-height: 36px; padding: 0 12px; border: 1px solid color-mix(in srgb, var(--surface) 55%, transparent); border-radius: 999px; background: var(--surface); color: var(--ink); cursor: pointer; font-weight: 700; }
 
 @media (min-width: 640px) {
   .app-shell {
