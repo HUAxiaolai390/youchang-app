@@ -323,6 +323,31 @@ button:focus-visible {
 .growth-card--total { text-align: center; }
 .growth-card--total p { color: var(--ink); font-size: 18px; font-weight: 700; }
 
+.settings-page { display: grid; gap: 18px; }
+.settings-section { display: grid; gap: 15px; padding: 22px; }
+.settings-section h2, .settings-section h3 { margin: 0; letter-spacing: -0.03em; }
+.settings-section h2 { font-size: 19px; }
+.settings-section h3 { font-size: 15px; }
+.settings-form { display: grid; gap: 9px; }
+.settings-form--edit, .backup-preview, .clear-confirmation, .settings-history { display: grid; gap: 10px; padding: 13px; border-radius: var(--radius-control); background: #f0efea; }
+.settings-inline-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; }
+.settings-inline-actions > button, .settings-list__item button { border: 0; background: transparent; color: var(--ink); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.settings-inline-actions .button { border: 1px solid var(--line); text-decoration: none; }
+.settings-inline-actions .button--primary { border-color: var(--ink); background: var(--ink); color: var(--surface); }
+.settings-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.settings-list__item { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 47px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.settings-list__item > span:first-child { display: grid; gap: 3px; }
+.settings-list__item small, .settings-muted, .settings-version { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.settings-history ul { display: grid; gap: 7px; margin: 0; padding-left: 19px; }
+.settings-history li { display: grid; gap: 2px; font-size: 14px; }
+.settings-history small { color: var(--muted); }
+.backup-preview p { margin: 0; font-size: 14px; font-weight: 700; }
+.settings-section--danger { border-color: #d9aeae; }
+.settings-section--danger h2 { color: #8d3131; }
+.clear-confirmation { margin-top: -4px; }
+.settings-version { padding: 0 4px 12px; text-align: center; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; clip-path: inset(50%); }
+
 @media (min-width: 640px) {
   .app-shell {
     padding-top: 34px;

@@ -1,9 +1,9 @@
 import { AppStateProvider, useAppState } from "./AppStateProvider";
 import type { AppRepository } from "../storage/repository";
 import { AppShell, type PageKey } from "../components/AppShell";
-import { EmptyState } from "../components/EmptyState";
 import { TodayPage } from "../features/today/TodayPage";
 import { GrowthPage } from "../features/growth/GrowthPage";
+import { SettingsPage } from "../features/settings/SettingsPage";
 
 import { useState } from "react";
 import { createLocalRepository } from "../storage/repository";
@@ -39,7 +39,7 @@ function AppContents() {
       </section>
       {activePage === "today" && <TodayPage />}
       {activePage === "growth" && <GrowthPage />}
-      {activePage === "settings" && <EmptyState title={page.title} description={page.description} />}
+      {activePage === "settings" && <SettingsPage />}
       {error && (
         <div role="alert">
           <p>{error}</p>

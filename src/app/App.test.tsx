@@ -39,4 +39,13 @@ describe("App", () => {
 
     expect(screen.getByText("累计完成 0 项")).toBeInTheDocument();
   });
+
+  it("opens the settings controls from the main navigation", async () => {
+    const user = userEvent.setup();
+
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "设置" }));
+
+    expect(screen.getByRole("heading", { name: "个人设置" })).toBeInTheDocument();
+  });
 });
