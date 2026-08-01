@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "postinstall": "playwright install chromium",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "test": "vitest",
@@ -11,7 +12,7 @@
     "typecheck": "tsc -b --pretty false",
     "preview": "vite preview",
     "e2e": "playwright test",
-    "check": "pnpm typecheck && pnpm test:run && pnpm build && pnpm e2e"
+    "check": "playwright install chromium && pnpm typecheck && pnpm test:run && pnpm build && pnpm e2e"
   },
   "dependencies": {
     "react": "^19.0.0",
