@@ -15,6 +15,43 @@ async function expectVisibleFocusOutline(locator: Locator) {
   expect(hasOutline).toBe(true);
 }
 
+async function expectMascotInsideViewport(page: Page) {
+  const mascot = page.getByRole("button", { name: "和小猫互动" });
+  await expect(mascot).toBeVisible();
+
+  const isInsideViewport = await mascot.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    return bounds.width > 0
+      && bounds.height > 0
+      && bounds.top >= 0
+      && bounds.left >= 0
+      && bounds.right <= window.innerWidth
+      && bounds.bottom <= window.innerHeight;
+  });
+  expect(isInsideViewport).toBe(true);
+
+  return mascot;
+}
+
+test("keeps the mascot visible and responds to interaction and completion", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  const mascot = await expectMascotInsideViewport(page);
+  await mascot.click();
+  await expect(mascot).toHaveAttribute("data-mascot-state", "react");
+
+  await page.getByRole("button", { name: "添加任务" }).click();
+  await page.getByLabel("任务名称").fill("小猫庆祝任务");
+  await page.getByRole("button", { name: "保存任务" }).click();
+
+  const task = page.getByRole("checkbox", { name: "完成：小猫庆祝任务" });
+  await expect(task).toBeVisible();
+  await task.check();
+  await expect(mascot).toHaveAttribute("data-mascot-state", "celebrate");
+});
+
 test("completes the core task, growth, and backup flow", async ({ page }, testInfo) => {
   const runtimeErrors: string[] = [];
   page.on("console", (message) => {
