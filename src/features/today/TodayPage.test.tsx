@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppStateProvider } from "../../app/AppStateProvider";
@@ -54,11 +54,10 @@ function addFixedRecord(state: AppState, title = "晨间拉伸", categoryId = "s
   });
 }
 
-function renderToday(state = createInitialState(new Date())) {
+function renderToday(state = createInitialState(new Date()), user = userEvent.setup()) {
   const repository = new MemoryRepository(state);
 
   render(<AppStateProvider repository={repository}><TodayPage /></AppStateProvider>);
-  const user = userEvent.setup();
 
   return { repository, user };
 }
@@ -241,5 +240,59 @@ describe("TodayPage", () => {
     expect(screen.getByText("你已经开始了，小猫在陪着你。")).toBeInTheDocument();
     await user.click(screen.getByRole("checkbox", { name: "完成：慢跑" }));
     expect(screen.getByText("今天已经足够，和小猫一起休息吧。")).toBeInTheDocument();
+  });
+
+  it("idles for a pending task and celebrates only its persisted completion", async () => {
+    vi.useFakeTimers();
+    const state = createInitialState(new Date());
+    addTask(state, "study-1", "背单词", "study");
+    renderToday(state);
+
+    expect(screen.getByRole("button", { name: "和小猫互动" }))
+      .toHaveAttribute("data-mascot-state", "idle");
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "完成：背单词" }));
+    expect(screen.getByRole("button", { name: "和小猫互动" }))
+      .toHaveAttribute("data-mascot-state", "celebrate");
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    fireEvent.click(screen.getByRole("checkbox", { name: "完成：背单词" }));
+    act(() => {
+      vi.advanceTimersByTime(800);
+    });
+
+    expect(screen.getByRole("button", { name: "和小猫互动" }))
+      .toHaveAttribute("data-mascot-state", "idle");
+  });
+
+  it("sleeps when today has no tasks and idles after adding a pending task", async () => {
+    const { user } = renderToday();
+
+    expect(screen.getByRole("button", { name: "和小猫互动" }))
+      .toHaveAttribute("data-mascot-state", "sleep");
+
+    await user.click(screen.getByRole("button", { name: "添加任务" }));
+    await user.type(screen.getByLabelText("任务名称"), "背单词");
+    await user.click(screen.getByRole("button", { name: "保存任务" }));
+
+    expect(screen.getByRole("button", { name: "和小猫互动" }))
+      .toHaveAttribute("data-mascot-state", "idle");
+  });
+
+  it("does not celebrate when completing a task fails to persist", async () => {
+    const state = createInitialState(new Date());
+    addTask(state, "study-1", "背单词", "study");
+    const repository = new MemoryRepository(state);
+    repository.saveError = new Error("保存失败，请立即导出备份");
+    const user = userEvent.setup();
+    render(<AppStateProvider repository={repository}><TodayPage /></AppStateProvider>);
+
+    await user.click(screen.getByRole("checkbox", { name: "完成：背单词" }));
+
+    expect(screen.getByRole("button", { name: "和小猫互动" }))
+      .toHaveAttribute("data-mascot-state", "idle");
+    expect(repository.load().scheduledTasks[0]).toMatchObject({ status: "pending" });
   });
 });

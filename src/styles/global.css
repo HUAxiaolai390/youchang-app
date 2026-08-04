@@ -238,10 +238,14 @@ button:focus-visible {
 }
 
 .today-page { display: grid; gap: 18px; }
-.today-hero { padding: 4px 4px 2px; }
+.today-hero { display: grid; grid-template-columns: minmax(0, 1fr) 160px; gap: 24px; align-items: center; padding: 22px; }
+.today-hero__copy { min-width: 0; }
 .today-hero p { margin: 0; color: var(--muted); }
 .today-hero h1 { margin: 8px 0; font-size: clamp(26px, 6vw, 36px); letter-spacing: -0.05em; }
 .today-hero__cat-message { line-height: 1.65; }
+.cat-mascot { width: 160px; padding: 0; border: 0; border-radius: 20px; background: transparent; cursor: pointer; line-height: 0; }
+.cat-mascot:focus-visible { outline: 3px solid #171717; outline-offset: 3px; }
+.cat-mascot__image { display: block; width: 100%; height: auto; }
 .progress-card { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; padding: 22px; }
 .progress-card p { margin: 0 0 5px; color: var(--muted); font-size: 14px; }
 .progress-card strong { font-size: 30px; letter-spacing: -0.05em; }
@@ -354,6 +358,11 @@ button:focus-visible {
 .pwa-update-prompt { position: fixed; z-index: 30; top: max(16px, env(safe-area-inset-top)); left: 50%; display: flex; width: min(calc(100% - 32px), 560px); min-width: 0; align-items: center; justify-content: space-between; gap: 14px; padding: 13px 14px 13px 17px; transform: translateX(-50%); border: 1px solid #333; border-radius: var(--radius-control); background: var(--ink); box-shadow: 0 10px 30px rgba(23, 23, 23, .24); color: var(--surface); font-size: 14px; }
 .pwa-update-prompt span { min-width: 0; }
 .pwa-update-prompt button { flex: 0 0 auto; min-height: 36px; padding: 0 12px; border: 1px solid color-mix(in srgb, var(--surface) 55%, transparent); border-radius: 999px; background: var(--surface); color: var(--ink); cursor: pointer; font-weight: 700; }
+
+@media (max-width: 479px) {
+  .today-hero { grid-template-columns: minmax(0, 1fr) 104px; gap: 12px; padding: 16px; }
+  .cat-mascot { width: 104px; }
+}
 
 @media (min-width: 640px) {
   .app-shell {

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useAppState } from "../../app/AppStateProvider";
+import { CatMascot } from "../../components/CatMascot";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { toDateKey } from "../../domain/date";
 import { getCatMessage, getTodayProgress } from "../../domain/stats";
@@ -22,6 +23,7 @@ export function TodayPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<EditingTask>();
   const [deleting, setDeleting] = useState<TodayTask>();
+  const [celebrationKey, setCelebrationKey] = useState(0);
   const progress = getTodayProgress(state, now);
 
   const { fixedTasks, scheduledTasks } = useMemo(() => {
@@ -78,7 +80,8 @@ export function TodayPage() {
   }
 
   function toggle(task: TodayTask) {
-    dispatch(task.kind === "fixed" ? { type: "fixed/toggle", recordId: task.id } : { type: "scheduled/toggle", id: task.id });
+    const saved = dispatch(task.kind === "fixed" ? { type: "fixed/toggle", recordId: task.id } : { type: "scheduled/toggle", id: task.id });
+    if (!task.completed && saved) setCelebrationKey((current) => current + 1);
   }
 
   function confirmDelete() {
@@ -96,10 +99,13 @@ export function TodayPage() {
 
   return (
     <div className="today-page">
-      <header className="today-hero">
-        <p>{formatToday(now)}</p>
-        <h1>早上好，{state.settings.displayName || "朋友"}</h1>
-        <p className="today-hero__cat-message">{getCatMessage(progress)}</p>
+      <header className="today-hero surface-card">
+        <div className="today-hero__copy">
+          <p>{formatToday(now)}</p>
+          <h1>早上好，{state.settings.displayName || "朋友"}</h1>
+          <p className="today-hero__cat-message">{getCatMessage(progress)}</p>
+        </div>
+        <CatMascot baseState={progress.total === 0 ? "sleep" : "idle"} celebrationKey={celebrationKey} />
       </header>
       <section className="progress-card surface-card" aria-label="今日完成进度">
         <div><p>今日完成</p><strong>{progress.completed}<span> / {progress.total}</span></strong></div>
