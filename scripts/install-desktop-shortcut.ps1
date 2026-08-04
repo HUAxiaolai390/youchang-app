@@ -97,7 +97,7 @@ if ($null -eq $pwshPath) {
 }
 
 $shortcutPath = Join-Path $resolvedDestination '启动有常.lnk'
-$shortcutArguments = '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "{0}"' -f $startScript
+$shortcutArguments = '-NoProfile -File "{0}"' -f $startScript
 $shell = $null
 $shortcut = $null
 try {
@@ -108,6 +108,9 @@ try {
     $shortcut.WorkingDirectory = $resolvedProjectRoot
     $shortcut.IconLocation = "$iconPath,0"
     $shortcut.Description = '启动有常'
+    # Keep the launcher unobtrusive without using the Hidden + Bypass pattern
+    # that endpoint-security products commonly quarantine in desktop links.
+    $shortcut.WindowStyle = 7
     $shortcut.Save()
 }
 finally {

@@ -13,7 +13,7 @@
 第一次使用时，仍需在项目文件夹的终端中运行 `pnpm install`，准备有常需要的工具。完成后，再运行下面这条命令安装桌面快捷方式：
 
 ```powershell
-pwsh.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-desktop-shortcut.ps1
+pwsh.exe -NoProfile -File .\scripts\install-desktop-shortcut.ps1
 ```
 
 命令会在桌面创建“启动有常”。以后正常使用时，直接双击桌面的“启动有常”即可：它会在后台启动本地服务，并自动打开浏览器，不需要先打开 VS Code 或保留一个终端窗口。

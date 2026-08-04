@@ -35,7 +35,7 @@ try {
     $stablePwshAlias = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Microsoft/WindowsApps/pwsh.exe'
     $hasStablePwshAlias = Test-Path -LiteralPath $stablePwshAlias -PathType Leaf
     Assert-True $hasStablePwshAlias 'This machine exposes the stable PowerShell Store App Execution Alias used by the regression test.'
-    $expectedArguments = '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "{0}"' -f $startScript
+    $expectedArguments = '-NoProfile -File "{0}"' -f $startScript
     $shortcutPath = Join-Path $testRoot '启动有常.lnk'
 
     $output = @(& $installer -DestinationDirectory $testRoot -ProjectRoot $projectRoot)
@@ -49,6 +49,7 @@ try {
     Assert-Equal $shortcut.TargetPath $stablePwshAlias 'The target is the stable PowerShell 7 App Execution Alias, not a versioned package path.'
     Assert-Equal ([System.IO.Path]::GetFileName($shortcut.TargetPath)) 'pwsh.exe' 'The target is not Windows PowerShell 5.1.'
     Assert-Equal $shortcut.Arguments $expectedArguments 'The hidden launch arguments contain the quoted absolute start script.'
+    Assert-Equal $shortcut.WindowStyle 7 'The launcher window is minimized without bypassing execution policy.'
     Assert-Equal $shortcut.WorkingDirectory $projectRoot 'The working directory is the exact project root.'
     Assert-Equal $shortcut.IconLocation "$iconPath,0" 'The icon is the exact project favicon at icon index zero.'
 
