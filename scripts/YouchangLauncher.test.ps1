@@ -95,7 +95,7 @@ try {
     Assert-True (($logs | Where-Object Name -Like '*-stdout.log').Count -eq 1) 'A separate stdout log is created.'
     Assert-True (($logs | Where-Object Name -Like '*-stderr.log').Count -eq 1) 'A separate stderr log is created.'
     $stdoutLog = $logs | Where-Object Name -Like '*-stdout.log'
-    Assert-True ((Get-Content -LiteralPath $stdoutLog.FullName -Raw).Trim() -eq 'dev -- --host 127.0.0.1 --port 5173 --strictPort') 'The fixed strict-port arguments are passed unchanged.'
+    Assert-True ((Get-Content -LiteralPath $stdoutLog.FullName -Raw).Trim() -eq 'dev --host 127.0.0.1 --port 5173 --strictPort') 'The fixed strict-port arguments are passed without a standalone separator.'
 
     $exports = @(Get-Command -Module YouchangLauncher | Select-Object -ExpandProperty Name | Sort-Object)
     Assert-True (($exports -join ',') -eq 'Start-YouchangServer,Test-YouchangPage,Wait-YouchangReady') 'Only the required functions are exported.'

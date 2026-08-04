@@ -21,7 +21,9 @@ function Start-YouchangServer {
     $logStamp = Get-Date -Format 'yyyyMMdd-HHmmssfff'
     $stdoutLog = Join-Path $logDirectory "server-$logStamp-stdout.log"
     $stderrLog = Join-Path $logDirectory "server-$logStamp-stderr.log"
-    $arguments = @('dev', '--', '--host', '127.0.0.1', '--port', '5173', '--strictPort')
+    # pnpm forwards script arguments directly. A standalone `--` reaches Vite
+    # as a positional separator and causes Vite 8 to ignore the host options.
+    $arguments = @('dev', '--host', '127.0.0.1', '--port', '5173', '--strictPort')
 
     return Start-Process -FilePath $PnpmPath `
         -ArgumentList $arguments `
