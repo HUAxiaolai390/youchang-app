@@ -88,6 +88,60 @@ function Stop-TestListener {
     }
 }
 
+function Start-DisconnectingTcpListener {
+    param([string] $TemporaryDirectory)
+
+    $port = Get-TestPort
+    $readyPath = Join-Path $TemporaryDirectory "tcp-$port.ready"
+    $stopPath = Join-Path $TemporaryDirectory "tcp-$port.stop"
+    $listenerScript = Join-Path $PSScriptRoot 'YouchangLauncher.TcpTestListener.ps1'
+    $job = Start-Job -FilePath $listenerScript -ArgumentList $port, $readyPath, $stopPath
+    $deadline = [DateTime]::UtcNow.AddSeconds(5)
+    try {
+        while (-not (Test-Path -LiteralPath $readyPath)) {
+            if ($job.State -in @('Completed', 'Failed', 'Stopped')) {
+                throw "Temporary TCP listener stopped early: $(Receive-Job -Job $job)"
+            }
+            if ([DateTime]::UtcNow -ge $deadline) {
+                throw 'Temporary TCP listener did not become ready.'
+            }
+            Start-Sleep -Milliseconds 50
+        }
+    }
+    catch {
+        Stop-Job -Job $job -ErrorAction SilentlyContinue
+        Remove-Job -Job $job -Force -ErrorAction SilentlyContinue
+        throw
+    }
+
+    return [pscustomobject]@{
+        Job = $job
+        StopPath = $stopPath
+        Url = "http://127.0.0.1:$port/"
+    }
+}
+
+function Stop-DisconnectingTcpListener {
+    param($Server)
+
+    if ($null -eq $Server) {
+        return
+    }
+
+    try {
+        if ($Server.Job.State -eq 'Running') {
+            Set-Content -LiteralPath $Server.StopPath -Encoding Ascii -Value 'stop'
+            if ($null -eq (Wait-Job -Job $Server.Job -Timeout 3)) {
+                throw 'Temporary TCP listener did not exit after its stop signal.'
+            }
+        }
+    }
+    finally {
+        Stop-Job -Job $Server.Job -ErrorAction SilentlyContinue
+        Remove-Job -Job $Server.Job -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Invoke-StartScript {
     param(
         [string] $Url,
@@ -131,6 +185,8 @@ function Invoke-StartScript {
 
 $testRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('youchang-start-test-' + [guid]::NewGuid().ToString('N'))
 $server = $null
+$hangingTcpListener = $null
+$disconnectingTcpServer = $null
 try {
     New-Item -ItemType Directory -Path $testRoot | Out-Null
     $server = Start-TestListener -TemporaryDirectory $testRoot
@@ -151,8 +207,37 @@ try {
     Assert-True ($otherResult.ExitCode -eq 2) 'A non-Youchang page returns the occupied-port exit code.'
     $occupiedMessage = '5173 ' + (ConvertFrom-CodePoints @(0x7aef, 0x53e3, 0x6b63, 0x5728, 0x88ab, 0x5176, 0x4ed6, 0x7a0b, 0x5e8f, 0x4f7f, 0x7528))
     Assert-True ($otherResult.Output -match [regex]::Escape($occupiedMessage)) 'A non-Youchang page reports the Chinese occupied-port message.'
+
+    $hangingTcpListener = New-Object System.Net.Sockets.TcpListener ([System.Net.IPAddress]::Loopback, 0)
+    $hangingTcpListener.Start()
+    $hangingTcpPort = $hangingTcpListener.LocalEndpoint.Port
+    $hangingResult = Invoke-StartScript -Url "http://127.0.0.1:$hangingTcpPort/" -PnpmDirectory $fakePnpmDirectory
+    Assert-True ($hangingResult.ExitCode -eq 2) 'A hanging non-HTTP TCP listener returns the occupied-port exit code.'
+    Assert-True (-not (Test-Path -LiteralPath $markerPath)) 'A hanging occupied TCP port does not invoke pnpm.'
+    Assert-True ($hangingResult.Output -match [regex]::Escape($occupiedMessage)) 'A hanging occupied TCP port reports the Chinese occupied-port message.'
+    $hangingTcpListener.Stop()
+    $hangingTcpListener = $null
+
+    $disconnectingTcpServer = Start-DisconnectingTcpListener -TemporaryDirectory $testRoot
+    $disconnectingResult = Invoke-StartScript -Url $disconnectingTcpServer.Url -PnpmDirectory $fakePnpmDirectory
+    Assert-True ($disconnectingResult.ExitCode -eq 2) 'An immediately disconnecting TCP listener returns the occupied-port exit code.'
+    Assert-True (-not (Test-Path -LiteralPath $markerPath)) 'An immediately disconnecting occupied TCP port does not invoke pnpm.'
+    Assert-True ($disconnectingResult.Output -match [regex]::Escape($occupiedMessage)) 'An immediately disconnecting occupied TCP port reports the Chinese occupied-port message.'
+    Stop-DisconnectingTcpListener $disconnectingTcpServer
+    $disconnectingTcpServer = $null
+
+    $unusedPort = Get-TestPort
+    $timeoutResult = Invoke-StartScript -Url "http://127.0.0.1:$unusedPort/" -TimeoutSeconds 1 -PnpmDirectory $fakePnpmDirectory
+    Assert-True ($timeoutResult.ExitCode -eq 4) 'A first start that never becomes ready returns the timeout exit code.'
+    Assert-True (Test-Path -LiteralPath $markerPath) 'A first-start timeout invokes the isolated fake pnpm command.'
+    $timeoutMessage = ConvertFrom-CodePoints @(0x6709, 0x5e38, 0x672a, 0x80fd, 0x5728, 0x89c4, 0x5b9a, 0x65f6, 0x95f4, 0x5185, 0x542f, 0x52a8)
+    Assert-True ($timeoutResult.Output -match [regex]::Escape($timeoutMessage)) 'A first-start timeout reports the Chinese timeout message.'
 }
 finally {
+    if ($null -ne $hangingTcpListener) {
+        $hangingTcpListener.Stop()
+    }
+    Stop-DisconnectingTcpListener $disconnectingTcpServer
     Stop-TestListener $server
     if (Test-Path -LiteralPath $testRoot) {
         Remove-Item -LiteralPath $testRoot -Recurse -Force

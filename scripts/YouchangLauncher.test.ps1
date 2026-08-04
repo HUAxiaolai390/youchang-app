@@ -83,6 +83,8 @@ try {
     Assert-True (Test-YouchangPage -Url $server.HealthyUrl) 'The 有常 page is recognized.'
     Assert-True (-not (Test-YouchangPage -Url $server.OtherUrl)) 'A different app is rejected.'
     Assert-True (Wait-YouchangReady -Url $server.HealthyUrl -TimeoutSeconds 2) 'The healthy page becomes ready.'
+    $unusedPort = Get-TestPort
+    Assert-True (-not (Wait-YouchangReady -Url "http://127.0.0.1:$unusedPort/" -TimeoutSeconds 1)) 'Readiness returns false when its timeout expires.'
 
     $fakePnpmPath = Join-Path $testRoot 'pnpm.cmd'
     Set-Content -LiteralPath $fakePnpmPath -Encoding Ascii -Value '@echo %*'

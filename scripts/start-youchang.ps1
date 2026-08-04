@@ -69,13 +69,28 @@ function Test-LauncherEndpointResponds {
     )
 
     try {
-        Invoke-WebRequest -Uri $Url -TimeoutSec 1 -UseBasicParsing -ErrorAction Stop | Out-Null
-        return $true
+        $endpoint = [System.Uri]::new($Url, [System.UriKind]::Absolute)
+        if ([string]::IsNullOrWhiteSpace($endpoint.DnsSafeHost) -or $endpoint.Port -le 0) {
+            return $false
+        }
     }
     catch {
-        # A HTTP error response still proves that another program owns the endpoint.
-        # This covers both Windows PowerShell WebException and pwsh HttpResponseException.
-        return ($null -ne $_.Exception.Response)
+        return $false
+    }
+
+    $client = New-Object System.Net.Sockets.TcpClient
+    try {
+        # Test-YouchangPage already performed the bounded HTTP recognition step.
+        # A TCP connect catches non-HTTP owners, including services that hang or
+        # close immediately after accepting a connection.
+        $connectTask = $client.ConnectAsync($endpoint.DnsSafeHost, $endpoint.Port)
+        return $connectTask.Wait(750)
+    }
+    catch {
+        return $false
+    }
+    finally {
+        $client.Dispose()
     }
 }
 

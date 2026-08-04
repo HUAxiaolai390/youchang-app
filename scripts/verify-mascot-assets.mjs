@@ -45,6 +45,23 @@ async function verifyAsset(filePath, expectedType) {
       || !Number.isInteger(metadata.pageHeight) || metadata.pageHeight <= 0)) {
     throw new Error(`Invalid decoded GIF frames for ${filePath}`);
   }
+
+  let pixels;
+  try {
+    pixels = await sharp(contents, { animated: expectedType === "gif" })
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`Unable to decode ${expectedType.toUpperCase()} pixel data: ${filePath}: ${detail}`);
+  }
+
+  const { data, info } = pixels;
+  const expectedPixelBytes = info.width * info.height * info.channels;
+  if (info.width <= 0 || info.height <= 0 || info.channels <= 0
+    || data.length <= 0 || data.length !== expectedPixelBytes) {
+    throw new Error(`Invalid decoded pixel buffer for ${filePath}`);
+  }
 }
 
 export async function verifyMascotAssets(rootDir) {

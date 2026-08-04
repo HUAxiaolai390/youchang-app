@@ -1,4 +1,4 @@
-import { cp, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -39,5 +39,14 @@ describe("verifyMascotAssets", () => {
     await writeFile(path.join(mascotDir, "celebrate.png"), Buffer.from("89504e470d0a1a0a", "hex"));
 
     await expect(verifyMascotAssets(rootDir)).rejects.toThrow(/celebrate\.png/);
+  });
+
+  it("rejects a truncated PNG whose metadata is still readable", async () => {
+    const { rootDir, mascotDir } = await createAssetRoot();
+    const pngPath = path.join(mascotDir, "idle.png");
+    const validPng = await readFile(pngPath);
+    await writeFile(pngPath, validPng.subarray(0, Math.floor(validPng.length * 0.9)));
+
+    await expect(verifyMascotAssets(rootDir)).rejects.toThrow(/idle\.png/);
   });
 });
