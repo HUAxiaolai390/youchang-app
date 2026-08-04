@@ -1,16 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 
 export type MascotBaseState = "idle" | "sleep";
-export type MascotState = MascotBaseState | "react" | "celebrate";
+export type MascotState = MascotBaseState | "celebrate";
 export type CatMascotProps = {
   baseState: MascotBaseState;
   celebrationKey: number;
 };
 
-const temporaryActionDurations: Record<Extract<MascotState, "react" | "celebrate">, number> = {
-  react: 1120,
-  celebrate: 2080
-};
+export const mascotIdleVariants = [
+  "02", "03", "04", "05", "06", "08", "09", "10", "11",
+  "12", "13", "14", "15", "16", "17", "18", "19", "20"
+] as const;
+
+type MascotIdleVariant = (typeof mascotIdleVariants)[number];
+
+const defaultIdleVariant: MascotIdleVariant = "19";
+const celebrationDuration = 2080;
 const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
 
 function usePrefersReducedMotion() {
@@ -41,7 +46,8 @@ function usePrefersReducedMotion() {
 }
 
 export function CatMascot({ baseState, celebrationKey }: CatMascotProps) {
-  const [temporaryState, setTemporaryState] = useState<MascotState | null>(null);
+  const [temporaryState, setTemporaryState] = useState<"celebrate" | null>(null);
+  const [selectedIdleVariant, setSelectedIdleVariant] = useState<MascotIdleVariant | null>(null);
   const [playbackKey, setPlaybackKey] = useState(0);
   const lastCelebrationKey = useRef(celebrationKey);
   const temporaryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -55,28 +61,46 @@ export function CatMascot({ baseState, celebrationKey }: CatMascotProps) {
     }
   }
 
-  function startTemporaryState(state: Extract<MascotState, "react" | "celebrate">) {
+  function startCelebration() {
     clearTemporaryTimer();
-    setTemporaryState(state);
+    setTemporaryState("celebrate");
     setPlaybackKey((current) => current + 1);
     temporaryTimer.current = setTimeout(() => {
       temporaryTimer.current = null;
       setTemporaryState(null);
-    }, temporaryActionDurations[state]);
+    }, celebrationDuration);
+  }
+
+  function selectNextIdleVariant() {
+    clearTemporaryTimer();
+    setTemporaryState(null);
+    setSelectedIdleVariant((current) => {
+      const currentVariant = current ?? defaultIdleVariant;
+      const currentIndex = mascotIdleVariants.indexOf(currentVariant);
+      return mascotIdleVariants[(currentIndex + 1) % mascotIdleVariants.length];
+    });
+    setPlaybackKey((current) => current + 1);
   }
 
   useEffect(() => {
     if (celebrationKey === lastCelebrationKey.current) return;
 
     lastCelebrationKey.current = celebrationKey;
-    startTemporaryState("celebrate");
+    startCelebration();
   }, [celebrationKey]);
+
+  useEffect(() => {
+    setSelectedIdleVariant(null);
+  }, [baseState]);
 
   useEffect(() => () => clearTemporaryTimer(), []);
 
-  const state = temporaryState ?? baseState;
+  const state: MascotState = temporaryState ?? (selectedIdleVariant ? "idle" : baseState);
+  const idleVariant = state === "idle" ? (selectedIdleVariant ?? defaultIdleVariant) : null;
   const extension = prefersReducedMotion ? "png" : "gif";
-  const desiredSource = `/mascot/${state}.${extension}`;
+  const desiredSource = state === "idle" && selectedIdleVariant
+    ? `/mascot/idle/${selectedIdleVariant}.${extension}`
+    : `/mascot/${state}.${extension}`;
   const fallbackSource = `/mascot/idle.${extension}`;
   const displayedSource = failedSources.has(desiredSource) ? fallbackSource : desiredSource;
 
@@ -85,13 +109,15 @@ export function CatMascot({ baseState, celebrationKey }: CatMascotProps) {
       type="button"
       className="cat-mascot"
       aria-label="和小猫互动"
+      title="点击切换小猫待机动作"
       data-mascot-state={state}
+      data-mascot-idle-variant={idleVariant ?? undefined}
       onClick={() => {
-        if (state !== "celebrate") startTemporaryState("react");
+        if (state !== "celebrate") selectNextIdleVariant();
       }}
     >
       <img
-        key={`${state}-${playbackKey}`}
+        key={`${displayedSource}-${playbackKey}`}
         className="cat-mascot__image"
         src={displayedSource}
         alt=""

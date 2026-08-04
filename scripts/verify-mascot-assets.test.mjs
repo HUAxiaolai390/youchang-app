@@ -2,7 +2,7 @@ import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { verifyMascotAssets } from "./verify-mascot-assets.mjs";
+import { IDLE_VARIANTS, MASCOT_ASSET_COUNT, verifyMascotAssets } from "./verify-mascot-assets.mjs";
 
 const sourceMascotDir = path.resolve("public", "mascot");
 const temporaryRoots = [];
@@ -25,6 +25,16 @@ describe("verifyMascotAssets", () => {
     const { rootDir } = await createAssetRoot();
 
     await expect(verifyMascotAssets(rootDir)).resolves.toBeUndefined();
+    expect(IDLE_VARIANTS).toHaveLength(18);
+    expect(MASCOT_ASSET_COUNT).toBe(44);
+  });
+
+  it("requires every extracted idle variant", async () => {
+    const { rootDir, mascotDir } = await createAssetRoot();
+    const missingVariant = path.join(mascotDir, "idle", "02.gif");
+    await rm(missingVariant);
+
+    await expect(verifyMascotAssets(rootDir)).rejects.toThrow(missingVariant);
   });
 
   it("rejects a header-only GIF89a file", async () => {

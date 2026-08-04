@@ -104,6 +104,7 @@ export function TodayPage() {
           <p>{formatToday(now)}</p>
           <h1>早上好，{state.settings.displayName || "朋友"}</h1>
           <p className="today-hero__cat-message">{getCatMessage(progress)}</p>
+          <p className="today-hero__mascot-hint">点点小猫，切换 18 种待机动作。</p>
         </div>
         <CatMascot baseState={progress.total === 0 ? "sleep" : "idle"} celebrationKey={celebrationKey} />
       </header>

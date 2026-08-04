@@ -1,9 +1,8 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CatMascot } from "./CatMascot";
+import { CatMascot, mascotIdleVariants } from "./CatMascot";
 
-const reactDuration = 1120;
 const celebrateDuration = 2080;
 
 function mockMatchMedia(matches = false) {
@@ -45,20 +44,33 @@ describe("CatMascot", () => {
     vi.unstubAllGlobals();
   });
 
-  it("plays one complete reaction loop, then returns to its base state", () => {
+  it("cycles through all 18 extracted idle animations and wraps", () => {
+    render(<CatMascot baseState="idle" celebrationKey={0} />);
+    const button = screen.getByRole("button", { name: "和小猫互动" });
+    const expectedCycle = ["20", ...mascotIdleVariants.slice(0, -1)];
+
+    expect(mascotIdleVariants).toHaveLength(18);
+    expect(button).toHaveAttribute("data-mascot-state", "idle");
+    expect(button).toHaveAttribute("data-mascot-idle-variant", "19");
+    expect(screen.getByRole("presentation")).toHaveAttribute("src", "/mascot/idle.gif");
+
+    for (const variant of expectedCycle) {
+      fireEvent.click(button);
+      expect(button).toHaveAttribute("data-mascot-state", "idle");
+      expect(button).toHaveAttribute("data-mascot-idle-variant", variant);
+      expect(screen.getByRole("presentation")).toHaveAttribute("src", `/mascot/idle/${variant}.gif`);
+    }
+  });
+
+  it("switches from sleep to the next idle action when clicked", () => {
     render(<CatMascot baseState="sleep" celebrationKey={0} />);
     const button = screen.getByRole("button", { name: "和小猫互动" });
 
     expect(button).toHaveAttribute("data-mascot-state", "sleep");
-
     fireEvent.click(button);
-    expect(button).toHaveAttribute("data-mascot-state", "react");
-
-    act(() => vi.advanceTimersByTime(reactDuration - 1));
-    expect(button).toHaveAttribute("data-mascot-state", "react");
-
-    act(() => vi.advanceTimersByTime(1));
-    expect(button).toHaveAttribute("data-mascot-state", "sleep");
+    expect(button).toHaveAttribute("data-mascot-state", "idle");
+    expect(button).toHaveAttribute("data-mascot-idle-variant", "20");
+    expect(screen.getByRole("presentation")).toHaveAttribute("src", "/mascot/idle/20.gif");
   });
 
   it("plays one complete celebration loop, then returns to its base state", () => {
@@ -115,7 +127,9 @@ describe("CatMascot", () => {
     button.focus();
     await user.keyboard("{Enter}");
 
-    expect(button).toHaveAttribute("data-mascot-state", "react");
+    expect(button).toHaveAttribute("data-mascot-state", "idle");
+    expect(button).toHaveAttribute("data-mascot-idle-variant", "20");
+    expect(screen.getByRole("presentation")).toHaveAttribute("src", "/mascot/idle/20.gif");
     view.unmount();
   });
 
@@ -144,10 +158,11 @@ describe("CatMascot", () => {
 
     expect(image).toHaveAttribute("src", "/mascot/sleep.gif");
     act(() => image.dispatchEvent(new Event("error", { bubbles: true })));
-    expect(image).toHaveAttribute("src", "/mascot/idle.gif");
+    const fallbackImage = screen.getByRole("presentation");
+    expect(fallbackImage).toHaveAttribute("src", "/mascot/idle.gif");
 
-    act(() => image.dispatchEvent(new Event("error", { bubbles: true })));
-    expect(image).toHaveAttribute("src", "/mascot/idle.gif");
+    act(() => fallbackImage.dispatchEvent(new Event("error", { bubbles: true })));
+    expect(screen.getByRole("presentation")).toHaveAttribute("src", "/mascot/idle.gif");
   });
 
   it("falls back to the idle PNG in reduced-motion mode", () => {
@@ -157,6 +172,30 @@ describe("CatMascot", () => {
 
     act(() => image.dispatchEvent(new Event("error", { bubbles: true })));
 
-    expect(image).toHaveAttribute("src", "/mascot/idle.png");
+    expect(screen.getByRole("presentation")).toHaveAttribute("src", "/mascot/idle.png");
+  });
+
+  it("uses each idle variant's static frame in reduced-motion mode", () => {
+    mockMatchMedia(true);
+    render(<CatMascot baseState="idle" celebrationKey={0} />);
+    const button = screen.getByRole("button", { name: "和小猫互动" });
+
+    fireEvent.click(button);
+
+    expect(screen.getByRole("presentation")).toHaveAttribute("src", "/mascot/idle/20.png");
+  });
+
+  it("falls back from a broken idle variant and continues cycling", () => {
+    render(<CatMascot baseState="idle" celebrationKey={0} />);
+    const button = screen.getByRole("button", { name: "和小猫互动" });
+
+    fireEvent.click(button);
+    const brokenImage = screen.getByRole("presentation");
+    expect(brokenImage).toHaveAttribute("src", "/mascot/idle/20.gif");
+    act(() => brokenImage.dispatchEvent(new Event("error", { bubbles: true })));
+    expect(screen.getByRole("presentation")).toHaveAttribute("src", "/mascot/idle.gif");
+
+    fireEvent.click(button);
+    expect(screen.getByRole("presentation")).toHaveAttribute("src", "/mascot/idle/02.gif");
   });
 });

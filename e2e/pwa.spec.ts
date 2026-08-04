@@ -37,6 +37,8 @@ test("opens after the network is disabled", async ({ page, context }) => {
 
   await expectOfflineCachedAsset(page, "/mascot/idle.gif");
   await expectOfflineCachedAsset(page, "/mascot/idle.png");
+  await expectOfflineCachedAsset(page, "/mascot/idle/02.gif");
+  await expectOfflineCachedAsset(page, "/mascot/idle/02.png");
 
   await page.reload();
   await expect(page.getByRole("heading", { name: /早上好/ })).toBeVisible();

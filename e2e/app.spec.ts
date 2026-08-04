@@ -47,7 +47,12 @@ test("keeps the mascot visible and responds to interaction and completion", asyn
 
   const mascot = await expectMascotInsideViewport(page);
   await mascot.click();
-  await expect(mascot).toHaveAttribute("data-mascot-state", "react");
+  await expect(mascot).toHaveAttribute("data-mascot-state", "idle");
+  await expect(mascot).toHaveAttribute("data-mascot-idle-variant", "20");
+  await expect(mascot.locator("img")).toHaveAttribute("src", "/mascot/idle/20.gif");
+  await mascot.click();
+  await expect(mascot).toHaveAttribute("data-mascot-idle-variant", "02");
+  await expect(mascot.locator("img")).toHaveAttribute("src", "/mascot/idle/02.gif");
   await expectMascotImageDecoded(mascot);
 
   await page.getByRole("button", { name: "添加任务" }).click();

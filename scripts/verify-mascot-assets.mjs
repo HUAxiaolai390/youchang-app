@@ -6,6 +6,11 @@ import sharp from "sharp";
 const GIF_HEADERS = ["GIF87a", "GIF89a"];
 const PNG_SIGNATURE = "89504e470d0a1a0a";
 const ASSET_NAMES = ["idle", "sleep", "react", "celebrate"];
+export const IDLE_VARIANTS = [
+  "02", "03", "04", "05", "06", "08", "09", "10", "11",
+  "12", "13", "14", "15", "16", "17", "18", "19", "20"
+];
+export const MASCOT_ASSET_COUNT = (ASSET_NAMES.length + IDLE_VARIANTS.length) * 2;
 
 async function verifyAsset(filePath, expectedType) {
   const contents = await readFile(filePath);
@@ -71,13 +76,18 @@ export async function verifyMascotAssets(rootDir) {
     await verifyAsset(path.join(mascotDir, `${name}.gif`), "gif");
     await verifyAsset(path.join(mascotDir, `${name}.png`), "png");
   }
+
+  for (const variant of IDLE_VARIANTS) {
+    await verifyAsset(path.join(mascotDir, "idle", `${variant}.gif`), "gif");
+    await verifyAsset(path.join(mascotDir, "idle", `${variant}.png`), "png");
+  }
 }
 
 const currentFile = fileURLToPath(import.meta.url);
 if (process.argv[1] && path.resolve(process.argv[1]) === currentFile) {
   verifyMascotAssets(process.cwd())
     .then(() => {
-      console.log("Mascot assets verified: 8 files");
+      console.log(`Mascot assets verified: ${MASCOT_ASSET_COUNT} files`);
     })
     .catch((error) => {
       console.error(error.message);

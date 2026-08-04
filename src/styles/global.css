@@ -243,6 +243,7 @@ button:focus-visible {
 .today-hero p { margin: 0; color: var(--muted); }
 .today-hero h1 { margin: 8px 0; font-size: clamp(26px, 6vw, 36px); letter-spacing: -0.05em; }
 .today-hero__cat-message { line-height: 1.65; }
+.today-hero .today-hero__mascot-hint { margin-top: 6px; font-size: 13px; color: #8a877f; }
 .cat-mascot { width: 160px; padding: 0; border: 0; border-radius: 20px; background: transparent; cursor: pointer; line-height: 0; }
 .cat-mascot:focus-visible { outline: 3px solid #171717; outline-offset: 3px; }
 .cat-mascot__image { display: block; width: 100%; height: auto; }
