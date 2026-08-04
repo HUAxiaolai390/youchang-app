@@ -30,13 +30,70 @@ if (-not (Test-Path -LiteralPath $iconPath -PathType Leaf)) {
 $startScript = (Resolve-Path -LiteralPath $startScript -ErrorAction Stop).Path
 $iconPath = (Resolve-Path -LiteralPath $iconPath -ErrorAction Stop).Path
 
-$pwshCommands = @(Get-Command 'pwsh.exe' -CommandType Application -All -ErrorAction Stop)
-if ($pwshCommands.Count -eq 0) {
-    throw '找不到 PowerShell 7 pwsh.exe。'
+function Test-PowerShell7Executable {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Path
+    )
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf) -or
+        [System.IO.Path]::GetFileName($Path) -ine 'pwsh.exe') {
+        return $false
+    }
+
+    try {
+        $marker = @(& $Path -NoLogo -NoProfile -NonInteractive -Command 'if ($PSVersionTable.PSVersion.Major -ge 7) { [Console]::Out.Write("YouchangPwsh7") } else { exit 1 }' 2>$null) -join ''
+        return ($LASTEXITCODE -eq 0 -and $marker -eq 'YouchangPwsh7')
+    }
+    catch {
+        return $false
+    }
 }
-$pwshPath = (Resolve-Path -LiteralPath $pwshCommands[0].Source -ErrorAction Stop).Path
-if ([System.IO.Path]::GetFileName($pwshPath) -ine 'pwsh.exe') {
-    throw "PowerShell 7 路径无效：$pwshPath"
+
+function Test-VersionedWindowsAppsPackagePath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Path
+    )
+
+    $windowsAppsRoot = [System.IO.Path]::GetFullPath((Join-Path $env:ProgramFiles 'WindowsApps')).TrimEnd('\') + '\'
+    $candidatePath = [System.IO.Path]::GetFullPath($Path)
+    return $candidatePath.StartsWith($windowsAppsRoot, [System.StringComparison]::OrdinalIgnoreCase)
+}
+
+$pwshPath = $null
+$localApplicationData = [Environment]::GetFolderPath('LocalApplicationData')
+if (-not [string]::IsNullOrWhiteSpace($localApplicationData)) {
+    $stableStoreAlias = Join-Path $localApplicationData 'Microsoft/WindowsApps/pwsh.exe'
+    if (Test-PowerShell7Executable -Path $stableStoreAlias) {
+        $pwshPath = [System.IO.Path]::GetFullPath($stableStoreAlias)
+    }
+}
+
+if ($null -eq $pwshPath) {
+    $pwshCommands = @(Get-Command 'pwsh.exe' -CommandType Application -All -ErrorAction SilentlyContinue)
+    foreach ($pwshCommand in $pwshCommands) {
+        if ([string]::IsNullOrWhiteSpace($pwshCommand.Source)) {
+            continue
+        }
+
+        $resolvedCandidate = Resolve-Path -LiteralPath $pwshCommand.Source -ErrorAction SilentlyContinue
+        if ($null -eq $resolvedCandidate) {
+            continue
+        }
+        $candidatePath = $resolvedCandidate.Path
+        if ((Test-VersionedWindowsAppsPackagePath -Path $candidatePath)) {
+            continue
+        }
+        if (Test-PowerShell7Executable -Path $candidatePath) {
+            $pwshPath = $candidatePath
+            break
+        }
+    }
+}
+
+if ($null -eq $pwshPath) {
+    throw '找不到可长期使用的 PowerShell 7 pwsh.exe。请启用 PowerShell 的“应用执行别名”，或安装非版本化路径的 PowerShell 7。'
 }
 
 $shortcutPath = Join-Path $resolvedDestination '启动有常.lnk'

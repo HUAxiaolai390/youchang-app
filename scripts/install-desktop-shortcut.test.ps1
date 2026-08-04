@@ -32,8 +32,9 @@ try {
     $projectRoot = (Resolve-Path -LiteralPath (Split-Path -Parent $PSScriptRoot)).Path
     $startScript = (Resolve-Path -LiteralPath (Join-Path $projectRoot 'scripts/start-youchang.ps1')).Path
     $iconPath = (Resolve-Path -LiteralPath (Join-Path $projectRoot 'public/favicon.ico')).Path
-    $pwshCommand = @(Get-Command 'pwsh.exe' -CommandType Application -All -ErrorAction Stop)[0]
-    $expectedPwshPath = (Resolve-Path -LiteralPath $pwshCommand.Source -ErrorAction Stop).Path
+    $stablePwshAlias = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Microsoft/WindowsApps/pwsh.exe'
+    $hasStablePwshAlias = Test-Path -LiteralPath $stablePwshAlias -PathType Leaf
+    Assert-True $hasStablePwshAlias 'This machine exposes the stable PowerShell Store App Execution Alias used by the regression test.'
     $expectedArguments = '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "{0}"' -f $startScript
     $shortcutPath = Join-Path $testRoot '启动有常.lnk'
 
@@ -45,7 +46,7 @@ try {
 
     $shell = New-Object -ComObject WScript.Shell
     $shortcut = $shell.CreateShortcut($shortcutPath)
-    Assert-Equal $shortcut.TargetPath $expectedPwshPath 'The target is the resolved PowerShell 7 pwsh.exe.'
+    Assert-Equal $shortcut.TargetPath $stablePwshAlias 'The target is the stable PowerShell 7 App Execution Alias, not a versioned package path.'
     Assert-Equal ([System.IO.Path]::GetFileName($shortcut.TargetPath)) 'pwsh.exe' 'The target is not Windows PowerShell 5.1.'
     Assert-Equal $shortcut.Arguments $expectedArguments 'The hidden launch arguments contain the quoted absolute start script.'
     Assert-Equal $shortcut.WorkingDirectory $projectRoot 'The working directory is the exact project root.'
