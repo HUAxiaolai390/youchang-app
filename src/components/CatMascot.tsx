@@ -7,7 +7,10 @@ export type CatMascotProps = {
   celebrationKey: number;
 };
 
-const TEMPORARY_ACTION_DURATION = 1800;
+const temporaryActionDurations: Record<Extract<MascotState, "react" | "celebrate">, number> = {
+  react: 1120,
+  celebrate: 2080
+};
 const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
 
 function usePrefersReducedMotion() {
@@ -42,6 +45,7 @@ export function CatMascot({ baseState, celebrationKey }: CatMascotProps) {
   const [playbackKey, setPlaybackKey] = useState(0);
   const lastCelebrationKey = useRef(celebrationKey);
   const temporaryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [failedSources, setFailedSources] = useState<ReadonlySet<string>>(() => new Set());
   const prefersReducedMotion = usePrefersReducedMotion();
 
   function clearTemporaryTimer() {
@@ -58,7 +62,7 @@ export function CatMascot({ baseState, celebrationKey }: CatMascotProps) {
     temporaryTimer.current = setTimeout(() => {
       temporaryTimer.current = null;
       setTemporaryState(null);
-    }, TEMPORARY_ACTION_DURATION);
+    }, temporaryActionDurations[state]);
   }
 
   useEffect(() => {
@@ -72,6 +76,9 @@ export function CatMascot({ baseState, celebrationKey }: CatMascotProps) {
 
   const state = temporaryState ?? baseState;
   const extension = prefersReducedMotion ? "png" : "gif";
+  const desiredSource = `/mascot/${state}.${extension}`;
+  const fallbackSource = `/mascot/idle.${extension}`;
+  const displayedSource = failedSources.has(desiredSource) ? fallbackSource : desiredSource;
 
   return (
     <button
@@ -86,8 +93,17 @@ export function CatMascot({ baseState, celebrationKey }: CatMascotProps) {
       <img
         key={`${state}-${playbackKey}`}
         className="cat-mascot__image"
-        src={`/mascot/${state}.${extension}`}
+        src={displayedSource}
         alt=""
+        onError={() => {
+          if (displayedSource === fallbackSource) return;
+          setFailedSources((current) => {
+            if (current.has(desiredSource)) return current;
+            const next = new Set(current);
+            next.add(desiredSource);
+            return next;
+          });
+        }}
       />
     </button>
   );

@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import sharp from "sharp";
 
 const GIF_HEADERS = ["GIF87a", "GIF89a"];
 const PNG_SIGNATURE = "89504e470d0a1a0a";
@@ -20,6 +21,29 @@ async function verifyAsset(filePath, expectedType) {
 
   if (!isValid) {
     throw new Error(`Invalid ${expectedType.toUpperCase()} header: ${filePath}`);
+  }
+
+  let metadata;
+  try {
+    metadata = await sharp(contents, { animated: expectedType === "gif" }).metadata();
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`Unable to decode ${expectedType.toUpperCase()} mascot asset: ${filePath}: ${detail}`);
+  }
+
+  if (metadata.format !== expectedType) {
+    throw new Error(`Unexpected decoded format for ${filePath}: ${metadata.format ?? "unknown"}`);
+  }
+
+  if (!Number.isInteger(metadata.width) || metadata.width <= 0
+    || !Number.isInteger(metadata.height) || metadata.height <= 0) {
+    throw new Error(`Invalid decoded dimensions for ${filePath}`);
+  }
+
+  if (expectedType === "gif"
+    && (!Number.isInteger(metadata.pages) || metadata.pages <= 0
+      || !Number.isInteger(metadata.pageHeight) || metadata.pageHeight <= 0)) {
+    throw new Error(`Invalid decoded GIF frames for ${filePath}`);
   }
 }
 

@@ -260,9 +260,15 @@ describe("TodayPage", () => {
     });
     fireEvent.click(screen.getByRole("checkbox", { name: "完成：背单词" }));
     act(() => {
-      vi.advanceTimersByTime(800);
+      vi.advanceTimersByTime(1079);
     });
 
+    expect(screen.getByRole("button", { name: "和小猫互动" }))
+      .toHaveAttribute("data-mascot-state", "celebrate");
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
     expect(screen.getByRole("button", { name: "和小猫互动" }))
       .toHaveAttribute("data-mascot-state", "idle");
   });

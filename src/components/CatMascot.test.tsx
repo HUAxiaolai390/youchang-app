@@ -1,9 +1,10 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CatMascot } from "./CatMascot";
 
-const temporaryActionDuration = 1800;
+const reactDuration = 1120;
+const celebrateDuration = 2080;
 
 function mockMatchMedia(matches = false) {
   const changeListeners = new Set<(event: MediaQueryListEvent) => void>();
@@ -35,7 +36,7 @@ function mockMatchMedia(matches = false) {
 
 describe("CatMascot", () => {
   beforeEach(() => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.useFakeTimers();
     mockMatchMedia();
   });
 
@@ -44,36 +45,43 @@ describe("CatMascot", () => {
     vi.unstubAllGlobals();
   });
 
-  it("reacts to a click, then returns to its base state", async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  it("plays one complete reaction loop, then returns to its base state", () => {
     render(<CatMascot baseState="sleep" celebrationKey={0} />);
     const button = screen.getByRole("button", { name: "和小猫互动" });
 
     expect(button).toHaveAttribute("data-mascot-state", "sleep");
 
-    await user.click(button);
+    fireEvent.click(button);
     expect(button).toHaveAttribute("data-mascot-state", "react");
 
-    act(() => vi.advanceTimersByTime(temporaryActionDuration));
+    act(() => vi.advanceTimersByTime(reactDuration - 1));
+    expect(button).toHaveAttribute("data-mascot-state", "react");
+
+    act(() => vi.advanceTimersByTime(1));
     expect(button).toHaveAttribute("data-mascot-state", "sleep");
   });
 
-  it("shows celebration when the celebration key changes", () => {
+  it("plays one complete celebration loop, then returns to its base state", () => {
     const view = render(<CatMascot baseState="idle" celebrationKey={0} />);
 
     view.rerender(<CatMascot baseState="idle" celebrationKey={1} />);
 
-    expect(screen.getByRole("button", { name: "和小猫互动" }))
-      .toHaveAttribute("data-mascot-state", "celebrate");
+    const button = screen.getByRole("button", { name: "和小猫互动" });
+    expect(button).toHaveAttribute("data-mascot-state", "celebrate");
+
+    act(() => vi.advanceTimersByTime(celebrateDuration - 1));
+    expect(button).toHaveAttribute("data-mascot-state", "celebrate");
+
+    act(() => vi.advanceTimersByTime(1));
+    expect(button).toHaveAttribute("data-mascot-state", "idle");
   });
 
-  it("does not replace a celebration when clicked", async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  it("does not replace a celebration when clicked", () => {
     const view = render(<CatMascot baseState="idle" celebrationKey={0} />);
     view.rerender(<CatMascot baseState="idle" celebrationKey={1} />);
     const button = screen.getByRole("button", { name: "和小猫互动" });
 
-    await user.click(button);
+    fireEvent.click(button);
 
     expect(button).toHaveAttribute("data-mascot-state", "celebrate");
   });
@@ -82,27 +90,33 @@ describe("CatMascot", () => {
     const view = render(<CatMascot baseState="idle" celebrationKey={0} />);
     view.rerender(<CatMascot baseState="idle" celebrationKey={1} />);
 
-    act(() => vi.advanceTimersByTime(temporaryActionDuration - 1));
+    act(() => vi.advanceTimersByTime(celebrateDuration - 1));
     view.rerender(<CatMascot baseState="idle" celebrationKey={2} />);
     act(() => vi.advanceTimersByTime(1));
 
     expect(screen.getByRole("button", { name: "和小猫互动" }))
       .toHaveAttribute("data-mascot-state", "celebrate");
 
-    act(() => vi.advanceTimersByTime(temporaryActionDuration - 1));
+    act(() => vi.advanceTimersByTime(celebrateDuration - 2));
+    expect(screen.getByRole("button", { name: "和小猫互动" }))
+      .toHaveAttribute("data-mascot-state", "celebrate");
+
+    act(() => vi.advanceTimersByTime(1));
     expect(screen.getByRole("button", { name: "和小猫互动" }))
       .toHaveAttribute("data-mascot-state", "idle");
   });
 
   it("uses the button's native keyboard activation", async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    render(<CatMascot baseState="idle" celebrationKey={0} />);
+    vi.useRealTimers();
+    const user = userEvent.setup();
+    const view = render(<CatMascot baseState="idle" celebrationKey={0} />);
     const button = screen.getByRole("button", { name: "和小猫互动" });
 
     button.focus();
     await user.keyboard("{Enter}");
 
     expect(button).toHaveAttribute("data-mascot-state", "react");
+    view.unmount();
   });
 
   it("uses static PNGs for reduced motion and responds to preference changes", () => {
@@ -122,5 +136,27 @@ describe("CatMascot", () => {
     view.unmount();
 
     expect(media.mediaQueryList.removeEventListener).toHaveBeenCalledWith("change", expect.any(Function));
+  });
+
+  it("falls back from a broken animation to the idle GIF without retrying it", () => {
+    render(<CatMascot baseState="sleep" celebrationKey={0} />);
+    const image = screen.getByRole("presentation");
+
+    expect(image).toHaveAttribute("src", "/mascot/sleep.gif");
+    act(() => image.dispatchEvent(new Event("error", { bubbles: true })));
+    expect(image).toHaveAttribute("src", "/mascot/idle.gif");
+
+    act(() => image.dispatchEvent(new Event("error", { bubbles: true })));
+    expect(image).toHaveAttribute("src", "/mascot/idle.gif");
+  });
+
+  it("falls back to the idle PNG in reduced-motion mode", () => {
+    mockMatchMedia(true);
+    render(<CatMascot baseState="sleep" celebrationKey={0} />);
+    const image = screen.getByRole("presentation");
+
+    act(() => image.dispatchEvent(new Event("error", { bubbles: true })));
+
+    expect(image).toHaveAttribute("src", "/mascot/idle.png");
   });
 });

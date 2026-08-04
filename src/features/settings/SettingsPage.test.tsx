@@ -1,8 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { AppStateProvider } from "../../app/AppStateProvider";
-import { toDateKey } from "../../domain/date";
 import { createInitialState } from "../../domain/defaults";
 import type { AppState } from "../../domain/types";
 import type { AppRepository } from "../../storage/repository";
@@ -153,15 +152,21 @@ describe("SettingsPage", () => {
   });
 
   it("adds and can pause a fixed task", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date(2026, 7, 1, 12));
     const repository = renderSettings();
-    const user = userEvent.setup();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
-    await user.type(screen.getByLabelText("固定任务名称"), "晨读");
-    await user.selectOptions(screen.getByLabelText("固定任务分类"), "study");
-    await user.click(screen.getByRole("button", { name: "新增固定任务" }));
-    await user.click(screen.getByRole("button", { name: "停用：晨读" }));
+    try {
+      await user.type(screen.getByLabelText("固定任务名称"), "晨读");
+      await user.selectOptions(screen.getByLabelText("固定任务分类"), "study");
+      await user.click(screen.getByRole("button", { name: "新增固定任务" }));
+      await user.click(screen.getByRole("button", { name: "停用：晨读" }));
 
-    expect(repository.load().fixedTasks).toHaveLength(1);
-    expect(repository.load().fixedTasks[0].inactiveFrom).toBe(toDateKey(new Date()));
+      expect(repository.load().fixedTasks).toHaveLength(1);
+      expect(repository.load().fixedTasks[0].inactiveFrom).toBe("2026-08-01");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
