@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { AppStateProvider } from "../../app/AppStateProvider";
+import { toDateKey } from "../../domain/date";
 import { createInitialState } from "../../domain/defaults";
 import type { AppState } from "../../domain/types";
 import type { AppRepository } from "../../storage/repository";
@@ -161,6 +162,6 @@ describe("SettingsPage", () => {
     await user.click(screen.getByRole("button", { name: "停用：晨读" }));
 
     expect(repository.load().fixedTasks).toHaveLength(1);
-    expect(repository.load().fixedTasks[0].inactiveFrom).toBe("2026-08-01");
+    expect(repository.load().fixedTasks[0].inactiveFrom).toBe(toDateKey(new Date()));
   });
 });
