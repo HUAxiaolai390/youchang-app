@@ -18,7 +18,8 @@ export function createInitialState(now: Date): AppState {
     settings: {
       displayName: "",
       firstUsedAt: createdAt,
-      lastOpenedDate: toDateKey(now)
+      lastOpenedDate: toDateKey(now),
+      musicVolume: 0.35
     },
     categories: builtInCategories.map((category, order) => ({
       ...category,

@@ -74,6 +74,12 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
       return deleteCategory(state, action.id);
     case "settings/name":
       return { ...state, settings: { ...state.settings, displayName: action.value } };
+    case "settings/music-volume": {
+      const musicVolume = Number.isFinite(action.value)
+        ? Math.min(1, Math.max(0, action.value))
+        : (state.settings.musicVolume ?? 0.35);
+      return { ...state, settings: { ...state.settings, musicVolume } };
+    }
     case "backup/import":
       return rollover(action.state, now);
     case "system/rollover":

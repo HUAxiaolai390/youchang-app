@@ -17,6 +17,20 @@ describe("versioned backups", () => {
     expect(parseBackup(serializeBackup(state))).toEqual(state);
   });
 
+  it("accepts backups created before the optional music volume setting existed", () => {
+    const legacy = createInitialState(new Date(2026, 6, 31, 9));
+    delete legacy.settings.musicVolume;
+
+    expect(parseBackup(JSON.stringify(legacy)).settings.musicVolume).toBeUndefined();
+  });
+
+  it("rejects an out-of-range music volume", () => {
+    expect(() => parseBackup(JSON.stringify({
+      ...state,
+      settings: { ...state.settings, musicVolume: 1.5 }
+    }))).toThrow("备份文件格式无效");
+  });
+
   it("rejects a backup with missing state arrays", () => {
     expect(() => parseBackup(JSON.stringify({
       ...state,

@@ -69,7 +69,12 @@ function isRescheduleRecord(value: unknown): boolean {
 
 function hasValidSettings(value: unknown): boolean {
   return hasStrings(value, ["displayName", "firstUsedAt"])
-    && isDateKey(value.lastOpenedDate);
+    && isDateKey(value.lastOpenedDate)
+    && (value.musicVolume === undefined
+      || (typeof value.musicVolume === "number"
+        && Number.isFinite(value.musicVolume)
+        && value.musicVolume >= 0
+        && value.musicVolume <= 1));
 }
 
 function assertValidBackup(value: unknown): asserts value is AppState {

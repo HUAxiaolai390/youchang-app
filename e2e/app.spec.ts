@@ -66,6 +66,30 @@ test("keeps the mascot visible and responds to interaction and completion", asyn
   await expectMascotImageDecoded(mascot);
 });
 
+test("loads the extracted background music and remembers its volume", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  const audio = page.getByTestId("background-music-audio");
+  await expect.poll(() => audio.evaluate((element: HTMLAudioElement) =>
+    element.readyState >= 1 && Number.isFinite(element.duration) && element.duration > 0
+  )).toBe(true);
+
+  const volume = page.getByLabel("音量");
+  await expect(volume).toHaveValue("35");
+  await volume.fill("64");
+  await expect(page.getByText("64%", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "播放音乐" }).click();
+  await expect(page.getByRole("button", { name: "暂停音乐" })).toBeVisible();
+  await page.getByRole("button", { name: "暂停音乐" }).click();
+  await expect(page.getByRole("button", { name: "播放音乐" })).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByLabel("音量")).toHaveValue("64");
+});
+
 test("completes the core task, growth, and backup flow", async ({ page }, testInfo) => {
   const runtimeErrors: string[] = [];
   page.on("console", (message) => {

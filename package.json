@@ -12,7 +12,7 @@
     "typecheck": "tsc -b --pretty false",
     "preview": "vite preview",
     "e2e": "playwright test",
-    "assets:check": "node scripts/verify-mascot-assets.mjs",
+    "assets:check": "node scripts/verify-mascot-assets.mjs && node scripts/verify-audio-asset.mjs",
     "check": "pnpm assets:check && playwright install chromium && pnpm typecheck && pnpm test:run && pnpm build && pnpm e2e"
   },
   "dependencies": {

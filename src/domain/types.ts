@@ -65,6 +65,7 @@ export interface AppState {
     displayName: string;
     firstUsedAt: string;
     lastOpenedDate: DateKey;
+    musicVolume?: number;
   };
   categories: Category[];
   fixedTasks: FixedTaskTemplate[];

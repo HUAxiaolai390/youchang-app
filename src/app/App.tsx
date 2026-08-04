@@ -5,6 +5,7 @@ import { TodayPage } from "../features/today/TodayPage";
 import { GrowthPage } from "../features/growth/GrowthPage";
 import { SettingsPage } from "../features/settings/SettingsPage";
 import { PwaUpdatePrompt } from "../components/PwaUpdatePrompt";
+import { BackgroundMusic } from "../components/BackgroundMusic";
 
 import { useState } from "react";
 import { createLocalRepository } from "../storage/repository";
@@ -39,6 +40,7 @@ function AppContents() {
           <h2 id="page-title">{page.title}</h2>
           <p>{page.description}</p>
         </section>
+        <BackgroundMusic />
         {activePage === "today" && <TodayPage />}
         {activePage === "growth" && <GrowthPage />}
         {activePage === "settings" && <SettingsPage />}

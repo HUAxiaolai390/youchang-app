@@ -20,6 +20,7 @@ export type AppAction =
   | { type: "category/add"; name: string; icon: string }
   | { type: "category/delete"; id: string }
   | { type: "settings/name"; value: string }
+  | { type: "settings/music-volume"; value: number }
   | { type: "backup/import"; state: AppState }
   | { type: "data/clear" }
   | { type: "system/rollover"; now: Date }
