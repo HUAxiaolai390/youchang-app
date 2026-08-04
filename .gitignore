@@ -1,5 +1,6 @@
 .superpowers/
 .worktrees/
+.mascot-extract/
 work/
 outputs/
 node_modules/
