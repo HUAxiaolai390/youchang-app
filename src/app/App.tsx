@@ -6,8 +6,9 @@ import { GrowthPage } from "../features/growth/GrowthPage";
 import { SettingsPage } from "../features/settings/SettingsPage";
 import { PwaUpdatePrompt } from "../components/PwaUpdatePrompt";
 import { BackgroundMusic } from "../components/BackgroundMusic";
+import { getDailyQuote } from "../domain/daily-quotes";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createLocalRepository } from "../storage/repository";
 
 export function App({ repository }: { repository?: AppRepository }) {
@@ -25,6 +26,31 @@ export function App({ repository }: { repository?: AppRepository }) {
 function AppContents() {
   const { dispatch, error } = useAppState();
   const [activePage, setActivePage] = useState<PageKey>("today");
+  const [dailyQuote, setDailyQuote] = useState(() => getDailyQuote(new Date()));
+
+  useEffect(() => {
+    let midnightTimer = 0;
+
+    const refreshQuote = () => setDailyQuote(getDailyQuote(new Date()));
+    const scheduleMidnightRefresh = () => {
+      const now = new Date();
+      const nextDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1);
+      midnightTimer = window.setTimeout(() => {
+        refreshQuote();
+        scheduleMidnightRefresh();
+      }, nextDay.getTime() - now.getTime());
+    };
+    const refreshAfterSleep = () => {
+      if (!document.hidden) refreshQuote();
+    };
+
+    scheduleMidnightRefresh();
+    document.addEventListener("visibilitychange", refreshAfterSleep);
+    return () => {
+      window.clearTimeout(midnightTimer);
+      document.removeEventListener("visibilitychange", refreshAfterSleep);
+    };
+  }, []);
 
   const pageContent: Record<PageKey, { title: string; description: string }> = {
     today: { title: "今天", description: "日日有常，步步有长。" },
@@ -36,10 +62,27 @@ function AppContents() {
   return (
     <>
       <AppShell activePage={activePage} onNavigate={setActivePage}>
-        <section className="surface-card page-intro" aria-labelledby="page-title">
-          <h2 id="page-title">{page.title}</h2>
-          <p>{page.description}</p>
-        </section>
+        {activePage === "growth" ? (
+          <section className="surface-card page-intro page-intro--quote" aria-labelledby="page-title">
+            <div className="daily-quote__heading">
+              <h2 id="page-title">{page.title}</h2>
+              <span>每日一句 · Daily Quote</span>
+            </div>
+            <blockquote className="daily-quote">
+              <p className="daily-quote__zh">“{dailyQuote.zh}”</p>
+              <p className="daily-quote__en" lang="en">“{dailyQuote.en}”</p>
+              <footer>
+                <span>— {dailyQuote.authorZh}</span>
+                <span lang="en">{dailyQuote.authorEn}</span>
+              </footer>
+            </blockquote>
+          </section>
+        ) : (
+          <section className="surface-card page-intro" aria-labelledby="page-title">
+            <h2 id="page-title">{page.title}</h2>
+            <p>{page.description}</p>
+          </section>
+        )}
         <BackgroundMusic />
         {activePage === "today" && <TodayPage />}
         {activePage === "growth" && <GrowthPage />}

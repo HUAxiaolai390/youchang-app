@@ -149,6 +149,76 @@ button:focus-visible {
 .page-intro h2 { position: relative; z-index: 1; margin: 0; font-size: 24px; letter-spacing: -.04em; }
 .page-intro p { position: relative; z-index: 1; margin-bottom: 0; }
 
+.page-intro--quote {
+  display: grid;
+  gap: 20px;
+  background: linear-gradient(135deg, rgba(255, 253, 250, .98), rgba(250, 231, 204, .78));
+}
+
+.daily-quote__heading {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.daily-quote__heading > span {
+  padding: 6px 10px;
+  border: 1px solid rgba(170, 120, 66, .2);
+  border-radius: 999px;
+  background: rgba(255, 253, 250, .62);
+  color: #8b6843;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  white-space: nowrap;
+}
+
+.daily-quote {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.page-intro .daily-quote__zh {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(19px, 4vw, 26px);
+  font-weight: 800;
+  letter-spacing: -.025em;
+  line-height: 1.55;
+}
+
+.page-intro .daily-quote__en {
+  max-width: 620px;
+  margin: 0;
+  color: #6f6559;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.65;
+}
+
+.daily-quote footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 2px;
+  color: #8a7660;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.daily-quote footer [lang="en"] {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
+}
+
 .page-intro h1,
 .empty-state h2,
 .confirm-dialog h2 {
@@ -494,6 +564,12 @@ button:focus-visible {
 
 @media (max-width: 479px) {
   .page-intro { padding: 20px; }
+  .page-intro--quote { gap: 16px; }
+  .daily-quote__heading { align-items: flex-start; }
+  .daily-quote__heading > span { padding: 5px 8px; font-size: 10px; }
+  .page-intro .daily-quote__zh { font-size: 19px; line-height: 1.5; }
+  .page-intro .daily-quote__en { font-size: 13px; }
+  .daily-quote footer { flex-wrap: wrap; gap: 3px 7px; }
   .today-hero { grid-template-columns: minmax(0, 1fr) 112px; gap: 10px; padding: 18px; }
   .cat-mascot { width: 112px; }
   .today-hero h1 { font-size: 27px; }

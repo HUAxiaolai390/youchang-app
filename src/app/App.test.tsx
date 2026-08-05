@@ -39,6 +39,10 @@ describe("App", () => {
     render(<App />);
     await user.click(screen.getByRole("button", { name: "成长" }));
 
+    expect(screen.getByText("每日一句 · Daily Quote")).toBeInTheDocument();
+    expect(screen.getAllByText(/^“.+”$/)).toHaveLength(2);
+    expect(document.querySelector('.daily-quote__en[lang="en"]')).toHaveTextContent(/^“.+”$/);
+    expect(document.querySelector('.daily-quote footer [lang="en"]')).not.toBeEmptyDOMElement();
     expect(screen.getByText("累计完成 0 项")).toBeInTheDocument();
   });
 
