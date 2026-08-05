@@ -21,6 +21,8 @@ export type AppAction =
   | { type: "category/delete"; id: string }
   | { type: "settings/name"; value: string }
   | { type: "settings/music-volume"; value: number }
+  | { type: "focus/configure"; focusMinutes: number; breakMinutes: number }
+  | { type: "focus/session-complete"; minutes: number }
   | { type: "backup/import"; state: AppState }
   | { type: "data/clear" }
   | { type: "system/rollover"; now: Date }

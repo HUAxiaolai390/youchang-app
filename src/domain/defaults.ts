@@ -30,6 +30,13 @@ export function createInitialState(now: Date): AppState {
     fixedTasks: [],
     fixedRecords: [],
     scheduledTasks: [],
-    reschedules: []
+    reschedules: [],
+    focus: {
+      focusMinutes: 25,
+      breakMinutes: 5,
+      completedSessions: 0,
+      totalFocusMinutes: 0,
+      experience: 0
+    }
   };
 }

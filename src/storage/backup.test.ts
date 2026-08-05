@@ -24,6 +24,20 @@ describe("versioned backups", () => {
     expect(parseBackup(JSON.stringify(legacy)).settings.musicVolume).toBeUndefined();
   });
 
+  it("accepts backups created before focus progress existed", () => {
+    const legacy = createInitialState(new Date(2026, 6, 31, 9));
+    delete legacy.focus;
+
+    expect(parseBackup(JSON.stringify(legacy)).focus).toBeUndefined();
+  });
+
+  it("rejects malformed focus progress", () => {
+    expect(() => parseBackup(JSON.stringify({
+      ...state,
+      focus: { ...state.focus, focusMinutes: 0 }
+    }))).toThrow("备份文件格式无效");
+  });
+
   it("rejects an out-of-range music volume", () => {
     expect(() => parseBackup(JSON.stringify({
       ...state,

@@ -72,4 +72,23 @@ describe("GrowthPage", () => {
     expect(screen.getByLabelText("7月31日，无数据")).toHaveTextContent("—");
     vi.useRealTimers();
   });
+
+  it("shows focus level, sessions, time, and experience", () => {
+    const state = createInitialState(new Date(2026, 6, 31, 8));
+    state.focus = {
+      focusMinutes: 50,
+      breakMinutes: 10,
+      completedSessions: 3,
+      totalFocusMinutes: 125,
+      experience: 125
+    };
+
+    renderGrowth(state);
+
+    expect(screen.getByText("等级 2")).toBeInTheDocument();
+    expect(screen.getByText("3 次")).toBeInTheDocument();
+    expect(screen.getByText("2 小时 5 分")).toBeInTheDocument();
+    expect(screen.getByText("125 EXP")).toBeInTheDocument();
+    expect(screen.getByLabelText("本级经验 25/100")).toBeInTheDocument();
+  });
 });

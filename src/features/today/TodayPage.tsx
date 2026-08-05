@@ -8,6 +8,7 @@ import type { DateKey } from "../../domain/types";
 import { TaskForm, type TaskFormValues } from "./TaskForm";
 import { TaskList, type TodayTask } from "./TaskList";
 import { Backlog } from "../backlog/Backlog";
+import { FocusTimer } from "../focus/FocusTimer";
 
 type EditingTask = TodayTask & { date: DateKey };
 
@@ -104,10 +105,11 @@ export function TodayPage() {
           <p>{formatToday(now)}</p>
           <h1>早上好，{state.settings.displayName || "朋友"}</h1>
           <p className="today-hero__cat-message">{getCatMessage(progress)}</p>
-          <p className="today-hero__mascot-hint">点点小猫，切换 18 种待机动作。</p>
+          <p className="today-hero__mascot-hint">小猫会自己换动作，也可以点它切换 18 种待机动作。</p>
         </div>
         <CatMascot baseState={progress.total === 0 ? "sleep" : "idle"} celebrationKey={celebrationKey} />
       </header>
+      <FocusTimer onFocusComplete={() => setCelebrationKey((current) => current + 1)} />
       <section className="progress-card surface-card" aria-label="今日完成进度">
         <div><p>今日完成</p><strong>{progress.completed}<span> / {progress.total}</span></strong></div>
         <div className="progress-card__bar" aria-hidden="true"><span style={{ width: `${progress.ratio * 100}%` }} /></div>

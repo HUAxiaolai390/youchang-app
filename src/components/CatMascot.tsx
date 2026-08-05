@@ -16,6 +16,7 @@ type MascotIdleVariant = (typeof mascotIdleVariants)[number];
 
 const defaultIdleVariant: MascotIdleVariant = "19";
 const celebrationDuration = 2080;
+export const mascotAutoSwitchInterval = 15_000;
 const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
 
 function usePrefersReducedMotion() {
@@ -82,6 +83,16 @@ export function CatMascot({ baseState, celebrationKey }: CatMascotProps) {
     setPlaybackKey((current) => current + 1);
   }
 
+  function selectRandomIdleVariant() {
+    setSelectedIdleVariant((current) => {
+      const currentVariant = current ?? defaultIdleVariant;
+      const available = mascotIdleVariants.filter((variant) => variant !== currentVariant);
+      const randomIndex = Math.min(available.length - 1, Math.floor(Math.random() * available.length));
+      return available[randomIndex];
+    });
+    setPlaybackKey((current) => current + 1);
+  }
+
   useEffect(() => {
     if (celebrationKey === lastCelebrationKey.current) return;
 
@@ -92,6 +103,13 @@ export function CatMascot({ baseState, celebrationKey }: CatMascotProps) {
   useEffect(() => {
     setSelectedIdleVariant(null);
   }, [baseState]);
+
+  useEffect(() => {
+    if (prefersReducedMotion || temporaryState === "celebrate") return;
+
+    const timer = window.setTimeout(selectRandomIdleVariant, mascotAutoSwitchInterval);
+    return () => window.clearTimeout(timer);
+  }, [prefersReducedMotion, selectedIdleVariant, temporaryState]);
 
   useEffect(() => () => clearTemporaryTimer(), []);
 

@@ -15,6 +15,7 @@ import {
 } from "../domain/tasks";
 import { moveArchivedTaskToCurrentWeek, rescheduleTask, rollover } from "../domain/rollover";
 import type { AppState } from "../domain/types";
+import { completeFocusSession, configureFocus } from "../domain/focus";
 import type { AppRepository } from "../storage/repository";
 import type { AppAction } from "./app-actions";
 
@@ -80,6 +81,10 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
         : (state.settings.musicVolume ?? 0.35);
       return { ...state, settings: { ...state.settings, musicVolume } };
     }
+    case "focus/configure":
+      return configureFocus(state, action.focusMinutes, action.breakMinutes);
+    case "focus/session-complete":
+      return completeFocusSession(state, action.minutes);
     case "backup/import":
       return rollover(action.state, now);
     case "system/rollover":

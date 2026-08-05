@@ -59,6 +59,14 @@ export interface RescheduleRecord {
   changedAt: string;
 }
 
+export interface FocusProgress {
+  focusMinutes: number;
+  breakMinutes: number;
+  completedSessions: number;
+  totalFocusMinutes: number;
+  experience: number;
+}
+
 export interface AppState {
   schemaVersion: 1;
   settings: {
@@ -72,4 +80,5 @@ export interface AppState {
   fixedRecords: FixedTaskRecord[];
   scheduledTasks: ScheduledTask[];
   reschedules: RescheduleRecord[];
+  focus?: FocusProgress;
 }

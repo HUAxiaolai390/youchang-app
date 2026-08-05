@@ -77,6 +77,23 @@ function hasValidSettings(value: unknown): boolean {
         && value.musicVolume <= 1));
 }
 
+function hasValidFocus(value: unknown): boolean {
+  if (value === undefined) return true;
+  if (!isRecord(value)) return false;
+
+  const focusMinutes = value.focusMinutes;
+  const breakMinutes = value.breakMinutes;
+  const completedSessions = value.completedSessions;
+  const totalFocusMinutes = value.totalFocusMinutes;
+  const experience = value.experience;
+
+  return typeof focusMinutes === "number" && Number.isInteger(focusMinutes) && focusMinutes >= 1 && focusMinutes <= 180
+    && typeof breakMinutes === "number" && Number.isInteger(breakMinutes) && breakMinutes >= 1 && breakMinutes <= 60
+    && typeof completedSessions === "number" && Number.isInteger(completedSessions) && completedSessions >= 0
+    && typeof totalFocusMinutes === "number" && Number.isInteger(totalFocusMinutes) && totalFocusMinutes >= 0
+    && typeof experience === "number" && Number.isInteger(experience) && experience >= 0;
+}
+
 function assertValidBackup(value: unknown): asserts value is AppState {
   if (!isRecord(value)) {
     throw new Error(INVALID_BACKUP);
@@ -85,6 +102,7 @@ function assertValidBackup(value: unknown): asserts value is AppState {
     throw new Error(UNSUPPORTED_VERSION);
   }
   if (!hasValidSettings(value.settings)
+    || !hasValidFocus(value.focus)
     || !Array.isArray(value.categories)
     || !Array.isArray(value.fixedTasks)
     || !Array.isArray(value.fixedRecords)

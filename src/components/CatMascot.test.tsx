@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CatMascot, mascotIdleVariants } from "./CatMascot";
+import { CatMascot, mascotAutoSwitchInterval, mascotIdleVariants } from "./CatMascot";
 
 const celebrateDuration = 2080;
 
@@ -41,6 +41,7 @@ describe("CatMascot", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
@@ -71,6 +72,17 @@ describe("CatMascot", () => {
     expect(button).toHaveAttribute("data-mascot-state", "idle");
     expect(button).toHaveAttribute("data-mascot-idle-variant", "20");
     expect(screen.getByRole("presentation")).toHaveAttribute("src", "/mascot/idle/20.gif");
+  });
+
+  it("automatically switches to a different idle action", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    render(<CatMascot baseState="idle" celebrationKey={0} />);
+    const button = screen.getByRole("button", { name: "和小猫互动" });
+
+    act(() => vi.advanceTimersByTime(mascotAutoSwitchInterval));
+
+    expect(button).toHaveAttribute("data-mascot-idle-variant", "02");
+    expect(screen.getByRole("presentation")).toHaveAttribute("src", "/mascot/idle/02.gif");
   });
 
   it("plays one complete celebration loop, then returns to its base state", () => {

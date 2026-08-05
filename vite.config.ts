@@ -14,8 +14,8 @@ export default defineConfig({
         name: "有常",
         short_name: "有常",
         description: "日日有常，步步有长。",
-        theme_color: "#f6f5f0",
-        background_color: "#f6f5f0",
+        theme_color: "#f4f0e8",
+        background_color: "#f4f0e8",
         display: "standalone",
         start_url: "/",
         icons: [

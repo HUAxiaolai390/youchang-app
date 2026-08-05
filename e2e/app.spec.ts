@@ -90,6 +90,28 @@ test("loads the extracted background music and remembers its volume", async ({ p
   await expect(page.getByLabel("音量")).toHaveValue("64");
 });
 
+test("customizes and remembers the focus timer", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  await page.getByRole("button", { name: "50 / 10" }).click();
+  await expect(page.locator(".focus-timer")).toContainText("50:00");
+
+  await page.getByText("自定义时长", { exact: true }).click();
+  await page.getByLabel("专注分钟").fill("37");
+  await page.getByLabel("休息分钟").fill("8");
+  await page.getByRole("button", { name: "应用设置" }).click();
+  await expect(page.locator(".focus-timer")).toContainText("37:00");
+  await expectNoHorizontalOverflow(page);
+
+  await page.reload();
+  await expect(page.locator(".focus-timer")).toContainText("37:00");
+  await page.getByRole("button", { name: "成长" }).click();
+  await expect(page.getByText("等级 1", { exact: true })).toBeVisible();
+  await expect(page.getByText("0 次", { exact: true })).toBeVisible();
+});
+
 test("completes the core task, growth, and backup flow", async ({ page }, testInfo) => {
   const runtimeErrors: string[] = [];
   page.on("console", (message) => {
