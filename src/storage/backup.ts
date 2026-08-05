@@ -1,6 +1,7 @@
 import { toDateKey } from "../domain/date";
 import type { AppState, DateKey } from "../domain/types";
 import { maximumActualMinutes } from "../domain/time";
+import { isTimeKey, maximumEstimatedMinutes } from "../domain/planning";
 
 const INVALID_BACKUP = "备份文件格式无效";
 const UNSUPPORTED_VERSION = "备份文件版本不受支持";
@@ -44,6 +45,7 @@ function isFixedTask(value: unknown): boolean {
     && isDateKey(value.activeFrom)
     && (value.inactiveFrom === undefined || isDateKey(value.inactiveFrom))
     && (value.successorId === undefined || isString(value.successorId))
+    && isOptionalPlanning(value)
     && typeof value.order === "number";
 }
 
@@ -51,6 +53,7 @@ function isFixedRecord(value: unknown): boolean {
   return hasStrings(value, ["id", "templateId", "titleSnapshot", "categoryId", "categoryNameSnapshot"])
     && isDateKey(value.date)
     && (value.completedAt === undefined || isString(value.completedAt))
+    && isOptionalPlanning(value)
     && isOptionalActualMinutes(value.actualMinutes);
 }
 
@@ -61,7 +64,17 @@ function isScheduledTask(value: unknown): boolean {
     && taskStatuses.has(value.status)
     && (value.sourceTaskId === undefined || isString(value.sourceTaskId))
     && (value.completedAt === undefined || isString(value.completedAt))
+    && isOptionalPlanning(value)
     && isOptionalActualMinutes(value.actualMinutes);
+}
+
+function isOptionalPlanning(value: Record<string, unknown>): boolean {
+  return (value.plannedStartTime === undefined || isTimeKey(value.plannedStartTime))
+    && (value.estimatedMinutes === undefined
+      || (typeof value.estimatedMinutes === "number"
+        && Number.isInteger(value.estimatedMinutes)
+        && value.estimatedMinutes >= 1
+        && value.estimatedMinutes <= maximumEstimatedMinutes));
 }
 
 function isOptionalActualMinutes(value: unknown): boolean {

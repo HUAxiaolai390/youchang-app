@@ -1,16 +1,25 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import type { Category, DateKey } from "../../domain/types";
+import { maximumEstimatedMinutes, normalizeEstimatedMinutes, normalizePlannedStartTime } from "../../domain/planning";
+import type { Category, DateKey, TimeKey } from "../../domain/types";
 
 export type TaskFormValues = {
   title: string;
   kind: "fixed" | "scheduled";
   categoryId: string;
   date: DateKey;
+  plannedStartTime?: TimeKey;
+  estimatedMinutes?: number;
+};
+
+type TaskFormDraft = Omit<TaskFormValues, "plannedStartTime" | "estimatedMinutes"> & {
+  plannedStartTime: string;
+  estimatedMinutes: string;
 };
 
 type TaskFormProps = {
   categories: Category[];
   today: DateKey;
+  defaultDate?: DateKey;
   initialValues?: TaskFormValues;
   error?: string;
   onSubmit(values: TaskFormValues): void;
@@ -36,13 +45,15 @@ function FormSurface({ children }: { children: ReactNode }) {
   return <dialog ref={dialogRef} className="task-form-panel" aria-labelledby="task-form-title">{children}</dialog>;
 }
 
-export function TaskForm({ categories, today, initialValues, error, onSubmit, onCancel }: TaskFormProps) {
-  const [values, setValues] = useState<TaskFormValues>(initialValues ?? {
-    title: "",
-    kind: "scheduled",
-    categoryId: "study",
-    date: today
-  });
+export function TaskForm({ categories, today, defaultDate, initialValues, error, onSubmit, onCancel }: TaskFormProps) {
+  const [values, setValues] = useState<TaskFormDraft>(() => ({
+    title: initialValues?.title ?? "",
+    kind: initialValues?.kind ?? "scheduled",
+    categoryId: initialValues?.categoryId ?? "study",
+    date: initialValues?.date ?? defaultDate ?? today,
+    plannedStartTime: initialValues?.plannedStartTime ?? "",
+    estimatedMinutes: initialValues?.estimatedMinutes?.toString() ?? ""
+  }));
   const [formError, setFormError] = useState<string>();
   const isEditing = Boolean(initialValues);
   const displayedError = formError ?? error;
@@ -57,7 +68,19 @@ export function TaskForm({ categories, today, initialValues, error, onSubmit, on
       setFormError("请选择有效分类");
       return;
     }
-    onSubmit({ ...values, title: values.title.trim() });
+    try {
+      const estimatedValue = values.estimatedMinutes.trim();
+      onSubmit({
+        title: values.title.trim(),
+        kind: values.kind,
+        categoryId: values.categoryId,
+        date: values.date,
+        plannedStartTime: normalizePlannedStartTime(values.plannedStartTime),
+        estimatedMinutes: normalizeEstimatedMinutes(estimatedValue === "" ? undefined : Number(estimatedValue))
+      });
+    } catch (caught) {
+      setFormError(caught instanceof Error ? caught.message : "请检查计划时间");
+    }
   }
 
   return (
@@ -97,6 +120,33 @@ export function TaskForm({ categories, today, initialValues, error, onSubmit, on
           <label className="field-label" htmlFor="task-date">执行日期</label>
           <input id="task-date" className="field-control" type="date" value={values.date} onChange={(event) => setValues((current) => ({ ...current, date: event.target.value as DateKey }))} />
         </>}
+        <div className="task-form__planning">
+          <label htmlFor="task-start-time">
+            <span>开始时间（选填）</span>
+            <input
+              id="task-start-time"
+              className="field-control"
+              type="time"
+              value={values.plannedStartTime}
+              onChange={(event) => setValues((current) => ({ ...current, plannedStartTime: event.target.value }))}
+            />
+          </label>
+          <label htmlFor="task-estimated-minutes">
+            <span>预计用时（分钟，选填）</span>
+            <input
+              id="task-estimated-minutes"
+              className="field-control"
+              type="number"
+              inputMode="numeric"
+              min="1"
+              max={maximumEstimatedMinutes}
+              placeholder="例如 30"
+              value={values.estimatedMinutes}
+              onChange={(event) => setValues((current) => ({ ...current, estimatedMinutes: event.target.value }))}
+            />
+          </label>
+        </div>
+        <p className="task-form__planning-note">不确定时可以先不填，之后编辑任务再补上。</p>
         {displayedError && <p id="task-form-error" role="alert" className="form-error">{displayedError}</p>}
         <div className="task-form__actions">
           <button type="button" className="button" onClick={onCancel}>取消</button>

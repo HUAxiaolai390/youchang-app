@@ -37,7 +37,9 @@ function createFixedRecord(
     date,
     titleSnapshot: task.title,
     categoryId: task.categoryId,
-    categoryNameSnapshot: task.categoryNameSnapshot
+    categoryNameSnapshot: task.categoryNameSnapshot,
+    plannedStartTime: task.plannedStartTime,
+    estimatedMinutes: task.estimatedMinutes
   };
 }
 
@@ -104,6 +106,8 @@ export function rescheduleTask(
     scheduledDate: targetDate,
     status: "pending",
     sourceTaskId: source.id,
+    plannedStartTime: source.plannedStartTime,
+    estimatedMinutes: source.estimatedMinutes,
     createdAt: now.toISOString()
   };
   const record: RescheduleRecord = {

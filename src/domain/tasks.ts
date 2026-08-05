@@ -7,6 +7,8 @@ import type {
   ScheduledTask
 } from "./types";
 import { toDateKey } from "./date";
+import { normalizeEstimatedMinutes, normalizePlannedStartTime } from "./planning";
+import type { TimeKey } from "./types";
 
 export interface AddCategoryInput {
   name: string;
@@ -17,6 +19,8 @@ export interface AddScheduledTaskInput {
   title: string;
   categoryId: string;
   scheduledDate: DateKey;
+  plannedStartTime?: TimeKey;
+  estimatedMinutes?: number;
 }
 
 export type UpdateScheduledTaskInput = AddScheduledTaskInput;
@@ -25,11 +29,15 @@ export interface AddFixedTaskInput {
   title: string;
   categoryId: string;
   activeFrom: DateKey;
+  plannedStartTime?: TimeKey;
+  estimatedMinutes?: number;
 }
 
 export interface UpdateFixedTaskInput {
   title: string;
   categoryId: string;
+  plannedStartTime?: TimeKey;
+  estimatedMinutes?: number;
 }
 
 export type TaskKind = "fixed" | "scheduled";
@@ -112,6 +120,8 @@ export function addFixedTask(state: AppState, input: AddFixedTaskInput, now: Dat
     title,
     ...categorySnapshot(category),
     activeFrom: input.activeFrom,
+    plannedStartTime: normalizePlannedStartTime(input.plannedStartTime),
+    estimatedMinutes: normalizeEstimatedMinutes(input.estimatedMinutes),
     order: state.fixedTasks.length,
     createdAt: now.toISOString()
   };
@@ -121,7 +131,9 @@ export function addFixedTask(state: AppState, input: AddFixedTaskInput, now: Dat
     templateId: task.id,
     date: toDateKey(now),
     titleSnapshot: task.title,
-    ...categorySnapshot(category)
+    ...categorySnapshot(category),
+    plannedStartTime: task.plannedStartTime,
+    estimatedMinutes: task.estimatedMinutes
   };
 
   return {
@@ -139,16 +151,18 @@ export function updateFixedTask(
 ): AppState {
   const title = requireTitle(input.title);
   const category = requireCategory(state, input.categoryId);
+  const plannedStartTime = normalizePlannedStartTime(input.plannedStartTime);
+  const estimatedMinutes = normalizeEstimatedMinutes(input.estimatedMinutes);
   const task = state.fixedTasks.find((item) => item.id === id);
   if (!task) return state;
 
   return {
     ...state,
     fixedTasks: state.fixedTasks.map((item) => item.id === id
-      ? { ...item, title, ...categorySnapshot(category) }
+      ? { ...item, title, ...categorySnapshot(category), plannedStartTime, estimatedMinutes }
       : item),
     fixedRecords: state.fixedRecords.map((record) => record.templateId === id && record.date === today
-      ? { ...record, titleSnapshot: title, ...categorySnapshot(category) }
+      ? { ...record, titleSnapshot: title, ...categorySnapshot(category), plannedStartTime, estimatedMinutes }
       : record)
   };
 }
@@ -195,7 +209,9 @@ export function setFixedTaskActive(
     date: today,
     titleSnapshot: successor.title,
     categoryId: successor.categoryId,
-    categoryNameSnapshot: successor.categoryNameSnapshot
+    categoryNameSnapshot: successor.categoryNameSnapshot,
+    plannedStartTime: successor.plannedStartTime,
+    estimatedMinutes: successor.estimatedMinutes
   };
 
   return {
@@ -215,6 +231,8 @@ export function addScheduledTask(state: AppState, input: AddScheduledTaskInput, 
     title,
     ...categorySnapshot(category),
     scheduledDate: input.scheduledDate,
+    plannedStartTime: normalizePlannedStartTime(input.plannedStartTime),
+    estimatedMinutes: normalizeEstimatedMinutes(input.estimatedMinutes),
     status: "pending",
     createdAt: now.toISOString()
   };
@@ -232,6 +250,8 @@ export function updateScheduledTask(
 
   const title = requireTitle(input.title);
   const category = requireCategory(state, input.categoryId);
+  const plannedStartTime = normalizePlannedStartTime(input.plannedStartTime);
+  const estimatedMinutes = normalizeEstimatedMinutes(input.estimatedMinutes);
   return {
     ...state,
     scheduledTasks: state.scheduledTasks.map((item) => item.id === id
@@ -239,7 +259,9 @@ export function updateScheduledTask(
           ...item,
           title,
           ...categorySnapshot(category),
-          scheduledDate: input.scheduledDate
+          scheduledDate: input.scheduledDate,
+          plannedStartTime,
+          estimatedMinutes
         }
       : item)
   };

@@ -4,6 +4,7 @@ import { AppShell, type PageKey } from "../components/AppShell";
 import { TodayPage } from "../features/today/TodayPage";
 import { GrowthPage } from "../features/growth/GrowthPage";
 import { SettingsPage } from "../features/settings/SettingsPage";
+import { WeekPage } from "../features/week/WeekPage";
 import { PwaUpdatePrompt } from "../components/PwaUpdatePrompt";
 import { BackgroundMusic } from "../components/BackgroundMusic";
 import { getDailyQuote } from "../domain/daily-quotes";
@@ -54,6 +55,7 @@ function AppContents() {
 
   const pageContent: Record<PageKey, { title: string; description: string }> = {
     today: { title: "今天", description: "日日有常，步步有长。" },
+    week: { title: "计划", description: "把任务放进合适的时间里。" },
     growth: { title: "成长", description: "慢慢积累，也是一种前进。" },
     settings: { title: "设置", description: "把有常调成更适合你的样子。" }
   };
@@ -85,6 +87,7 @@ function AppContents() {
         )}
         <BackgroundMusic />
         {activePage === "today" && <TodayPage />}
+        {activePage === "week" && <WeekPage />}
         {activePage === "growth" && <GrowthPage />}
         {activePage === "settings" && <SettingsPage />}
         {error && (

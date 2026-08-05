@@ -6,7 +6,7 @@ import { ConfirmDialog } from "./ConfirmDialog";
 import { EmptyState } from "./EmptyState";
 
 describe("AppShell", () => {
-  it("offers Today, Growth, and Settings navigation", () => {
+  it("offers Today, Plan, Growth, and Settings navigation", () => {
     render(
       <AppShell activePage="today" onNavigate={() => {}}>
         <p>内容</p>
@@ -14,6 +14,7 @@ describe("AppShell", () => {
     );
 
     expect(screen.getByRole("button", { name: "今日" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("button", { name: "计划" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "成长" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "设置" })).toBeEnabled();
   });

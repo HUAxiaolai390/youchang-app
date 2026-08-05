@@ -47,11 +47,14 @@ export function TodayPage() {
       }).map((record): TodayTask => ({
         id: record.id, taskId: record.templateId, kind: "fixed", title: record.titleSnapshot, categoryId: record.categoryId,
         categoryName: liveCategoryName(record.categoryId), completed: Boolean(record.completedAt), editable: true,
+        plannedStartTime: record.plannedStartTime ?? templatesById.get(record.templateId)?.plannedStartTime,
+        estimatedMinutes: record.estimatedMinutes ?? templatesById.get(record.templateId)?.estimatedMinutes,
         actualMinutes: record.actualMinutes
       })),
       scheduledTasks: state.scheduledTasks.filter((task) => task.scheduledDate === today && visible(task.categoryId)).map((task): TodayTask => ({
         id: task.id, taskId: task.id, kind: "scheduled", title: task.title, categoryId: task.categoryId,
         categoryName: liveCategoryName(task.categoryId), completed: task.status === "completed", editable: task.status === "pending",
+        plannedStartTime: task.plannedStartTime, estimatedMinutes: task.estimatedMinutes,
         actualMinutes: task.actualMinutes
       }))
     };
@@ -66,14 +69,26 @@ export function TodayPage() {
     let saved: boolean;
     if (editing) {
       if (editing.kind === "fixed") {
-        saved = dispatch({ type: "fixed/update", id: editing.taskId, input: { title: values.title, categoryId: values.categoryId } });
+        saved = dispatch({ type: "fixed/update", id: editing.taskId, input: {
+          title: values.title, categoryId: values.categoryId,
+          plannedStartTime: values.plannedStartTime, estimatedMinutes: values.estimatedMinutes
+        } });
       } else {
-        saved = dispatch({ type: "scheduled/update", id: editing.taskId, input: { title: values.title, categoryId: values.categoryId, scheduledDate: values.date } });
+        saved = dispatch({ type: "scheduled/update", id: editing.taskId, input: {
+          title: values.title, categoryId: values.categoryId, scheduledDate: values.date,
+          plannedStartTime: values.plannedStartTime, estimatedMinutes: values.estimatedMinutes
+        } });
       }
     } else if (values.kind === "fixed") {
-      saved = dispatch({ type: "fixed/add", input: { title: values.title, categoryId: values.categoryId, activeFrom: today } });
+      saved = dispatch({ type: "fixed/add", input: {
+        title: values.title, categoryId: values.categoryId, activeFrom: today,
+        plannedStartTime: values.plannedStartTime, estimatedMinutes: values.estimatedMinutes
+      } });
     } else {
-      saved = dispatch({ type: "scheduled/add", input: { title: values.title, categoryId: values.categoryId, scheduledDate: values.date } });
+      saved = dispatch({ type: "scheduled/add", input: {
+        title: values.title, categoryId: values.categoryId, scheduledDate: values.date,
+        plannedStartTime: values.plannedStartTime, estimatedMinutes: values.estimatedMinutes
+      } });
     }
     if (saved) {
       setFormOpen(false);
@@ -109,7 +124,9 @@ export function TodayPage() {
     title: editing.title,
     kind: editing.kind,
     categoryId: editing.categoryId,
-    date: editing.date
+    date: editing.date,
+    plannedStartTime: editing.plannedStartTime,
+    estimatedMinutes: editing.estimatedMinutes
   } : undefined;
 
   return (

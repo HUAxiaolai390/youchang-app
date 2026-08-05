@@ -112,6 +112,26 @@ test("customizes and remembers the focus timer", async ({ page }) => {
   await expect(page.getByText("0 次", { exact: true })).toBeVisible();
 });
 
+test("plans a timed task and shows it in the weekly view", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  await page.getByRole("button", { name: "添加任务" }).click();
+  await page.getByLabel("任务名称").fill("英语听力训练");
+  await page.getByLabel("开始时间（选填）").fill("20:30");
+  await page.getByLabel("预计用时（分钟，选填）").fill("40");
+  await page.getByRole("button", { name: "保存任务" }).click();
+
+  await expect(page.getByText(/20:30 · 预计 40 分钟/)).toBeVisible();
+  await page.getByRole("button", { name: "计划" }).click();
+  await expect(page.getByRole("heading", { name: "本周安排" })).toBeVisible();
+  await expect(page.getByText("英语听力训练", { exact: true })).toBeVisible();
+  await expect(page.getByText("20:30", { exact: true })).toBeVisible();
+  await expect(page.getByText("40 分", { exact: true })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
 test("records manual and stopwatch time into the allocation", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => window.localStorage.clear());

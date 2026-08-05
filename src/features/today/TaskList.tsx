@@ -1,3 +1,6 @@
+import { formatPlanComparison } from "../../domain/planning";
+import type { TimeKey } from "../../domain/types";
+
 export type TodayTask = {
   id: string;
   taskId: string;
@@ -7,6 +10,8 @@ export type TodayTask = {
   categoryName: string;
   completed: boolean;
   editable: boolean;
+  plannedStartTime?: TimeKey;
+  estimatedMinutes?: number;
   actualMinutes?: number;
 };
 
@@ -33,7 +38,11 @@ export function TaskList({ title, tasks, onToggle, onEdit, onDelete, onTime }: T
               </label>
               <div className="task-item__copy">
                 <p>{task.title}</p>
-                <span>{task.categoryName}{task.actualMinutes ? ` · 实际 ${task.actualMinutes} 分钟` : " · 暂未记录用时"}</span>
+                <span>
+                  {task.categoryName}
+                  {task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}
+                  {` · ${formatPlanComparison(task.estimatedMinutes, task.actualMinutes)}`}
+                </span>
               </div>
               <div className="task-item__actions">
                 <button type="button" onClick={() => onTime(task)} aria-label={`记录用时：${task.title}`}>用时</button>

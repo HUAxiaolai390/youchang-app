@@ -51,7 +51,12 @@ function TaskCard({ task, categoryName, actionLabel, onReschedule, onDelete, onT
     <li className="backlog-card">
       <div className="backlog-card__copy">
         <p>{task.title}</p>
-        <span>原定：{formatDate(task.scheduledDate)} · {categoryName}{task.actualMinutes ? ` · 实际 ${task.actualMinutes} 分钟` : ""}</span>
+        <span>
+          原定：{formatDate(task.scheduledDate)} · {categoryName}
+          {task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}
+          {task.estimatedMinutes ? ` · 预计 ${task.estimatedMinutes} 分钟` : ""}
+          {task.actualMinutes ? ` · 实际 ${task.actualMinutes} 分钟` : ""}
+        </span>
       </div>
       <div className="backlog-card__actions">
         <button type="button" onClick={onTime} aria-label={`记录用时：${task.title}`}>用时</button>

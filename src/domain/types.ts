@@ -1,4 +1,5 @@
 export type DateKey = `${number}-${number}-${number}`;
+export type TimeKey = `${number}:${number}`;
 
 export type TaskStatus =
   | "pending"
@@ -24,6 +25,8 @@ export interface FixedTaskTemplate {
   activeFrom: DateKey;
   inactiveFrom?: DateKey;
   successorId?: string;
+  plannedStartTime?: TimeKey;
+  estimatedMinutes?: number;
   order: number;
   createdAt: string;
 }
@@ -36,6 +39,8 @@ export interface FixedTaskRecord {
   categoryId: string;
   categoryNameSnapshot: string;
   completedAt?: string;
+  plannedStartTime?: TimeKey;
+  estimatedMinutes?: number;
   actualMinutes?: number;
 }
 
@@ -49,6 +54,8 @@ export interface ScheduledTask {
   sourceTaskId?: string;
   createdAt: string;
   completedAt?: string;
+  plannedStartTime?: TimeKey;
+  estimatedMinutes?: number;
   actualMinutes?: number;
 }
 

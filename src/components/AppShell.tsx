@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-export type PageKey = "today" | "growth" | "settings";
+export type PageKey = "today" | "week" | "growth" | "settings";
 
 type AppShellProps = {
   activePage: PageKey;
@@ -10,6 +10,7 @@ type AppShellProps = {
 
 const navigation = [
   { key: "today", label: "今日", icon: "home" },
+  { key: "week", label: "计划", icon: "calendar" },
   { key: "growth", label: "成长", icon: "growth" },
   { key: "settings", label: "设置", icon: "settings" }
 ] as const;
@@ -21,6 +22,10 @@ function NavigationIcon({ name }: { name: (typeof navigation)[number]["icon"] })
 
   if (name === "growth") {
     return <svg className="bottom-nav__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18V11m7 7V6m7 12v-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><path d="m5 8 7-4 7 7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+  }
+
+  if (name === "calendar") {
+    return <svg className="bottom-nav__icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2" fill="none" stroke="currentColor" strokeWidth="1.8" /><path d="M8 3v4m8-4v4M4 10h16M8 14h3m2 0h3m-8 3h3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>;
   }
 
   return <svg className="bottom-nav__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" fill="none" stroke="currentColor" strokeWidth="1.8" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.06 2.06-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56v.08h-2.92v-.08a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-2.06-2.06.06-.06A1.7 1.7 0 0 0 7.22 15a1.7 1.7 0 0 0-1.56-1.03h-.08v-2.92h.08A1.7 1.7 0 0 0 7.22 10a1.7 1.7 0 0 0-.34-1.88l-.06-.06L8.88 6l.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.56v-.08h2.92v.08A1.7 1.7 0 0 0 15.8 6.4a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.06 2.06-.06.06A1.7 1.7 0 0 0 19.4 10a1.7 1.7 0 0 0 1.56 1.03h.08v2.92h-.08A1.7 1.7 0 0 0 19.4 15Z" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" /></svg>;

@@ -125,7 +125,7 @@ describe("TodayPage", () => {
     await user.clear(screen.getByLabelText("实际用时（分钟）"));
     await user.type(screen.getByLabelText("实际用时（分钟）"), "0");
     await user.click(screen.getByRole("button", { name: "保存用时" }));
-    expect(screen.getByText(/暂未记录用时/)).toBeVisible();
+    expect(screen.getByText(/暂未填写预计和实际用时/)).toBeVisible();
     expect(repository.load().scheduledTasks[0].actualMinutes).toBeUndefined();
   });
 

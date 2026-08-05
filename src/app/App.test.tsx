@@ -46,6 +46,16 @@ describe("App", () => {
     expect(screen.getByText("累计完成 0 项")).toBeInTheDocument();
   });
 
+  it("opens the weekly planner from the main navigation", async () => {
+    const user = userEvent.setup();
+
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "计划" }));
+
+    expect(screen.getByRole("heading", { name: "本周安排" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "选择本周日期" })).toBeInTheDocument();
+  });
+
   it("opens the settings controls from the main navigation", async () => {
     const user = userEvent.setup();
 

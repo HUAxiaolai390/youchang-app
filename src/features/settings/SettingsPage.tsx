@@ -2,7 +2,8 @@ import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { useAppState } from "../../app/AppStateProvider";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { toDateKey } from "../../domain/date";
-import type { AppState, Category, FixedTaskTemplate } from "../../domain/types";
+import { maximumEstimatedMinutes } from "../../domain/planning";
+import type { AppState, Category, FixedTaskTemplate, TimeKey } from "../../domain/types";
 import { downloadBackup, parseBackup } from "../../storage/backup";
 
 function backupErrorMessage(error: unknown): string {
@@ -29,10 +30,14 @@ export function SettingsPage() {
   const [categoryIconInput, setCategoryIconInput] = useState("分");
   const [fixedTitle, setFixedTitle] = useState("");
   const [fixedCategoryId, setFixedCategoryId] = useState("study");
+  const [fixedStartTime, setFixedStartTime] = useState("");
+  const [fixedEstimatedMinutes, setFixedEstimatedMinutes] = useState("");
   const [fixedTaskError, setFixedTaskError] = useState<string>();
   const [editingFixedId, setEditingFixedId] = useState<string>();
   const [editingFixedTitle, setEditingFixedTitle] = useState("");
   const [editingFixedCategoryId, setEditingFixedCategoryId] = useState("study");
+  const [editingFixedStartTime, setEditingFixedStartTime] = useState("");
+  const [editingFixedEstimatedMinutes, setEditingFixedEstimatedMinutes] = useState("");
   const [pendingBackup, setPendingBackup] = useState<AppState>();
   const [backupError, setBackupError] = useState<string>();
   const [categoryToDelete, setCategoryToDelete] = useState<Category>();
@@ -76,14 +81,26 @@ export function SettingsPage() {
     setFixedTaskError(undefined);
     if (dispatch({
       type: "fixed/add",
-      input: { title: fixedTitle, categoryId: fixedCategoryId, activeFrom: toDateKey(new Date()) }
-    })) setFixedTitle("");
+      input: {
+        title: fixedTitle,
+        categoryId: fixedCategoryId,
+        activeFrom: toDateKey(new Date()),
+        plannedStartTime: fixedStartTime ? fixedStartTime as TimeKey : undefined,
+        estimatedMinutes: fixedEstimatedMinutes ? Number(fixedEstimatedMinutes) : undefined
+      }
+    })) {
+      setFixedTitle("");
+      setFixedStartTime("");
+      setFixedEstimatedMinutes("");
+    }
   }
 
   function beginEditFixedTask(task: FixedTaskTemplate) {
     setEditingFixedId(task.id);
     setEditingFixedTitle(task.title);
     setEditingFixedCategoryId(task.categoryId);
+    setEditingFixedStartTime(task.plannedStartTime ?? "");
+    setEditingFixedEstimatedMinutes(task.estimatedMinutes?.toString() ?? "");
   }
 
   function saveFixedTask(event: FormEvent<HTMLFormElement>) {
@@ -94,7 +111,12 @@ export function SettingsPage() {
       return;
     }
     setFixedTaskError(undefined);
-    if (dispatch({ type: "fixed/update", id: editingFixedId, input: { title: editingFixedTitle, categoryId: editingFixedCategoryId } })) {
+    if (dispatch({ type: "fixed/update", id: editingFixedId, input: {
+      title: editingFixedTitle,
+      categoryId: editingFixedCategoryId,
+      plannedStartTime: editingFixedStartTime ? editingFixedStartTime as TimeKey : undefined,
+      estimatedMinutes: editingFixedEstimatedMinutes ? Number(editingFixedEstimatedMinutes) : undefined
+    } })) {
       setEditingFixedId(undefined);
     }
   }
@@ -147,6 +169,10 @@ export function SettingsPage() {
             {state.categories.length === 0 && <option value="">暂无可用分类</option>}
             {state.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
           </select>
+          <div className="task-form__planning">
+            <label htmlFor="fixed-start-time"><span>开始时间（选填）</span><input id="fixed-start-time" className="field-control" type="time" value={fixedStartTime} onChange={(event) => setFixedStartTime(event.target.value)} /></label>
+            <label htmlFor="fixed-estimated-minutes"><span>预计用时（分钟）</span><input id="fixed-estimated-minutes" className="field-control" type="number" min="1" max={maximumEstimatedMinutes} placeholder="例如 30" value={fixedEstimatedMinutes} onChange={(event) => setFixedEstimatedMinutes(event.target.value)} /></label>
+          </div>
           <button className="button" type="submit">新增固定任务</button>
           {fixedTaskError && <p className="form-error" role="alert">{fixedTaskError}</p>}
         </form>
@@ -154,7 +180,7 @@ export function SettingsPage() {
           {managedFixedTasks.length === 0 && <li className="settings-muted">还没有固定任务</li>}
           {managedFixedTasks.map((task) => (
             <li key={task.id} className="settings-list__item">
-              <span><strong>{task.title}</strong><small>{categoryName(state.categories, task.categoryId)} · {task.inactiveFrom ? "已停用" : "进行中"}</small></span>
+              <span><strong>{task.title}</strong><small>{categoryName(state.categories, task.categoryId)}{task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}{task.estimatedMinutes ? ` · 预计 ${task.estimatedMinutes} 分钟` : ""} · {task.inactiveFrom ? "已停用" : "进行中"}</small></span>
               <span className="settings-inline-actions">
                 <button type="button" onClick={() => beginEditFixedTask(task)} aria-label={`编辑固定任务：${task.title}`}>编辑</button>
                 <button type="button" onClick={() => dispatch({ type: "fixed/set-active", id: task.id, active: Boolean(task.inactiveFrom) })} aria-label={`${task.inactiveFrom ? "启用" : "停用"}：${task.title}`}>{task.inactiveFrom ? "启用" : "停用"}</button>
@@ -170,6 +196,10 @@ export function SettingsPage() {
             {state.categories.length === 0 && <option value="">暂无可用分类</option>}
             {state.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
           </select>
+          <div className="task-form__planning">
+            <label htmlFor="editing-fixed-start-time"><span>编辑开始时间（选填）</span><input id="editing-fixed-start-time" className="field-control" type="time" value={editingFixedStartTime} onChange={(event) => setEditingFixedStartTime(event.target.value)} /></label>
+            <label htmlFor="editing-fixed-estimated-minutes"><span>编辑预计用时（分钟）</span><input id="editing-fixed-estimated-minutes" className="field-control" type="number" min="1" max={maximumEstimatedMinutes} value={editingFixedEstimatedMinutes} onChange={(event) => setEditingFixedEstimatedMinutes(event.target.value)} /></label>
+          </div>
           {fixedTaskError && <p className="form-error" role="alert">{fixedTaskError}</p>}
           <div className="settings-inline-actions"><button className="button" type="button" onClick={() => setEditingFixedId(undefined)}>取消编辑</button><button className="button button--primary" type="submit">保存固定任务</button></div>
         </form>}
