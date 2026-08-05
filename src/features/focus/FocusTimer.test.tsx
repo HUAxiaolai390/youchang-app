@@ -82,4 +82,43 @@ describe("FocusTimer", () => {
     expect(screen.getByLabelText("剩余 25:00")).toBeInTheDocument();
     expect(repository.value.focus?.completedSessions).toBe(0);
   });
+
+  it("uses the stopwatch and adds its result to a selected task", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 5, 9));
+    const state = createInitialState(new Date());
+    state.scheduledTasks.push({
+      id: "reading", title: "阅读", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-05", status: "pending", createdAt: new Date().toISOString()
+    });
+    const { repository, onFocusComplete } = renderTimer(state);
+
+    fireEvent.click(screen.getByRole("button", { name: "正计时" }));
+    fireEvent.change(screen.getByLabelText("记录到"), { target: { value: "scheduled:reading" } });
+    fireEvent.click(screen.getByRole("button", { name: "开始计时" }));
+    act(() => vi.advanceTimersByTime(60_000));
+    fireEvent.click(screen.getByRole("button", { name: "完成并记录" }));
+
+    expect(repository.value.scheduledTasks[0].actualMinutes).toBe(1);
+    expect(screen.getByRole("status")).toHaveTextContent("1 分钟已经记入时间分配");
+    expect(screen.getByLabelText("已计时 00:00")).toBeInTheDocument();
+    expect(onFocusComplete).toHaveBeenCalledTimes(1);
+  });
+
+  it("records a stopwatch without a task into a category", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 5, 9));
+    const { repository } = renderTimer(createInitialState(new Date()));
+
+    fireEvent.click(screen.getByRole("button", { name: "正计时" }));
+    fireEvent.change(screen.getByLabelText("记录名称"), { target: { value: "查资料" } });
+    fireEvent.change(screen.getByLabelText("分类"), { target: { value: "work" } });
+    fireEvent.click(screen.getByRole("button", { name: "开始计时" }));
+    act(() => vi.advanceTimersByTime(1_000));
+    fireEvent.click(screen.getByRole("button", { name: "完成并记录" }));
+
+    expect(repository.value.timeEntries).toEqual([
+      expect.objectContaining({ title: "查资料", categoryId: "work", date: "2026-08-05", minutes: 1 })
+    ]);
+  });
 });

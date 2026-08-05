@@ -257,6 +257,9 @@ button:focus-visible {
   background: var(--ink);
   color: var(--surface);
 }
+.time-entry-dialog__field { display: grid; gap: 8px; margin-top: 18px; font-size: 14px; font-weight: 700; }
+.time-entry-dialog__field input { width: 100%; min-height: 46px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--surface); }
+.time-entry-dialog__field small { color: var(--muted); font-size: 12px; font-weight: 400; }
 
 .music-player { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px 18px; align-items: center; padding: 15px 18px; background: rgba(255, 253, 250, .78); backdrop-filter: blur(16px); }
 .music-player__track { display: flex; min-width: 0; align-items: center; gap: 11px; }
@@ -293,6 +296,9 @@ button:focus-visible {
 .progress-card__bar { grid-column: 1 / -1; height: 8px; overflow: hidden; border-radius: 999px; background: #e8e7e1; }
 .progress-card__bar span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #66745d, #9dad8f); transition: width 180ms ease; }
 .progress-card__cat { font-size: 26px; letter-spacing: -5px; color: var(--ink); }
+.progress-card__time { display: grid; gap: 3px; text-align: right; }
+.progress-card__time span { color: var(--muted); font-size: 12px; }
+.progress-card__time strong { font-size: 15px; letter-spacing: -.02em; }
 .category-filter { display: flex; gap: 8px; overflow-x: auto; padding: 1px 1px 5px; }
 .category-filter button { flex: 0 0 auto; min-height: 36px; padding: 0 13px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); cursor: pointer; font-size: 14px; }
 .category-filter button[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--surface); }
@@ -300,7 +306,12 @@ button:focus-visible {
 .focus-card { display: grid; gap: 18px; overflow: hidden; padding: 22px; border-color: #38342d; background: linear-gradient(145deg, #292720, #1d1b18); box-shadow: 0 18px 44px rgba(35, 30, 23, .2); color: #fffaf2; }
 .focus-card__heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .focus-card__heading h2 { margin: 3px 0 0; font-size: 23px; letter-spacing: -.04em; }
+.focus-card__title { display: grid; gap: 7px; }
 .focus-card__eyebrow { color: #d9c9b2; font-size: 10px; font-weight: 800; letter-spacing: .18em; }
+.timer-mode-switch { display: flex; width: max-content; gap: 3px; padding: 3px; border: 1px solid rgba(255,255,255,.1); border-radius: 999px; background: rgba(255,255,255,.05); }
+.timer-mode-switch button { min-height: 28px; padding: 0 11px; border: 0; border-radius: 999px; background: transparent; color: #bfb5a7; cursor: pointer; font-size: 12px; }
+.timer-mode-switch button[aria-pressed="true"] { background: #fff7eb; color: #24211c; font-weight: 800; }
+.timer-mode-switch button:disabled { cursor: not-allowed; opacity: .55; }
 .level-chip { display: grid; min-width: 92px; gap: 1px; padding: 9px 12px; border: 1px solid rgba(255,255,255,.16); border-radius: 15px; background: rgba(255,255,255,.08); text-align: right; }
 .level-chip span { color: #ffd59f; font-size: 15px; font-weight: 800; }
 .level-chip small { color: #c4baab; font-size: 10px; }
@@ -318,6 +329,9 @@ button:focus-visible {
 .focus-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .focus-actions .button { border-color: rgba(255,255,255,.16); background: rgba(255,255,255,.07); color: #fffaf2; }
 .focus-actions .focus-actions__main { min-width: 118px; border-color: var(--accent); background: var(--accent); color: #211d18; font-weight: 800; }
+.focus-actions .focus-actions__finish { border-color: #f5eadb; background: #f5eadb; color: #211d18; font-weight: 800; }
+.focus-actions .focus-actions__finish:disabled { cursor: not-allowed; opacity: .42; }
+.focus-actions--stopwatch { align-content: center; }
 .focus-actions__switch { padding: 8px 4px; border: 0; background: transparent; color: #cfc5b6; cursor: pointer; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
 .focus-custom { padding-top: 14px; border-top: 1px solid rgba(255,255,255,.1); }
 .focus-custom summary { width: max-content; color: #ddd3c5; cursor: pointer; font-size: 13px; font-weight: 700; }
@@ -326,6 +340,10 @@ button:focus-visible {
 .focus-custom__fields input { width: 100%; min-height: 40px; padding: 0 10px; border: 1px solid rgba(255,255,255,.17); border-radius: 11px; background: rgba(255,255,255,.09); color: #fffaf2; }
 .focus-custom__fields .button { border-color: rgba(255,255,255,.18); background: #fffaf2; color: #211d18; }
 .focus-card__announcement { margin: -4px 0 0; color: #c9beae; font-size: 12px; line-height: 1.5; }
+.stopwatch-target { display: grid; grid-template-columns: 1.3fr 1fr .8fr; gap: 10px; padding: 14px; border: 1px solid rgba(255,255,255,.1); border-radius: 16px; background: rgba(255,255,255,.045); }
+.stopwatch-target label { display: grid; min-width: 0; gap: 6px; color: #cfc5b6; font-size: 12px; }
+.stopwatch-target select, .stopwatch-target input { width: 100%; min-width: 0; min-height: 40px; padding: 0 10px; border: 1px solid rgba(255,255,255,.16); border-radius: 11px; background: #34312b; color: #fffaf2; }
+.stopwatch-target option { background: #34312b; color: #fffaf2; }
 .task-list { border-top: 1px solid var(--line); padding-top: 18px; }
 .task-list__header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
 .task-list__header h2 { margin: 0; font-size: 18px; letter-spacing: -0.03em; }
@@ -340,7 +358,7 @@ button:focus-visible {
 .task-item__copy { min-width: 0; flex: 1; }
 .task-item__copy p { margin: 0 0 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .task-item--completed .task-item__copy p { color: var(--muted); text-decoration: line-through; }
-.task-item__actions { display: flex; gap: 4px; }
+.task-item__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
 .task-item__actions button { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; }
 .add-task-button { position: sticky; bottom: 78px; justify-self: end; display: inline-flex; align-items: center; gap: 7px; min-height: 48px; padding: 0 17px; border: 0; border-radius: 999px; background: var(--ink); box-shadow: 0 8px 22px rgba(23, 23, 23, .22); color: var(--surface); cursor: pointer; font-weight: 700; }
 .task-form-panel { position: fixed; z-index: 20; right: 0; bottom: 0; left: 0; width: min(100%, 620px); max-height: min(90vh, 760px); margin: auto; overflow: auto; padding: 24px; border: 1px solid var(--line); border-radius: 24px 24px 0 0; background: var(--surface); box-shadow: 0 -15px 48px rgba(23, 23, 23, .14); }
@@ -370,7 +388,7 @@ button:focus-visible {
 .backlog-card { display: flex; align-items: center; gap: 12px; min-height: 66px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 17px; background: var(--surface); }
 .backlog-card__copy { min-width: 0; flex: 1; }
 .backlog-card__copy p { margin: 0 0 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.backlog-card__actions { display: flex; gap: 4px; }
+.backlog-card__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
 .backlog-card__actions button, .archived-tasks summary, .reschedule-picker button { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; }
 .archived-tasks { border-top: 1px solid var(--line); padding-top: 13px; }
 .archived-tasks summary { color: var(--ink); font-weight: 700; }
@@ -412,6 +430,38 @@ button:focus-visible {
 .growth-mini-card > span { color: #c48541; font-size: 20px; }
 .growth-mini-card p { margin: 0; color: var(--muted); font-size: 12px; }
 .growth-mini-card strong { overflow-wrap: anywhere; font-size: 17px; letter-spacing: -.03em; }
+.time-allocation-card { display: grid; gap: 20px; padding: 22px; }
+.time-allocation-card__heading { display: flex; align-items: end; justify-content: space-between; gap: 14px; }
+.time-allocation-card__heading p { margin: 0 0 3px; color: #b0783f; font-size: 10px; font-weight: 800; letter-spacing: .15em; }
+.time-allocation-card__heading h2 { margin: 0; font-size: 21px; letter-spacing: -.04em; }
+.time-period-switch { display: flex; gap: 3px; padding: 3px; border-radius: 999px; background: #eee8de; }
+.time-period-switch button { min-height: 31px; padding: 0 11px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; }
+.time-period-switch button[aria-pressed="true"] { background: var(--surface); box-shadow: 0 3px 10px rgba(51,41,28,.08); color: var(--ink); font-weight: 800; }
+.time-allocation-card__total { display: flex; align-items: baseline; gap: 9px; }
+.time-allocation-card__total strong { font-size: 30px; letter-spacing: -.05em; }
+.time-allocation-card__total span { color: var(--muted); font-size: 12px; }
+.time-allocation-card__empty { margin: 0; padding: 18px; border-radius: 15px; background: #f3eee6; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.time-allocation-list { display: grid; gap: 15px; }
+.time-allocation-row { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 11px; align-items: center; }
+.time-allocation-row__icon { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 13px; font-size: 13px; font-weight: 800; }
+.time-allocation-row__icon--0 { background: #fae4c5; color: #855628; }
+.time-allocation-row__icon--1 { background: #dfe9d8; color: #506346; }
+.time-allocation-row__icon--2 { background: #dde6ef; color: #4a6075; }
+.time-allocation-row__icon--3 { background: #eadff0; color: #675171; }
+.time-allocation-row__icon--4 { background: #f1dddd; color: #7a5050; }
+.time-allocation-row__icon--5 { background: #e7e3db; color: #625d54; }
+.time-allocation-row__main { display: grid; min-width: 0; gap: 8px; }
+.time-allocation-row__main > div:first-child { display: flex; justify-content: space-between; gap: 10px; }
+.time-allocation-row__main strong { font-size: 14px; }
+.time-allocation-row__main span { color: var(--muted); font-size: 12px; text-align: right; }
+.time-allocation-row__track { height: 8px; overflow: hidden; border-radius: 999px; background: #eeeae3; }
+.time-allocation-row__bar { display: block; height: 100%; min-width: 4px; border-radius: inherit; }
+.time-allocation-row__bar--0 { background: #e6a45c; }
+.time-allocation-row__bar--1 { background: #8eaa7d; }
+.time-allocation-row__bar--2 { background: #829db8; }
+.time-allocation-row__bar--3 { background: #a787b5; }
+.time-allocation-row__bar--4 { background: #bd8585; }
+.time-allocation-row__bar--5 { background: #979084; }
 
 .settings-page { display: grid; gap: 18px; }
 .settings-section { display: grid; gap: 15px; padding: 22px; }
@@ -454,9 +504,14 @@ button:focus-visible {
   .focus-presets, .focus-actions { justify-content: center; }
   .focus-custom__fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .focus-custom__fields .button { grid-column: 1 / -1; }
+  .stopwatch-target { grid-template-columns: minmax(0, 1fr); width: 100%; }
+  .focus-card__heading { align-items: start; }
+  .level-chip { min-width: 78px; padding: 8px 9px; }
   .growth-focus-stats { grid-template-columns: 1fr; }
   .growth-level-card { grid-template-columns: 72px minmax(0, 1fr); gap: 14px; padding: 18px; }
   .growth-level-card__badge { width: 70px; border-radius: 21px; font-size: 19px; }
+  .time-allocation-card { padding: 18px; }
+  .time-allocation-card__heading { align-items: start; }
 }
 
 @media (min-width: 640px) {

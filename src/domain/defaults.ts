@@ -37,6 +37,7 @@ export function createInitialState(now: Date): AppState {
       completedSessions: 0,
       totalFocusMinutes: 0,
       experience: 0
-    }
+    },
+    timeEntries: []
   };
 }

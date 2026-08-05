@@ -97,7 +97,10 @@ export function deleteCategory(state: AppState, categoryId: string): AppState {
     fixedRecords: state.fixedRecords.map((record) => record.categoryId === categoryId
       ? { ...record, categoryId: "other" }
       : record),
-    scheduledTasks: state.scheduledTasks.map(reassignScheduledTask)
+    scheduledTasks: state.scheduledTasks.map(reassignScheduledTask),
+    timeEntries: (state.timeEntries ?? []).map((entry) => entry.categoryId === categoryId
+      ? { ...entry, categoryId: "other" }
+      : entry)
   };
 }
 

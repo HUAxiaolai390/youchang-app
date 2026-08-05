@@ -1,5 +1,6 @@
 import { toDateKey } from "../domain/date";
 import type { AppState, DateKey } from "../domain/types";
+import { maximumActualMinutes } from "../domain/time";
 
 const INVALID_BACKUP = "备份文件格式无效";
 const UNSUPPORTED_VERSION = "备份文件版本不受支持";
@@ -49,7 +50,8 @@ function isFixedTask(value: unknown): boolean {
 function isFixedRecord(value: unknown): boolean {
   return hasStrings(value, ["id", "templateId", "titleSnapshot", "categoryId", "categoryNameSnapshot"])
     && isDateKey(value.date)
-    && (value.completedAt === undefined || isString(value.completedAt));
+    && (value.completedAt === undefined || isString(value.completedAt))
+    && isOptionalActualMinutes(value.actualMinutes);
 }
 
 function isScheduledTask(value: unknown): boolean {
@@ -58,7 +60,22 @@ function isScheduledTask(value: unknown): boolean {
     && isString(value.status)
     && taskStatuses.has(value.status)
     && (value.sourceTaskId === undefined || isString(value.sourceTaskId))
-    && (value.completedAt === undefined || isString(value.completedAt));
+    && (value.completedAt === undefined || isString(value.completedAt))
+    && isOptionalActualMinutes(value.actualMinutes);
+}
+
+function isOptionalActualMinutes(value: unknown): boolean {
+  return value === undefined
+    || (typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= maximumActualMinutes);
+}
+
+function isTimeEntry(value: unknown): boolean {
+  return hasStrings(value, ["id", "title", "categoryId", "categoryNameSnapshot", "createdAt"])
+    && isDateKey(value.date)
+    && typeof value.minutes === "number"
+    && Number.isInteger(value.minutes)
+    && value.minutes >= 1
+    && value.minutes <= maximumActualMinutes;
 }
 
 function isRescheduleRecord(value: unknown): boolean {
@@ -108,6 +125,8 @@ function assertValidBackup(value: unknown): asserts value is AppState {
     || !Array.isArray(value.fixedRecords)
     || !Array.isArray(value.scheduledTasks)
     || !Array.isArray(value.reschedules)
+    || (value.timeEntries !== undefined
+      && (!Array.isArray(value.timeEntries) || !value.timeEntries.every(isTimeEntry)))
     || !value.categories.every(isCategory)
     || !value.fixedTasks.every(isFixedTask)
     || !value.fixedRecords.every(isFixedRecord)
@@ -138,7 +157,8 @@ function normalizeCategoryReferences(state: AppState): AppState {
     ...state,
     fixedTasks: state.fixedTasks.map(normalize),
     fixedRecords: state.fixedRecords.map(normalize),
-    scheduledTasks: state.scheduledTasks.map(normalize)
+    scheduledTasks: state.scheduledTasks.map(normalize),
+    timeEntries: (state.timeEntries ?? []).map(normalize)
   };
 }
 

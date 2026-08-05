@@ -7,6 +7,7 @@ export type TodayTask = {
   categoryName: string;
   completed: boolean;
   editable: boolean;
+  actualMinutes?: number;
 };
 
 type TaskListProps = {
@@ -15,9 +16,10 @@ type TaskListProps = {
   onToggle(task: TodayTask): void;
   onEdit(task: TodayTask): void;
   onDelete(task: TodayTask): void;
+  onTime(task: TodayTask): void;
 };
 
-export function TaskList({ title, tasks, onToggle, onEdit, onDelete }: TaskListProps) {
+export function TaskList({ title, tasks, onToggle, onEdit, onDelete, onTime }: TaskListProps) {
   return (
     <section className="task-list" aria-labelledby={`${title}-title`}>
       <div className="task-list__header"><h2 id={`${title}-title`}>{title}</h2><span>{tasks.length} 项</span></div>
@@ -29,8 +31,12 @@ export function TaskList({ title, tasks, onToggle, onEdit, onDelete }: TaskListP
                 <input type="checkbox" checked={task.completed} onChange={() => onToggle(task)} aria-label={`完成：${task.title}`} />
                 <span aria-hidden="true" />
               </label>
-              <div className="task-item__copy"><p>{task.title}</p><span>{task.categoryName}</span></div>
+              <div className="task-item__copy">
+                <p>{task.title}</p>
+                <span>{task.categoryName}{task.actualMinutes ? ` · 实际 ${task.actualMinutes} 分钟` : " · 暂未记录用时"}</span>
+              </div>
               <div className="task-item__actions">
+                <button type="button" onClick={() => onTime(task)} aria-label={`记录用时：${task.title}`}>用时</button>
                 {task.editable && <button type="button" onClick={() => onEdit(task)} aria-label={`编辑：${task.title}`}>编辑</button>}
                 <button type="button" onClick={() => onDelete(task)} aria-label={`删除：${task.title}`}>删除</button>
               </div>

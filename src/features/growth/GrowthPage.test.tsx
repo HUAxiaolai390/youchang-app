@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { AppStateProvider } from "../../app/AppStateProvider";
 import { createInitialState } from "../../domain/defaults";
@@ -90,5 +90,32 @@ describe("GrowthPage", () => {
     expect(screen.getByText("2 小时 5 分")).toBeInTheDocument();
     expect(screen.getByText("125 EXP")).toBeInTheDocument();
     expect(screen.getByLabelText("本级经验 25/100")).toBeInTheDocument();
+  });
+
+  it("switches between today's and seven-day time allocation", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, 31, 8));
+    const state = createInitialState(new Date());
+    state.scheduledTasks.push({
+      id: "study", title: "阅读", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-07-31", status: "completed", createdAt: new Date().toISOString(), actualMinutes: 30
+    });
+    state.fixedRecords.push({
+      id: "exercise", templateId: "exercise-template", titleSnapshot: "跑步", categoryId: "exercise",
+      categoryNameSnapshot: "运动", date: "2026-07-30", actualMinutes: 60
+    });
+    state.timeEntries = [{
+      id: "work", title: "查资料", categoryId: "work", categoryNameSnapshot: "工作",
+      date: "2026-07-31", minutes: 15, createdAt: new Date().toISOString()
+    }];
+
+    renderGrowth(state);
+
+    expect(screen.getByText("45 分钟")).toBeVisible();
+    expect(screen.getByLabelText("学习 30 分钟，占 67%")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "近 7 天" }));
+    expect(screen.getByText("1 小时 45 分")).toBeVisible();
+    expect(screen.getByLabelText("运动 1 小时，占 57%")).toBeVisible();
+    vi.useRealTimers();
   });
 });

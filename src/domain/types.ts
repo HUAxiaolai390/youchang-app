@@ -36,6 +36,7 @@ export interface FixedTaskRecord {
   categoryId: string;
   categoryNameSnapshot: string;
   completedAt?: string;
+  actualMinutes?: number;
 }
 
 export interface ScheduledTask {
@@ -48,6 +49,7 @@ export interface ScheduledTask {
   sourceTaskId?: string;
   createdAt: string;
   completedAt?: string;
+  actualMinutes?: number;
 }
 
 export interface RescheduleRecord {
@@ -67,6 +69,16 @@ export interface FocusProgress {
   experience: number;
 }
 
+export interface TimeEntry {
+  id: string;
+  title: string;
+  categoryId: string;
+  categoryNameSnapshot: string;
+  date: DateKey;
+  minutes: number;
+  createdAt: string;
+}
+
 export interface AppState {
   schemaVersion: 1;
   settings: {
@@ -81,4 +93,5 @@ export interface AppState {
   scheduledTasks: ScheduledTask[];
   reschedules: RescheduleRecord[];
   focus?: FocusProgress;
+  timeEntries?: TimeEntry[];
 }

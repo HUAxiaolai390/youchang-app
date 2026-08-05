@@ -2,8 +2,10 @@ import { useMemo, useState } from "react";
 import { useAppState } from "../../app/AppStateProvider";
 import { CatMascot } from "../../components/CatMascot";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { TimeEntryDialog } from "../../components/TimeEntryDialog";
 import { toDateKey } from "../../domain/date";
 import { getCatMessage, getTodayProgress } from "../../domain/stats";
+import { formatTrackedTime, getTimeAllocation } from "../../domain/time";
 import type { DateKey } from "../../domain/types";
 import { TaskForm, type TaskFormValues } from "./TaskForm";
 import { TaskList, type TodayTask } from "./TaskList";
@@ -24,8 +26,10 @@ export function TodayPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<EditingTask>();
   const [deleting, setDeleting] = useState<TodayTask>();
+  const [timing, setTiming] = useState<TodayTask>();
   const [celebrationKey, setCelebrationKey] = useState(0);
   const progress = getTodayProgress(state, now);
+  const todayTime = getTimeAllocation(state, today, today);
 
   const { fixedTasks, scheduledTasks } = useMemo(() => {
     const visible = (categoryId: string) => filter === "all" || filter === categoryId;
@@ -42,11 +46,13 @@ export function TodayPage() {
           && (!template.inactiveFrom || today < template.inactiveFrom);
       }).map((record): TodayTask => ({
         id: record.id, taskId: record.templateId, kind: "fixed", title: record.titleSnapshot, categoryId: record.categoryId,
-        categoryName: liveCategoryName(record.categoryId), completed: Boolean(record.completedAt), editable: true
+        categoryName: liveCategoryName(record.categoryId), completed: Boolean(record.completedAt), editable: true,
+        actualMinutes: record.actualMinutes
       })),
       scheduledTasks: state.scheduledTasks.filter((task) => task.scheduledDate === today && visible(task.categoryId)).map((task): TodayTask => ({
         id: task.id, taskId: task.id, kind: "scheduled", title: task.title, categoryId: task.categoryId,
-        categoryName: liveCategoryName(task.categoryId), completed: task.status === "completed", editable: task.status === "pending"
+        categoryName: liveCategoryName(task.categoryId), completed: task.status === "completed", editable: task.status === "pending",
+        actualMinutes: task.actualMinutes
       }))
     };
   }, [filter, state.categories, state.fixedRecords, state.fixedTasks, state.scheduledTasks, today]);
@@ -91,6 +97,14 @@ export function TodayPage() {
     setDeleting(undefined);
   }
 
+  function saveActualTime(minutes: number) {
+    if (!timing) return;
+    const saved = dispatch(timing.kind === "fixed"
+      ? { type: "fixed/time-set", recordId: timing.id, minutes }
+      : { type: "scheduled/time-set", id: timing.id, minutes });
+    if (saved) setTiming(undefined);
+  }
+
   const formValues = editing ? {
     title: editing.title,
     kind: editing.kind,
@@ -113,18 +127,22 @@ export function TodayPage() {
       <section className="progress-card surface-card" aria-label="今日完成进度">
         <div><p>今日完成</p><strong>{progress.completed}<span> / {progress.total}</span></strong></div>
         <div className="progress-card__bar" aria-hidden="true"><span style={{ width: `${progress.ratio * 100}%` }} /></div>
-        <span className="progress-card__cat" aria-hidden="true">●ᴥ●</span>
+        <div className="progress-card__time">
+          <span>今日记录</span>
+          <strong>{formatTrackedTime(todayTime.totalMinutes)}</strong>
+        </div>
       </section>
       <section className="category-filter" aria-label="任务分类筛选">
         <button type="button" aria-pressed={filter === "all"} onClick={() => setFilter("all")}>全部</button>
         {state.categories.map((category) => <button key={category.id} type="button" aria-label={`只看${category.name}`} aria-pressed={filter === category.id} onClick={() => setFilter(category.id)}>{category.name}</button>)}
       </section>
-      <TaskList title="每日固定" tasks={fixedTasks} onToggle={toggle} onEdit={openEdit} onDelete={setDeleting} />
-      <TaskList title="今日安排" tasks={scheduledTasks} onToggle={toggle} onEdit={openEdit} onDelete={setDeleting} />
+      <TaskList title="每日固定" tasks={fixedTasks} onToggle={toggle} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
+      <TaskList title="今日安排" tasks={scheduledTasks} onToggle={toggle} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
       <Backlog now={now} />
       <button type="button" className="add-task-button" aria-label="添加任务" onClick={() => { setEditing(undefined); setFormOpen(true); }}>＋<span>添加任务</span></button>
       {formOpen && <TaskForm categories={state.categories} today={today} initialValues={formValues} error={error} onSubmit={saveTask} onCancel={closeForm} />}
       {deleting && <ConfirmDialog title="删除任务？" message={`确定删除“${deleting.title}”吗？`} confirmLabel="删除" onConfirm={confirmDelete} onCancel={() => setDeleting(undefined)} />}
+      {timing && <TimeEntryDialog taskTitle={timing.title} currentMinutes={timing.actualMinutes} onSave={saveActualTime} onCancel={() => setTiming(undefined)} />}
     </div>
   );
 }

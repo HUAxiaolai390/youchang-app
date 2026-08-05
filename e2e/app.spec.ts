@@ -112,6 +112,35 @@ test("customizes and remembers the focus timer", async ({ page }) => {
   await expect(page.getByText("0 次", { exact: true })).toBeVisible();
 });
 
+test("records manual and stopwatch time into the allocation", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  await page.getByRole("button", { name: "添加任务" }).click();
+  await page.getByLabel("任务名称").fill("论文阅读");
+  await page.getByRole("button", { name: "保存任务" }).click();
+
+  await page.getByRole("button", { name: "记录用时：论文阅读" }).click();
+  await page.getByLabel("实际用时（分钟）").fill("45");
+  await page.getByRole("button", { name: "保存用时" }).click();
+  await expect(page.getByText(/实际 45 分钟/)).toBeVisible();
+
+  await page.getByRole("button", { name: "正计时", exact: true }).click();
+  await page.getByLabel("记录到").selectOption({ label: "今日安排 · 论文阅读" });
+  await page.getByRole("button", { name: "开始计时" }).click();
+  await page.waitForTimeout(1_100);
+  await page.getByRole("button", { name: "完成并记录" }).click();
+  await expect(page.getByText(/实际 46 分钟/)).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  await page.getByRole("button", { name: "成长" }).click();
+  await expect(page.getByText("46 分钟", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("学习 46 分钟，占 100%")).toBeVisible();
+  await page.getByRole("button", { name: "近 7 天" }).click();
+  await expectNoHorizontalOverflow(page);
+});
+
 test("completes the core task, growth, and backup flow", async ({ page }, testInfo) => {
   const runtimeErrors: string[] = [];
   page.on("console", (message) => {

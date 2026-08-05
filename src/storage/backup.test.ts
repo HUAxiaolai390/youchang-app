@@ -31,6 +31,32 @@ describe("versioned backups", () => {
     expect(parseBackup(JSON.stringify(legacy)).focus).toBeUndefined();
   });
 
+  it("accepts backups created before time tracking existed", () => {
+    const legacy = createInitialState(new Date(2026, 6, 31, 9));
+    delete legacy.timeEntries;
+
+    expect(parseBackup(JSON.stringify(legacy)).timeEntries).toEqual([]);
+  });
+
+  it("rejects malformed actual time and time entries", () => {
+    expect(() => parseBackup(JSON.stringify({
+      ...state,
+      scheduledTasks: [{
+        id: "task", title: "阅读", categoryId: "study", categoryNameSnapshot: "学习",
+        scheduledDate: "2026-07-31", status: "pending", createdAt: "2026-07-31T01:00:00.000Z",
+        actualMinutes: -1
+      }]
+    }))).toThrow("备份文件格式无效");
+
+    expect(() => parseBackup(JSON.stringify({
+      ...state,
+      timeEntries: [{
+        id: "entry", title: "阅读", categoryId: "study", categoryNameSnapshot: "学习",
+        date: "2026-07-31", minutes: 0, createdAt: "2026-07-31T01:00:00.000Z"
+      }]
+    }))).toThrow("备份文件格式无效");
+  });
+
   it("rejects malformed focus progress", () => {
     expect(() => parseBackup(JSON.stringify({
       ...state,
@@ -86,6 +112,15 @@ describe("versioned backups", () => {
         scheduledDate: "2026-07-31",
         status: "pending",
         createdAt: "2026-07-31T01:00:00.000Z"
+      }],
+      timeEntries: [{
+        id: "time-1",
+        title: "旧分类记录",
+        categoryId: "deleted-category",
+        categoryNameSnapshot: "阅读",
+        date: "2026-07-31",
+        minutes: 25,
+        createdAt: "2026-07-31T01:00:00.000Z"
       }]
     }));
 
@@ -94,6 +129,10 @@ describe("versioned backups", () => {
       categoryNameSnapshot: "已删除"
     });
     expect(result.fixedRecords[0]).toMatchObject({
+      categoryId: "other",
+      categoryNameSnapshot: "阅读"
+    });
+    expect(result.timeEntries?.[0]).toMatchObject({
       categoryId: "other",
       categoryNameSnapshot: "阅读"
     });

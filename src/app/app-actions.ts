@@ -23,6 +23,11 @@ export type AppAction =
   | { type: "settings/music-volume"; value: number }
   | { type: "focus/configure"; focusMinutes: number; breakMinutes: number }
   | { type: "focus/session-complete"; minutes: number }
+  | { type: "fixed/time-set"; recordId: string; minutes: number }
+  | { type: "fixed/time-add"; recordId: string; minutes: number }
+  | { type: "scheduled/time-set"; id: string; minutes: number }
+  | { type: "scheduled/time-add"; id: string; minutes: number }
+  | { type: "time-entry/add"; title: string; categoryId: string; date: DateKey; minutes: number }
   | { type: "backup/import"; state: AppState }
   | { type: "data/clear" }
   | { type: "system/rollover"; now: Date }

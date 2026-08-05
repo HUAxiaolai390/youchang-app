@@ -16,6 +16,13 @@ import {
 import { moveArchivedTaskToCurrentWeek, rescheduleTask, rollover } from "../domain/rollover";
 import type { AppState } from "../domain/types";
 import { completeFocusSession, configureFocus } from "../domain/focus";
+import {
+  addFixedActualMinutes,
+  addScheduledActualMinutes,
+  addTimeEntry,
+  setFixedActualMinutes,
+  setScheduledActualMinutes
+} from "../domain/time";
 import type { AppRepository } from "../storage/repository";
 import type { AppAction } from "./app-actions";
 
@@ -32,6 +39,7 @@ const knownErrorMessages = new Set([
   "请输入分类名称",
   "请选择有效分类",
   "分类名称已存在",
+  "请输入有效用时",
   "这个任务现在不能改期",
   "请选择本周内的日期",
   "备份文件格式无效",
@@ -85,6 +93,21 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
       return configureFocus(state, action.focusMinutes, action.breakMinutes);
     case "focus/session-complete":
       return completeFocusSession(state, action.minutes);
+    case "fixed/time-set":
+      return setFixedActualMinutes(state, action.recordId, action.minutes);
+    case "fixed/time-add":
+      return addFixedActualMinutes(state, action.recordId, action.minutes);
+    case "scheduled/time-set":
+      return setScheduledActualMinutes(state, action.id, action.minutes);
+    case "scheduled/time-add":
+      return addScheduledActualMinutes(state, action.id, action.minutes);
+    case "time-entry/add":
+      return addTimeEntry(state, {
+        title: action.title,
+        categoryId: action.categoryId,
+        date: action.date,
+        minutes: action.minutes
+      }, now);
     case "backup/import":
       return rollover(action.state, now);
     case "system/rollover":

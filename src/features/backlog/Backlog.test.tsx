@@ -154,4 +154,16 @@ describe("Backlog", () => {
     expect(repository.load().scheduledTasks).toEqual([]);
     expect(screen.queryByText("完成实验报告")).not.toBeInTheDocument();
   });
+
+  it("records and edits the actual time of a backlog task", async () => {
+    const { repository, user } = renderBacklogWithTask();
+
+    await user.click(screen.getByRole("button", { name: "记录用时：完成实验报告" }));
+    await user.clear(screen.getByLabelText("实际用时（分钟）"));
+    await user.type(screen.getByLabelText("实际用时（分钟）"), "75");
+    await user.click(screen.getByRole("button", { name: "保存用时" }));
+
+    expect(screen.getByText(/实际 75 分钟/)).toBeVisible();
+    expect(repository.load().scheduledTasks[0].actualMinutes).toBe(75);
+  });
 });

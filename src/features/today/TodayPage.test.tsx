@@ -108,6 +108,27 @@ describe("TodayPage", () => {
     expect(repository.load().fixedRecords[0]?.completedAt).toBeTruthy();
   });
 
+  it("lets the user fill and revise a task's actual time", async () => {
+    const state = createInitialState(new Date());
+    addTask(state, "study-1", "背单词", "study");
+    const { user, repository } = renderToday(state);
+
+    await user.click(screen.getByRole("button", { name: "记录用时：背单词" }));
+    await user.clear(screen.getByLabelText("实际用时（分钟）"));
+    await user.type(screen.getByLabelText("实际用时（分钟）"), "45");
+    await user.click(screen.getByRole("button", { name: "保存用时" }));
+
+    expect(screen.getByText(/实际 45 分钟/)).toBeVisible();
+    expect(repository.load().scheduledTasks[0].actualMinutes).toBe(45);
+
+    await user.click(screen.getByRole("button", { name: "记录用时：背单词" }));
+    await user.clear(screen.getByLabelText("实际用时（分钟）"));
+    await user.type(screen.getByLabelText("实际用时（分钟）"), "0");
+    await user.click(screen.getByRole("button", { name: "保存用时" }));
+    expect(screen.getByText(/暂未记录用时/)).toBeVisible();
+    expect(repository.load().scheduledTasks[0].actualMinutes).toBeUndefined();
+  });
+
   it("filters visible tasks without changing stored tasks", async () => {
     const state = createInitialState(new Date());
     addTask(state, "study-1", "背单词", "study");
