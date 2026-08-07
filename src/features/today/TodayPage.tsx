@@ -166,7 +166,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
   }
 
   return (
-    <div className="today-page">
+    <div className={`today-page${focusVisible ? " today-page--focus-open" : ""}`}>
       <header className="today-hero surface-card" aria-label="今日概览">
         <div className="today-hero__copy">
           <div className="today-hero__topline">

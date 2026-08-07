@@ -410,6 +410,12 @@ button:focus-visible {
 .category-filter button { flex: 0 0 auto; min-height: 36px; padding: 0 13px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); cursor: pointer; font-size: 14px; }
 .category-filter button[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--surface); }
 
+@media (min-width: 480px) {
+  .today-page--focus-open .focus-drawer { grid-row: 2; grid-column: 1 / -1; }
+  .today-page--focus-open .today-achievements { grid-row: 3; grid-column: 1 / -1; }
+  .today-page--focus-open .category-filter { grid-row: 4; }
+}
+
 .focus-card { display: grid; gap: 18px; overflow: hidden; padding: 22px; border-color: #38342d; background: linear-gradient(145deg, #292720, #1d1b18); box-shadow: 0 18px 44px rgba(35, 30, 23, .2); color: #fffaf2; }
 .focus-card__heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .focus-card__heading h2 { margin: 3px 0 0; font-size: 23px; letter-spacing: -.04em; }

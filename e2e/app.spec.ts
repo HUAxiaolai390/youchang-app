@@ -97,6 +97,12 @@ test("customizes and remembers the focus timer", async ({ page }) => {
 
   await page.getByRole("button", { name: /专注计时/ }).click();
 
+  const focusBounds = await page.getByRole("region", { name: "专注工具" }).boundingBox();
+  const medalBounds = await page.getByRole("region", { name: "我的勋章" }).boundingBox();
+  expect(focusBounds).not.toBeNull();
+  expect(medalBounds).not.toBeNull();
+  expect(focusBounds!.y + focusBounds!.height <= medalBounds!.y || medalBounds!.y + medalBounds!.height <= focusBounds!.y).toBe(true);
+
   await page.getByRole("button", { name: "50 / 10" }).click();
   await expect(page.locator(".focus-timer")).toContainText("50:00");
 
