@@ -20,12 +20,13 @@ class MemoryRepository implements AppRepository {
 function renderTimer(state = createInitialState(new Date())) {
   const repository = new MemoryRepository(state);
   const onFocusComplete = vi.fn();
+  const onRunningChange = vi.fn();
   render(
     <AppStateProvider repository={repository}>
-      <FocusTimer onFocusComplete={onFocusComplete} />
+      <FocusTimer onFocusComplete={onFocusComplete} onRunningChange={onRunningChange} />
     </AppStateProvider>
   );
-  return { repository, onFocusComplete };
+  return { repository, onFocusComplete, onRunningChange };
 }
 
 afterEach(() => {
@@ -33,6 +34,17 @@ afterEach(() => {
 });
 
 describe("FocusTimer", () => {
+  it("reports when timing starts and stops", () => {
+    const { onRunningChange } = renderTimer();
+    onRunningChange.mockClear();
+
+    fireEvent.click(screen.getByRole("button", { name: "开始专注" }));
+    expect(onRunningChange).toHaveBeenLastCalledWith(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "暂停" }));
+    expect(onRunningChange).toHaveBeenLastCalledWith(false);
+  });
+
   it("switches between the recommended 25/5 and 50/10 presets", () => {
     const { repository } = renderTimer();
 

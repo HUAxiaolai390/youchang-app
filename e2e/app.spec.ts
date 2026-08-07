@@ -95,6 +95,8 @@ test("customizes and remembers the focus timer", async ({ page }) => {
   await page.evaluate(() => window.localStorage.clear());
   await page.reload();
 
+  await page.getByRole("button", { name: /专注计时/ }).click();
+
   await page.getByRole("button", { name: "50 / 10" }).click();
   await expect(page.locator(".focus-timer")).toContainText("50:00");
 
@@ -146,6 +148,7 @@ test("records manual and stopwatch time into the allocation", async ({ page }) =
   await page.getByRole("button", { name: "保存用时" }).click();
   await expect(page.getByText(/实际 45 分钟/)).toBeVisible();
 
+  await page.getByRole("button", { name: /专注计时/ }).click();
   await page.getByRole("button", { name: "正计时", exact: true }).click();
   await page.getByLabel("记录到").selectOption({ label: "今日安排 · 论文阅读" });
   await page.getByRole("button", { name: "开始计时" }).click();
@@ -205,7 +208,12 @@ test("completes the core task, growth, and backup flow", async ({ page }, testIn
   await expectNoHorizontalOverflow(page);
 
   await page.reload();
-  await expect(page.getByRole("checkbox", { name: "完成：每日阅读" })).toBeVisible();
+  const firstTask = page.getByRole("checkbox", { name: "完成：每日阅读" });
+  await expect(firstTask).toBeVisible();
+  expect(await firstTask.evaluate((element) => {
+    const bounds = element.closest("li")?.getBoundingClientRect();
+    return Boolean(bounds && bounds.top >= 0 && bounds.bottom <= window.innerHeight);
+  })).toBe(true);
   await expect(page.getByRole("checkbox", { name: "完成：拉伸训练" })).toBeChecked();
 
   await page.getByRole("button", { name: "成长" }).click();

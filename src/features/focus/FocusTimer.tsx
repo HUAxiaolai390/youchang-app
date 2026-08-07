@@ -15,6 +15,7 @@ type TimerMode = "countdown" | "stopwatch";
 
 type FocusTimerProps = {
   onFocusComplete(): void;
+  onRunningChange?(running: boolean): void;
 };
 
 const presets = [
@@ -28,7 +29,7 @@ function formatTime(seconds: number): string {
   return `${minutes}:${remainder}`;
 }
 
-export function FocusTimer({ onFocusComplete }: FocusTimerProps) {
+export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps) {
   const { state, dispatch } = useAppState();
   const focus = getFocusProgress(state);
   const today = toDateKey(new Date());
@@ -57,6 +58,10 @@ export function FocusTimer({ onFocusComplete }: FocusTimerProps) {
       .map((task) => ({ value: `scheduled:${task.id}`, label: `今日安排 · ${task.title}` }));
     return [...fixed, ...scheduled];
   }, [state.fixedRecords, state.scheduledTasks, today]);
+
+  useEffect(() => {
+    onRunningChange?.(isRunning || stopwatchRunning);
+  }, [isRunning, onRunningChange, stopwatchRunning]);
 
   const phaseMinutes = phase === "focus" ? focus.focusMinutes : focus.breakMinutes;
   const totalSeconds = phaseMinutes * 60;

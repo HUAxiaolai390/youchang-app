@@ -79,6 +79,31 @@ function addTask(state: AppState, id: string, title: string, categoryId: string,
 afterEach(() => vi.useRealTimers());
 
 describe("TodayPage", () => {
+  it("keeps the timer compact until the user opens it from the next task", async () => {
+    const state = createInitialState(new Date());
+    addTask(state, "study-1", "背单词", "study");
+    const { user } = renderToday(state);
+
+    const drawerToggle = screen.getByRole("button", { name: /专注计时/ });
+    expect(drawerToggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("region", { name: "专注计时器" })).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "下一项任务" })).toHaveTextContent("待办 · 背单词");
+
+    await user.click(screen.getByRole("button", { name: "开始下一项" }));
+
+    expect(drawerToggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("region", { name: "专注计时器" })).toBeVisible();
+  });
+
+  it("offers to add the first task from the empty overview", async () => {
+    const { user } = renderToday();
+
+    expect(screen.getByRole("region", { name: "下一项任务" })).toHaveTextContent("今天还没有安排");
+    await user.click(screen.getByRole("button", { name: "添加第一项" }));
+
+    expect(screen.getByRole("dialog", { name: "添加任务" })).toBeInTheDocument();
+  });
+
   it("adds a temporary study task for today", async () => {
     const { user, repository } = renderToday();
 

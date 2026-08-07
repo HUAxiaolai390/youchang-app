@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useAppState } from "../../app/AppStateProvider";
 import { CatMascot } from "../../components/CatMascot";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
@@ -28,20 +28,21 @@ export function TodayPage() {
   const [deleting, setDeleting] = useState<TodayTask>();
   const [timing, setTiming] = useState<TodayTask>();
   const [celebrationKey, setCelebrationKey] = useState(0);
+  const [focusOpen, setFocusOpen] = useState(false);
+  const [focusRunning, setFocusRunning] = useState(false);
+  const focusDrawerRef = useRef<HTMLElement>(null);
   const progress = getTodayProgress(state, now);
   const todayTime = getTimeAllocation(state, today, today);
 
-  const { fixedTasks, scheduledTasks } = useMemo(() => {
-    const visible = (categoryId: string) => filter === "all" || filter === categoryId;
+  const { allFixedTasks, allScheduledTasks } = useMemo(() => {
     const templatesById = new Map(state.fixedTasks.map((task) => [task.id, task]));
     const categoriesById = new Map(state.categories.map((category) => [category.id, category.name]));
     const liveCategoryName = (categoryId: string) => categoriesById.get(categoryId) ?? categoriesById.get("other") ?? "其他";
     return {
-      fixedTasks: state.fixedRecords.filter((record) => {
+      allFixedTasks: state.fixedRecords.filter((record) => {
         const template = templatesById.get(record.templateId);
         if (!template) return false;
         return record.date === today
-          && visible(record.categoryId)
           && template.activeFrom <= today
           && (!template.inactiveFrom || today < template.inactiveFrom);
       }).map((record): TodayTask => ({
@@ -51,14 +52,26 @@ export function TodayPage() {
         estimatedMinutes: record.estimatedMinutes ?? templatesById.get(record.templateId)?.estimatedMinutes,
         actualMinutes: record.actualMinutes
       })),
-      scheduledTasks: state.scheduledTasks.filter((task) => task.scheduledDate === today && visible(task.categoryId)).map((task): TodayTask => ({
+      allScheduledTasks: state.scheduledTasks.filter((task) => (
+        task.scheduledDate === today && !["rescheduled", "archived"].includes(task.status)
+      )).map((task): TodayTask => ({
         id: task.id, taskId: task.id, kind: "scheduled", title: task.title, categoryId: task.categoryId,
         categoryName: liveCategoryName(task.categoryId), completed: task.status === "completed", editable: task.status === "pending",
         plannedStartTime: task.plannedStartTime, estimatedMinutes: task.estimatedMinutes,
         actualMinutes: task.actualMinutes
       }))
     };
-  }, [filter, state.categories, state.fixedRecords, state.fixedTasks, state.scheduledTasks, today]);
+  }, [state.categories, state.fixedRecords, state.fixedTasks, state.scheduledTasks, today]);
+
+  const fixedTasks = allFixedTasks.filter((task) => filter === "all" || filter === task.categoryId);
+  const scheduledTasks = allScheduledTasks.filter((task) => filter === "all" || filter === task.categoryId);
+  const nextTask = useMemo(() => [...allFixedTasks, ...allScheduledTasks]
+    .filter((task) => !task.completed)
+    .sort((first, second) => {
+      const firstTime = first.plannedStartTime ?? "99:99";
+      const secondTime = second.plannedStartTime ?? "99:99";
+      return firstTime.localeCompare(secondTime, "zh-CN") || first.title.localeCompare(second.title, "zh-CN");
+    })[0], [allFixedTasks, allScheduledTasks]);
 
   function openEdit(task: TodayTask) {
     setEditing({ ...task, date: task.kind === "scheduled" ? today : today });
@@ -129,24 +142,89 @@ export function TodayPage() {
     estimatedMinutes: editing.estimatedMinutes
   } : undefined;
 
+  const focusVisible = focusOpen || focusRunning;
+  const nextTaskDetails = nextTask ? [
+    nextTask.categoryName,
+    nextTask.plannedStartTime ? `${nextTask.plannedStartTime} 开始` : undefined,
+    nextTask.estimatedMinutes ? `预计 ${nextTask.estimatedMinutes} 分钟` : undefined
+  ].filter(Boolean).join(" · ") : "";
+  const celebrateFocus = useCallback(() => {
+    setCelebrationKey((current) => current + 1);
+  }, []);
+
+  function openNewTask() {
+    setEditing(undefined);
+    setFormOpen(true);
+  }
+
+  function openFocus() {
+    setFocusOpen(true);
+    focusDrawerRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+  }
+
   return (
     <div className="today-page">
-      <header className="today-hero surface-card">
+      <header className="today-hero surface-card" aria-label="今日概览">
         <div className="today-hero__copy">
-          <p>{formatToday(now)}</p>
+          <div className="today-hero__topline">
+            <p>{formatToday(now)}</p>
+            <span>日日有常，步步有长。</span>
+          </div>
           <h1>早上好，{state.settings.displayName || "朋友"}</h1>
           <p className="today-hero__cat-message">{getCatMessage(progress)}</p>
-          <p className="today-hero__mascot-hint">小猫会自己换动作，也可以点它切换 18 种待机动作。</p>
         </div>
         <CatMascot baseState={progress.total === 0 ? "sleep" : "idle"} celebrationKey={celebrationKey} />
+        <section className="today-hero__progress" aria-label="今日完成进度">
+          <div className="today-hero__metric">
+            <span>今日完成</span>
+            <strong>{progress.completed}<small> / {progress.total}</small></strong>
+          </div>
+          <div className="today-hero__bar" aria-hidden="true">
+            <span style={{ width: `${progress.ratio * 100}%` }} />
+          </div>
+          <div className="today-hero__metric today-hero__metric--time">
+            <span>今日记录</span>
+            <strong>{formatTrackedTime(todayTime.totalMinutes)}</strong>
+          </div>
+        </section>
+        <section className={`today-next${nextTask ? " today-next--ready" : ""}`} aria-label="下一项任务">
+          <div>
+            <span className="today-next__label">下一项</span>
+            <strong>{nextTask
+              ? `待办 · ${nextTask.title}`
+              : progress.total > 0
+                ? "今天的任务都完成了"
+                : "今天还没有安排"}</strong>
+            <small>{nextTask
+              ? nextTaskDetails
+              : progress.total > 0
+                ? "做得很好，去成长页看看今天的积累吧"
+                : "先放进一件今天最想完成的小事"}</small>
+          </div>
+          {nextTask
+            ? <button type="button" className="button button--primary" onClick={openFocus}>开始下一项</button>
+            : progress.total === 0
+              ? <button type="button" className="button" onClick={openNewTask}>添加第一项</button>
+              : null}
+        </section>
       </header>
-      <FocusTimer onFocusComplete={() => setCelebrationKey((current) => current + 1)} />
-      <section className="progress-card surface-card" aria-label="今日完成进度">
-        <div><p>今日完成</p><strong>{progress.completed}<span> / {progress.total}</span></strong></div>
-        <div className="progress-card__bar" aria-hidden="true"><span style={{ width: `${progress.ratio * 100}%` }} /></div>
-        <div className="progress-card__time">
-          <span>今日记录</span>
-          <strong>{formatTrackedTime(todayTime.totalMinutes)}</strong>
+      <section className={`focus-drawer surface-card${focusVisible ? " focus-drawer--open" : ""}`} ref={focusDrawerRef} aria-label="专注工具">
+        <button
+          type="button"
+          className="focus-drawer__toggle"
+          aria-expanded={focusVisible}
+          disabled={focusRunning}
+          onClick={() => setFocusOpen((open) => !open)}
+        >
+          <span className="focus-drawer__icon" aria-hidden="true">◷</span>
+          <span className="focus-drawer__copy">
+            <strong>{focusRunning ? "专注进行中" : "专注计时"}</strong>
+            <small>{focusRunning ? "计时期间会保持展开" : "倒计时或正计时，按需要展开"}</small>
+          </span>
+          <span className="focus-drawer__action">{focusRunning ? "进行中" : focusVisible ? "收起" : "展开"}</span>
+        </button>
+        <div className="focus-drawer__content" hidden={!focusVisible}>
+          <FocusTimer onFocusComplete={celebrateFocus} onRunningChange={setFocusRunning} />
         </div>
       </section>
       <section className="category-filter" aria-label="任务分类筛选">
@@ -156,7 +234,7 @@ export function TodayPage() {
       <TaskList title="每日固定" tasks={fixedTasks} onToggle={toggle} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
       <TaskList title="今日安排" tasks={scheduledTasks} onToggle={toggle} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
       <Backlog now={now} />
-      <button type="button" className="add-task-button" aria-label="添加任务" onClick={() => { setEditing(undefined); setFormOpen(true); }}>＋<span>添加任务</span></button>
+      <button type="button" className="add-task-button" aria-label="添加任务" onClick={openNewTask}>＋<span>添加任务</span></button>
       {formOpen && <TaskForm categories={state.categories} today={today} initialValues={formValues} error={error} onSubmit={saveTask} onCancel={closeForm} />}
       {deleting && <ConfirmDialog title="删除任务？" message={`确定删除“${deleting.title}”吗？`} confirmLabel="删除" onConfirm={confirmDelete} onCancel={() => setDeleting(undefined)} />}
       {timing && <TimeEntryDialog taskTitle={timing.title} currentMinutes={timing.actualMinutes} onSave={saveActualTime} onCancel={() => setTiming(undefined)} />}

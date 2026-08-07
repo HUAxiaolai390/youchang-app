@@ -4,7 +4,11 @@ import { useAppState } from "../app/AppStateProvider";
 export const backgroundMusicSource = "/audio/background.mp3";
 export const defaultMusicVolume = 0.35;
 
-export function BackgroundMusic() {
+type BackgroundMusicProps = {
+  compact?: boolean;
+};
+
+export function BackgroundMusic({ compact = false }: BackgroundMusicProps) {
   const { state, dispatch } = useAppState();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
@@ -34,7 +38,7 @@ export function BackgroundMusic() {
   }
 
   return (
-    <section className="music-player surface-card" aria-label="背景音乐控制">
+    <section className={`music-player surface-card${compact ? " music-player--compact" : ""}`} aria-label="背景音乐控制">
       <div className="music-player__track">
         <span className="music-player__note" aria-hidden="true">♫</span>
         <span><strong>背景音乐</strong><small>我真的特别想你</small></span>
@@ -47,7 +51,7 @@ export function BackgroundMusic() {
         {playing ? "暂停音乐" : "播放音乐"}
       </button>
       <div className="music-player__volume">
-        <label htmlFor="background-music-volume">音量</label>
+        <label className={compact ? "visually-hidden" : undefined} htmlFor="background-music-volume">音量</label>
         <input
           id="background-music-volume"
           type="range"

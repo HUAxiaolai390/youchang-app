@@ -79,13 +79,13 @@ function AppContents() {
               </footer>
             </blockquote>
           </section>
-        ) : (
+        ) : activePage !== "today" ? (
           <section className="surface-card page-intro" aria-labelledby="page-title">
             <h2 id="page-title">{page.title}</h2>
             <p>{page.description}</p>
           </section>
-        )}
-        <BackgroundMusic />
+        ) : null}
+        <BackgroundMusic compact={activePage === "today"} />
         {activePage === "today" && <TodayPage />}
         {activePage === "week" && <WeekPage />}
         {activePage === "growth" && <GrowthPage />}
