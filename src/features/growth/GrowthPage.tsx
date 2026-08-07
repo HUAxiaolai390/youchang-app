@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useAppState } from "../../app/AppStateProvider";
+import { AchievementMedal } from "../../components/AchievementMedal";
+import { achievementTierLabels, getAchievements, normalizeFeaturedAchievementIds } from "../../domain/achievements";
 import { toDateKey } from "../../domain/date";
 import { experiencePerLevel, getFocusLevel, getFocusProgress, getLevelExperience } from "../../domain/focus";
 import { getCurrentStreak, getSevenDayStats, getTotalCompleted } from "../../domain/stats";
@@ -11,7 +13,7 @@ function formatDay(date: string): string {
 }
 
 export function GrowthPage() {
-  const { state } = useAppState();
+  const { state, dispatch } = useAppState();
   const [timePeriod, setTimePeriod] = useState<"today" | "week">("today");
   const today = new Date();
   const todayKey = toDateKey(today);
@@ -23,6 +25,19 @@ export function GrowthPage() {
   const level = getFocusLevel(focus.experience);
   const levelExperience = getLevelExperience(focus.experience);
   const timeAllocation = getTimeAllocation(state, timePeriod === "today" ? todayKey : toDateKey(weekStart), todayKey);
+  const achievements = getAchievements(state, today);
+  const unlockedCount = achievements.filter((achievement) => achievement.unlocked).length;
+  const featuredIds = normalizeFeaturedAchievementIds(state.settings.featuredAchievementIds)
+    .filter((id) => achievements.some((achievement) => achievement.id === id && achievement.unlocked));
+
+  function toggleFeaturedAchievement(id: string) {
+    const isFeatured = featuredIds.includes(id as typeof featuredIds[number]);
+    if (!isFeatured && featuredIds.length >= 3) return;
+    dispatch({
+      type: "settings/featured-achievements",
+      ids: isFeatured ? featuredIds.filter((featuredId) => featuredId !== id) : [...featuredIds, id]
+    });
+  }
 
   return (
     <section className="growth-page" aria-label="成长统计">
@@ -37,6 +52,52 @@ export function GrowthPage() {
           <small>再获得 {experiencePerLevel - levelExperience} EXP 升级</small>
         </div>
       </article>
+
+      <section className="surface-card achievement-wall" aria-labelledby="achievement-wall-title">
+        <div className="achievement-wall__heading">
+          <div>
+            <p>ACHIEVEMENTS</p>
+            <h2 id="achievement-wall-title">成就勋章</h2>
+          </div>
+          <div className="achievement-wall__summary">
+            <strong>{unlockedCount} / {achievements.length}</strong>
+            <span>已解锁 · 首页展示 {featuredIds.length}/3</span>
+          </div>
+        </div>
+        <p className="achievement-wall__hint">
+          点击已解锁的勋章，就能把它挂到首页。首页最多展示三枚；满三枚时先取消一枚。
+        </p>
+        <div className="achievement-grid">
+          {achievements.map((achievement) => {
+            const isFeatured = featuredIds.includes(achievement.id);
+            const selectionFull = featuredIds.length >= 3 && !isFeatured;
+            return (
+              <article className={`achievement-card achievement-card--${achievement.tier}${achievement.unlocked ? "" : " achievement-card--locked"}${isFeatured ? " achievement-card--featured" : ""}`} key={achievement.id}>
+                <div className="achievement-card__topline">
+                  <span>{achievementTierLabels[achievement.tier]}</span>
+                  {isFeatured && <strong>首页展示</strong>}
+                </div>
+                <AchievementMedal achievement={achievement} hideTier />
+                <p>{achievement.description}</p>
+                <div className="achievement-card__progress" aria-label={`${achievement.name}进度：${achievement.progressLabel}`}>
+                  <span style={{ width: `${achievement.ratio * 100}%` }} />
+                </div>
+                <div className="achievement-card__footer">
+                  <span>{achievement.progressLabel}</span>
+                  <button
+                    type="button"
+                    aria-pressed={isFeatured}
+                    disabled={!achievement.unlocked || selectionFull}
+                    onClick={() => toggleFeaturedAchievement(achievement.id)}
+                  >
+                    {!achievement.unlocked ? "未解锁" : isFeatured ? "取消展示" : selectionFull ? "展示位已满" : "展示到首页"}
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
 
       <section className="growth-focus-stats" aria-label="专注成长数据">
         <article className="surface-card growth-mini-card">

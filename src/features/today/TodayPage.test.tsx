@@ -79,6 +79,18 @@ function addTask(state: AppState, id: string, title: string, categoryId: string,
 afterEach(() => vi.useRealTimers());
 
 describe("TodayPage", () => {
+  it("always shows three equal medal slots and renders selected unlocked medals", () => {
+    const state = createInitialState(new Date());
+    addTask(state, "finished", "完成的任务", "study", "completed");
+    state.settings.featuredAchievementIds = ["first-task"];
+
+    renderToday(state);
+
+    expect(screen.getByRole("region", { name: "我的勋章" }).querySelectorAll(".today-achievement-slot")).toHaveLength(3);
+    expect(screen.getByLabelText("初见有常，铜章")).toBeInTheDocument();
+    expect(screen.getAllByText("待展示")).toHaveLength(2);
+  });
+
   it("keeps the timer compact until the user opens it from the next task", async () => {
     const state = createInitialState(new Date());
     addTask(state, "study-1", "背单词", "study");

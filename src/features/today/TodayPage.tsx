@@ -1,8 +1,10 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useAppState } from "../../app/AppStateProvider";
 import { CatMascot } from "../../components/CatMascot";
+import { AchievementMedal } from "../../components/AchievementMedal";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { TimeEntryDialog } from "../../components/TimeEntryDialog";
+import { achievementTierLabels, getFeaturedAchievements } from "../../domain/achievements";
 import { toDateKey } from "../../domain/date";
 import { getCatMessage, getTodayProgress } from "../../domain/stats";
 import { formatTrackedTime, getTimeAllocation } from "../../domain/time";
@@ -18,7 +20,7 @@ function formatToday(date: Date) {
   return new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric", weekday: "long" }).format(date);
 }
 
-export function TodayPage() {
+export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => void }) {
   const { state, dispatch, error } = useAppState();
   const now = new Date();
   const today = toDateKey(now);
@@ -33,6 +35,7 @@ export function TodayPage() {
   const focusDrawerRef = useRef<HTMLElement>(null);
   const progress = getTodayProgress(state, now);
   const todayTime = getTimeAllocation(state, today, today);
+  const featuredAchievements = getFeaturedAchievements(state, now);
 
   const { allFixedTasks, allScheduledTasks } = useMemo(() => {
     const templatesById = new Map(state.fixedTasks.map((task) => [task.id, task]));
@@ -208,6 +211,28 @@ export function TodayPage() {
               : null}
         </section>
       </header>
+      <section className="surface-card today-achievements" aria-labelledby="today-achievements-title">
+        <div className="today-achievements__heading">
+          <span>MY MEDALS</span>
+          <strong id="today-achievements-title">我的勋章</strong>
+          {onOpenAchievements && <button type="button" onClick={onOpenAchievements}>管理</button>}
+        </div>
+        <div className="today-achievements__slots">
+          {Array.from({ length: 3 }, (_, index) => {
+            const achievement = featuredAchievements[index];
+            return achievement ? (
+              <div className="today-achievement-slot" key={achievement.id} aria-label={`${achievement.name}，${achievementTierLabels[achievement.tier]}`}>
+                <AchievementMedal achievement={achievement} compact />
+              </div>
+            ) : (
+              <div className="today-achievement-slot today-achievement-slot--empty" key={`empty-${index}`}>
+                <span aria-hidden="true">＋</span>
+                <small>待展示</small>
+              </div>
+            );
+          })}
+        </div>
+      </section>
       <section className={`focus-drawer surface-card${focusVisible ? " focus-drawer--open" : ""}`} ref={focusDrawerRef} aria-label="专注工具">
         <button
           type="button"

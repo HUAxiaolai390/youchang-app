@@ -46,6 +46,15 @@ describe("App", () => {
     expect(screen.getByText("累计完成 0 项")).toBeInTheDocument();
   });
 
+  it("opens medal management from the home page", async () => {
+    const user = userEvent.setup();
+
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "管理" }));
+
+    expect(screen.getByRole("heading", { name: "成就勋章" })).toBeInTheDocument();
+  });
+
   it("opens the weekly planner from the main navigation", async () => {
     const user = userEvent.setup();
 

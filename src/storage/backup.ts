@@ -2,6 +2,7 @@ import { toDateKey } from "../domain/date";
 import type { AppState, DateKey } from "../domain/types";
 import { maximumActualMinutes } from "../domain/time";
 import { isTimeKey, maximumEstimatedMinutes } from "../domain/planning";
+import { isAchievementId } from "../domain/achievements";
 
 const INVALID_BACKUP = "备份文件格式无效";
 const UNSUPPORTED_VERSION = "备份文件版本不受支持";
@@ -100,6 +101,11 @@ function isRescheduleRecord(value: unknown): boolean {
 function hasValidSettings(value: unknown): boolean {
   return hasStrings(value, ["displayName", "firstUsedAt"])
     && isDateKey(value.lastOpenedDate)
+    && (value.featuredAchievementIds === undefined
+      || (Array.isArray(value.featuredAchievementIds)
+        && value.featuredAchievementIds.length <= 3
+        && value.featuredAchievementIds.every((id) => isString(id) && isAchievementId(id))
+        && new Set(value.featuredAchievementIds).size === value.featuredAchievementIds.length))
     && (value.musicVolume === undefined
       || (typeof value.musicVolume === "number"
         && Number.isFinite(value.musicVolume)

@@ -7,14 +7,14 @@ import type { AppRepository } from "../../storage/repository";
 import { GrowthPage } from "./GrowthPage";
 
 class MemoryRepository implements AppRepository {
-  private readonly value: AppState;
+  private value: AppState;
 
   constructor(value: AppState) {
     this.value = value;
   }
 
   load() { return this.value; }
-  save() {}
+  save(state: AppState) { this.value = state; }
   clear() { return this.value; }
 }
 
@@ -70,6 +70,25 @@ describe("GrowthPage", () => {
     renderGrowth(createInitialState(new Date(2026, 6, 31, 8)));
 
     expect(screen.getByLabelText("7月31日，无数据")).toHaveTextContent("—");
+    vi.useRealTimers();
+  });
+
+  it("shows twelve graded medals and lets unlocked medals be selected for the home page", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, 31, 8));
+    const state = stateWithHistory();
+    renderGrowth(state);
+
+    expect(screen.getByRole("heading", { name: "成就勋章" })).toBeInTheDocument();
+    expect(screen.getByText("初见有常")).toBeInTheDocument();
+    expect(screen.getAllByText("铜章")).toHaveLength(4);
+    expect(screen.getAllByText("银章")).toHaveLength(4);
+    expect(screen.getAllByText("金章")).toHaveLength(4);
+
+    const firstTaskCard = screen.getByText("初见有常").closest("article")!;
+    fireEvent.click(firstTaskCard.querySelector("button")!);
+    expect(firstTaskCard).toHaveTextContent("首页展示");
+    expect(firstTaskCard.querySelector("button")).toHaveTextContent("取消展示");
     vi.useRealTimers();
   });
 

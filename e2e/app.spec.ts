@@ -207,6 +207,35 @@ test("records manual and stopwatch time into the allocation", async ({ page }) =
   await expectNoHorizontalOverflow(page);
 });
 
+test("unlocks a medal and pins it into one of three equal home slots", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  await page.getByRole("button", { name: "添加任务" }).click();
+  await page.getByLabel("任务名称").fill("勋章测试任务");
+  await page.getByRole("button", { name: "保存任务" }).click();
+  await page.getByRole("checkbox", { name: "完成：勋章测试任务" }).check();
+
+  await page.getByRole("button", { name: "管理" }).click();
+  const firstMedal = page.locator(".achievement-card").filter({ hasText: "初见有常" });
+  await expect(firstMedal).toHaveCount(1);
+  await expect(firstMedal.getByRole("button", { name: "展示到首页" })).toBeEnabled();
+  await firstMedal.getByRole("button", { name: "展示到首页" }).click();
+  await expect(firstMedal).toContainText("首页展示");
+
+  await page.getByRole("button", { name: "今日" }).click();
+  await expect(page.getByLabel("初见有常，铜章")).toBeVisible();
+  const slots = page.locator(".today-achievement-slot");
+  await expect(slots).toHaveCount(3);
+  const sizes = await slots.evaluateAll((elements) => elements.map((element) => {
+    const bounds = element.getBoundingClientRect();
+    return { width: Math.round(bounds.width), height: Math.round(bounds.height) };
+  }));
+  expect(new Set(sizes.map((size) => `${size.width}x${size.height}`)).size).toBe(1);
+  await expectNoHorizontalOverflow(page);
+});
+
 test("completes the core task, growth, and backup flow", async ({ page }, testInfo) => {
   const runtimeErrors: string[] = [];
   page.on("console", (message) => {

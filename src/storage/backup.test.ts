@@ -24,6 +24,29 @@ describe("versioned backups", () => {
     expect(parseBackup(JSON.stringify(legacy)).settings.musicVolume).toBeUndefined();
   });
 
+  it("accepts older backups without medal selections", () => {
+    const legacy = createInitialState(new Date(2026, 6, 31, 9));
+    delete legacy.settings.featuredAchievementIds;
+
+    expect(parseBackup(JSON.stringify(legacy)).settings.featuredAchievementIds).toBeUndefined();
+  });
+
+  it("round trips valid medal selections and rejects malformed selections", () => {
+    const selected = {
+      ...state,
+      settings: { ...state.settings, featuredAchievementIds: ["first-task", "first-focus"] }
+    };
+    expect(parseBackup(JSON.stringify(selected)).settings.featuredAchievementIds).toEqual(["first-task", "first-focus"]);
+    expect(() => parseBackup(JSON.stringify({
+      ...state,
+      settings: { ...state.settings, featuredAchievementIds: ["unknown-medal"] }
+    }))).toThrow("备份文件格式无效");
+    expect(() => parseBackup(JSON.stringify({
+      ...state,
+      settings: { ...state.settings, featuredAchievementIds: ["first-task", "first-task"] }
+    }))).toThrow("备份文件格式无效");
+  });
+
   it("accepts backups created before focus progress existed", () => {
     const legacy = createInitialState(new Date(2026, 6, 31, 9));
     delete legacy.focus;

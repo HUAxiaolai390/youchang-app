@@ -21,7 +21,7 @@ function isCountableFixedRecord(state: AppState, record: AppState["fixedRecords"
     && (!template.inactiveFrom || record.date < template.inactiveFrom);
 }
 
-function getDayStat(state: AppState, date: DateKey): DayStat {
+export function getDayStat(state: AppState, date: DateKey): DayStat {
   const fixedRecords = state.fixedRecords.filter((record) => record.date === date && isCountableFixedRecord(state, record));
   const scheduledTasks = state.scheduledTasks.filter((task) => task.scheduledDate === date);
   const completed = fixedRecords.filter((record) => record.completedAt).length
@@ -38,6 +38,19 @@ function getDayStat(state: AppState, date: DateKey): DayStat {
     hasFixedTasks,
     allFixedCompleted: hasFixedTasks && fixedRecords.every((record) => Boolean(record.completedAt))
   };
+}
+
+function getRecordedDates(state: AppState, todayKey: DateKey): DateKey[] {
+  const dates = new Set<DateKey>();
+
+  for (const record of state.fixedRecords) {
+    if (record.date <= todayKey && isCountableFixedRecord(state, record)) dates.add(record.date);
+  }
+  for (const task of state.scheduledTasks) {
+    if (task.scheduledDate <= todayKey) dates.add(task.scheduledDate);
+  }
+
+  return [...dates].sort();
 }
 
 export function getTodayProgress(state: AppState, today: Date): Progress {
@@ -63,17 +76,9 @@ export function getSevenDayStats(state: AppState, today: Date): DayStat[] {
 
 export function getCurrentStreak(state: AppState, today: Date): number {
   const todayKey = toDateKey(today);
-  const dates = new Set<DateKey>();
-
-  for (const record of state.fixedRecords) {
-    if (record.date <= todayKey && isCountableFixedRecord(state, record)) dates.add(record.date);
-  }
-  for (const task of state.scheduledTasks) {
-    if (task.scheduledDate <= todayKey) dates.add(task.scheduledDate);
-  }
 
   let streak = 0;
-  for (const date of [...dates].sort().reverse()) {
+  for (const date of getRecordedDates(state, todayKey).reverse()) {
     const day = getDayStat(state, date);
     if (day.hasFixedTasks ? day.allFixedCompleted : day.completed > 0) {
       streak += 1;
@@ -83,6 +88,25 @@ export function getCurrentStreak(state: AppState, today: Date): number {
   }
 
   return streak;
+}
+
+export function getLongestStreak(state: AppState, today: Date): number {
+  const dates = getRecordedDates(state, toDateKey(today));
+  if (dates.length === 0) return 0;
+
+  const firstDate = new Date(`${dates[0]}T00:00:00`);
+  const lastDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  let longest = 0;
+  let current = 0;
+
+  for (const cursor = new Date(firstDate); cursor <= lastDate; cursor.setDate(cursor.getDate() + 1)) {
+    const day = getDayStat(state, toDateKey(cursor));
+    const qualifies = day.hasFixedTasks ? day.allFixedCompleted : day.completed > 0;
+    current = qualifies ? current + 1 : 0;
+    longest = Math.max(longest, current);
+  }
+
+  return longest;
 }
 
 export function getTotalCompleted(state: AppState): number {

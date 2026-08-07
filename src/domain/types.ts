@@ -93,6 +93,7 @@ export interface AppState {
     firstUsedAt: string;
     lastOpenedDate: DateKey;
     musicVolume?: number;
+    featuredAchievementIds?: string[];
   };
   categories: Category[];
   fixedTasks: FixedTaskTemplate[];

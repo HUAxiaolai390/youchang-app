@@ -19,7 +19,8 @@ export function createInitialState(now: Date): AppState {
       displayName: "",
       firstUsedAt: createdAt,
       lastOpenedDate: toDateKey(now),
-      musicVolume: 0.35
+      musicVolume: 0.35,
+      featuredAchievementIds: []
     },
     categories: builtInCategories.map((category, order) => ({
       ...category,

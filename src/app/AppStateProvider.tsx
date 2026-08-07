@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { createInitialState } from "../domain/defaults";
+import { normalizeFeaturedAchievementIds } from "../domain/achievements";
 import { toDateKey } from "../domain/date";
 import {
   addCategory,
@@ -94,6 +95,14 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
         : (state.settings.musicVolume ?? 0.35);
       return { ...state, settings: { ...state.settings, musicVolume } };
     }
+    case "settings/featured-achievements":
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          featuredAchievementIds: normalizeFeaturedAchievementIds(action.ids)
+        }
+      };
     case "focus/configure":
       return configureFocus(state, action.focusMinutes, action.breakMinutes);
     case "focus/session-complete":

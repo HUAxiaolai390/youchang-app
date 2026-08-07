@@ -86,7 +86,7 @@ function AppContents() {
           </section>
         ) : null}
         <BackgroundMusic compact={activePage === "today"} />
-        {activePage === "today" && <TodayPage />}
+        {activePage === "today" && <TodayPage onOpenAchievements={() => setActivePage("growth")} />}
         {activePage === "week" && <WeekPage />}
         {activePage === "growth" && <GrowthPage />}
         {activePage === "settings" && <SettingsPage />}

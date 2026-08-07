@@ -22,6 +22,7 @@ export type AppAction =
   | { type: "category/delete"; id: string }
   | { type: "settings/name"; value: string }
   | { type: "settings/music-volume"; value: number }
+  | { type: "settings/featured-achievements"; ids: string[] }
   | { type: "focus/configure"; focusMinutes: number; breakMinutes: number }
   | { type: "focus/session-complete"; minutes: number }
   | { type: "fixed/time-set"; recordId: string; minutes: number }
