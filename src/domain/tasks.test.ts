@@ -10,6 +10,7 @@ import {
   deleteTask,
   setFixedTaskActive,
   toggleFixedRecord,
+  toggleFixedTaskForDate,
   toggleScheduledTask,
   updateFixedTask,
   updateScheduledTask
@@ -229,6 +230,40 @@ describe("task and category rules", () => {
       completedAt: now.toISOString()
     });
     expect(threeTimes.scheduledTasks).toHaveLength(1);
+  });
+
+  it.each([
+    ["2026-07-30", "backlog"],
+    ["2026-07-20", "archived"]
+  ] as const)("restores a retroactively completed %s task to %s when undone", (scheduledDate, originalStatus) => {
+    const original = state();
+    original.scheduledTasks.push({
+      id: "forgotten", title: "忘记打勾", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate, status: originalStatus, createdAt: "2026-07-20T08:00:00.000Z"
+    });
+
+    const completed = toggleScheduledTask(original, "forgotten", now);
+    const undone = toggleScheduledTask(completed, "forgotten", now);
+
+    expect(completed.scheduledTasks[0]).toMatchObject({ status: "completed", completedAt: now.toISOString() });
+    expect(undone.scheduledTasks[0]).toMatchObject({ status: originalStatus, completedAt: undefined });
+  });
+
+  it("creates a dated fixed record when a past completion was never recorded", () => {
+    const original = state();
+    original.fixedTasks.push({
+      id: "exercise", title: "跑步 4KM", categoryId: "exercise", categoryNameSnapshot: "运动",
+      activeFrom: "2026-07-27", estimatedMinutes: 30, order: 0, createdAt: now.toISOString()
+    });
+
+    const completed = toggleFixedTaskForDate(original, "exercise", "2026-07-29", now);
+
+    expect(completed.fixedRecords).toEqual([
+      expect.objectContaining({
+        templateId: "exercise", date: "2026-07-29", titleSnapshot: "跑步 4KM",
+        estimatedMinutes: 30, completedAt: now.toISOString()
+      })
+    ]);
   });
 
   it("toggles a fixed record without replacing its snapshots", () => {

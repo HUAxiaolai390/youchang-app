@@ -39,10 +39,11 @@ function getWeekDates(now: Date): DateKey[] {
   return dates;
 }
 
-function TaskCard({ task, categoryName, actionLabel, onReschedule, onDelete, onTime }: {
+function TaskCard({ task, categoryName, actionLabel, onComplete, onReschedule, onDelete, onTime }: {
   task: ScheduledTask;
   categoryName: string;
   actionLabel: string;
+  onComplete(): void;
   onReschedule(): void;
   onDelete(): void;
   onTime(): void;
@@ -59,6 +60,7 @@ function TaskCard({ task, categoryName, actionLabel, onReschedule, onDelete, onT
         </span>
       </div>
       <div className="backlog-card__actions">
+        <button type="button" className="backlog-card__complete" onClick={onComplete} aria-label={`补记完成：${task.title}`}>完成</button>
         <button type="button" onClick={onTime} aria-label={`记录用时：${task.title}`}>用时</button>
         <button type="button" onClick={onReschedule} aria-label={`${actionLabel}：${task.title}`}>{actionLabel}</button>
         <button type="button" onClick={onDelete} aria-label={`删除：${task.title}`}>删除</button>
@@ -73,6 +75,7 @@ export function Backlog({ now = new Date() }: BacklogProps) {
   const [rescheduling, setRescheduling] = useState<ReschedulingTask>();
   const [pendingDelete, setPendingDelete] = useState<{ task: ScheduledTask; archived: boolean }>();
   const [timing, setTiming] = useState<ScheduledTask>();
+  const [recentlyCompleted, setRecentlyCompleted] = useState<ScheduledTask>();
   const weekDates = useMemo(() => getWeekDates(now), [now]);
   const backlogTasks = state.scheduledTasks.filter((task) => task.status === "backlog" && isWithinWeek(task.scheduledDate, now));
   const archivedTasks = state.scheduledTasks.filter((task) => task.status === "archived");
@@ -101,15 +104,28 @@ export function Backlog({ now = new Date() }: BacklogProps) {
     if (dispatch({ type: "scheduled/time-set", id: timing.id, minutes })) setTiming(undefined);
   }
 
+  function completeTask(task: ScheduledTask) {
+    if (dispatch({ type: "scheduled/toggle", id: task.id })) setRecentlyCompleted(task);
+  }
+
+  function undoCompletion() {
+    if (!recentlyCompleted) return;
+    if (dispatch({ type: "scheduled/toggle", id: recentlyCompleted.id })) setRecentlyCompleted(undefined);
+  }
+
   return (
     <section className="backlog-panel" aria-labelledby="backlog-title">
       <div className="backlog-panel__header">
         <h2 id="backlog-title">本周待安排</h2>
         <span>{backlogTasks.length} 项</span>
       </div>
+      {recentlyCompleted && <div className="backlog-panel__notice" role="status">
+        <span>已按原定 {formatDate(recentlyCompleted.scheduledDate)} 补记“{recentlyCompleted.title}”完成</span>
+        <button type="button" onClick={undoCompletion} aria-label={`撤销补记：${recentlyCompleted.title}`}>撤销</button>
+      </div>}
       {backlogTasks.length === 0 ? <p className="backlog-panel__empty">本周没有待安排任务</p> : (
         <ul className="backlog-list">
-          {backlogTasks.map((task) => <TaskCard key={task.id} task={task} categoryName={liveCategoryName(task.categoryId)} actionLabel="改期" onReschedule={() => openReschedule(task, false)} onDelete={() => setPendingDelete({ task, archived: false })} onTime={() => setTiming(task)} />)}
+          {backlogTasks.map((task) => <TaskCard key={task.id} task={task} categoryName={liveCategoryName(task.categoryId)} actionLabel="改期" onComplete={() => completeTask(task)} onReschedule={() => openReschedule(task, false)} onDelete={() => setPendingDelete({ task, archived: false })} onTime={() => setTiming(task)} />)}
         </ul>
       )}
       {rescheduling && (
@@ -125,7 +141,7 @@ export function Backlog({ now = new Date() }: BacklogProps) {
         <summary>上周未处理{archivedTasks.length > 0 ? `（${archivedTasks.length}）` : ""}</summary>
         {archivedTasks.length === 0 ? <p className="backlog-panel__empty">没有历史未处理任务</p> : (
           <ul className="backlog-list">
-            {archivedTasks.map((task) => <TaskCard key={task.id} task={task} categoryName={liveCategoryName(task.categoryId)} actionLabel="移入本周" onReschedule={() => openReschedule(task, true)} onDelete={() => setPendingDelete({ task, archived: true })} onTime={() => setTiming(task)} />)}
+            {archivedTasks.map((task) => <TaskCard key={task.id} task={task} categoryName={liveCategoryName(task.categoryId)} actionLabel="移入本周" onComplete={() => completeTask(task)} onReschedule={() => openReschedule(task, true)} onDelete={() => setPendingDelete({ task, archived: true })} onTime={() => setTiming(task)} />)}
           </ul>
         )}
       </details>

@@ -6,7 +6,7 @@ import type {
   FixedTaskTemplate,
   ScheduledTask
 } from "./types";
-import { toDateKey } from "./date";
+import { isWithinWeek, toDateKey } from "./date";
 import { normalizeEstimatedMinutes, normalizePlannedStartTime } from "./planning";
 import type { TimeKey } from "./types";
 
@@ -278,6 +278,36 @@ export function toggleFixedRecord(state: AppState, recordId: string, now: Date):
   };
 }
 
+export function toggleFixedTaskForDate(
+  state: AppState,
+  templateId: string,
+  date: DateKey,
+  now: Date
+): AppState {
+  const existing = state.fixedRecords.find((record) => record.templateId === templateId && record.date === date);
+  if (existing) return toggleFixedRecord(state, existing.id, now);
+
+  const template = state.fixedTasks.find((task) => task.id === templateId);
+  if (!template || template.activeFrom > date || (template.inactiveFrom && date >= template.inactiveFrom)) {
+    return state;
+  }
+
+  return {
+    ...state,
+    fixedRecords: [...state.fixedRecords, {
+      id: crypto.randomUUID(),
+      templateId: template.id,
+      date,
+      titleSnapshot: template.title,
+      categoryId: template.categoryId,
+      categoryNameSnapshot: template.categoryNameSnapshot,
+      completedAt: now.toISOString(),
+      plannedStartTime: template.plannedStartTime,
+      estimatedMinutes: template.estimatedMinutes
+    }]
+  };
+}
+
 export function toggleScheduledTask(state: AppState, taskId: string, now: Date): AppState {
   if (!state.scheduledTasks.some((task) => task.id === taskId)) return state;
 
@@ -285,7 +315,13 @@ export function toggleScheduledTask(state: AppState, taskId: string, now: Date):
     ...state,
     scheduledTasks: state.scheduledTasks.map((task) => task.id === taskId
       ? task.status === "completed"
-        ? { ...task, status: "pending", completedAt: undefined }
+        ? {
+            ...task,
+            status: task.scheduledDate >= toDateKey(now)
+              ? "pending"
+              : isWithinWeek(task.scheduledDate, now) ? "backlog" : "archived",
+            completedAt: undefined
+          }
         : { ...task, status: "completed", completedAt: now.toISOString() }
       : task)
   };

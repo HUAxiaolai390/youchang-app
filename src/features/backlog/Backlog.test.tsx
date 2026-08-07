@@ -155,6 +155,34 @@ describe("Backlog", () => {
     expect(screen.queryByText("完成实验报告")).not.toBeInTheDocument();
   });
 
+  it("also retroactively completes a task from an earlier week", async () => {
+    const { repository, user } = renderBacklogWithTask("archived", "2026-07-20");
+
+    await user.click(screen.getByText(/^上周未处理/));
+    await user.click(screen.getByRole("button", { name: "补记完成：完成实验报告" }));
+
+    expect(repository.load().scheduledTasks[0]).toMatchObject({ status: "completed" });
+    expect(screen.getByRole("status")).toHaveTextContent(/已按原定 7月20日\s+补记/);
+
+    await user.click(screen.getByRole("button", { name: "撤销补记：完成实验报告" }));
+    expect(repository.load().scheduledTasks[0]).toMatchObject({ status: "archived", completedAt: undefined });
+  });
+
+  it("marks a forgotten backlog task complete on its original date and lets the user undo", async () => {
+    const { repository, user } = renderBacklogWithTask();
+
+    await user.click(screen.getByRole("button", { name: "补记完成：完成实验报告" }));
+
+    expect(repository.load().scheduledTasks[0]).toMatchObject({ status: "completed", completedAt: expect.any(String) });
+    expect(screen.getByRole("status")).toHaveTextContent(/已按原定 7月30日\s+补记“完成实验报告”完成/);
+    expect(screen.queryByRole("button", { name: "补记完成：完成实验报告" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "撤销补记：完成实验报告" }));
+
+    expect(repository.load().scheduledTasks[0]).toMatchObject({ status: "backlog", completedAt: undefined });
+    expect(screen.getByRole("button", { name: "补记完成：完成实验报告" })).toBeVisible();
+  });
+
   it("records and edits the actual time of a backlog task", async () => {
     const { repository, user } = renderBacklogWithTask();
 

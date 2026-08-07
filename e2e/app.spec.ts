@@ -134,6 +134,49 @@ test("plans a timed task and shows it in the weekly view", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
+test("retroactively completes a forgotten task on its original day", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  await page.getByRole("button", { name: "添加任务" }).click();
+  await page.getByLabel("任务名称").fill("忘记打勾的跑步");
+  await page.getByRole("button", { name: "保存任务" }).click();
+  await page.evaluate(() => {
+    const raw = window.localStorage.getItem("youchang:state");
+    if (!raw) throw new Error("missing app state");
+    const state = JSON.parse(raw);
+    const date = new Date();
+    const daysSinceMonday = (date.getDay() + 6) % 7;
+    date.setDate(date.getDate() - daysSinceMonday);
+    const originalDate = [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, "0"),
+      String(date.getDate()).padStart(2, "0")
+    ].join("-");
+    const task = state.scheduledTasks.find((item: { title: string }) => item.title === "忘记打勾的跑步");
+    task.scheduledDate = originalDate;
+    task.status = "backlog";
+    delete task.completedAt;
+    window.localStorage.setItem("youchang:state", JSON.stringify(state));
+  });
+  await page.reload();
+
+  await page.getByRole("button", { name: "补记完成：忘记打勾的跑步" }).click();
+  await expect(page.locator(".backlog-panel__notice")).toContainText("补记“忘记打勾的跑步”完成");
+
+  await page.getByRole("button", { name: "计划" }).click();
+  const plannedDay = page.locator(".week-day-strip button").filter({ hasText: "1 项" });
+  await expect(plannedDay).toHaveCount(1);
+  await plannedDay.click();
+  await expect(page.getByText("忘记打勾的跑步", { exact: true })).toBeVisible();
+  await expect(page.getByText("已完成", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "撤销完成：忘记打勾的跑步" }).click();
+  await expect(page.getByText("待安排", { exact: true })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
 test("records manual and stopwatch time into the allocation", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => window.localStorage.clear());

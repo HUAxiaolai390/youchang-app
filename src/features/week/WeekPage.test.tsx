@@ -68,6 +68,41 @@ describe("WeekPage", () => {
     });
   });
 
+  it("retroactively completes and restores a forgotten task on its original day", async () => {
+    const state = createInitialState(new Date(2026, 7, 5, 9));
+    state.scheduledTasks.push({
+      id: "forgotten-run", title: "跑步 4KM", categoryId: "exercise", categoryNameSnapshot: "运动",
+      scheduledDate: "2026-08-03", status: "backlog", actualMinutes: 30,
+      createdAt: new Date(2026, 7, 3, 9).toISOString()
+    });
+    const { repository, user } = renderWeek(state);
+
+    await user.click(screen.getByRole("button", { name: /星期一 8月3日/ }));
+    await user.click(screen.getByRole("button", { name: "补记完成：跑步 4KM" }));
+
+    expect(repository.state.scheduledTasks[0]).toMatchObject({ status: "completed" });
+    expect(screen.getByText("已完成")).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "撤销完成：跑步 4KM" }));
+    expect(repository.state.scheduledTasks[0]).toMatchObject({ status: "backlog", completedAt: undefined });
+  });
+
+  it("creates a fixed record when completing an earlier fixed task", async () => {
+    const state = createInitialState(new Date(2026, 7, 5, 9));
+    state.fixedTasks.push({
+      id: "fixed-reading", title: "英语单词", categoryId: "study", categoryNameSnapshot: "学习",
+      activeFrom: "2026-08-03", order: 0, createdAt: new Date(2026, 7, 3, 9).toISOString()
+    });
+    const { repository, user } = renderWeek(state);
+
+    await user.click(screen.getByRole("button", { name: /星期一 8月3日/ }));
+    await user.click(screen.getByRole("button", { name: "补记完成：英语单词" }));
+
+    expect(repository.state.fixedRecords).toEqual([
+      expect.objectContaining({ templateId: "fixed-reading", date: "2026-08-03", completedAt: expect.any(String) })
+    ]);
+  });
+
   it("adds a timed task directly to the selected day", async () => {
     const { repository, user } = renderWeek();
 

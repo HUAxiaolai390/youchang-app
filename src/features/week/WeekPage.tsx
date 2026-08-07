@@ -26,7 +26,13 @@ function statusLabel(task: WeekPlanTask): string {
   return task.kind === "fixed" ? "每日固定" : "当天任务";
 }
 
-function WeekTaskCard({ task, onMove }: { task: WeekPlanTask; onMove(task: WeekPlanTask): void }) {
+function WeekTaskCard({ task, canToggle, onMove, onToggle }: {
+  task: WeekPlanTask;
+  canToggle: boolean;
+  onMove(task: WeekPlanTask): void;
+  onToggle(task: WeekPlanTask): void;
+}) {
+  const canMove = task.kind === "scheduled" && task.status !== "completed";
   return (
     <li className={`week-task${task.status === "completed" ? " week-task--completed" : ""}`}>
       <div className="week-task__time">
@@ -41,9 +47,15 @@ function WeekTaskCard({ task, onMove }: { task: WeekPlanTask; onMove(task: WeekP
         <p>{task.title}</p>
         <small>{formatPlanComparison(task.estimatedMinutes, task.actualMinutes)}</small>
       </div>
-      {task.kind === "scheduled" && task.status !== "completed" && (
-        <button type="button" className="week-task__move" onClick={() => onMove(task)} aria-label={`改期：${task.title}`}>改到</button>
-      )}
+      {(canToggle || canMove) && <div className="week-task__actions">
+        {canToggle && <button
+          type="button"
+          className="week-task__complete"
+          onClick={() => onToggle(task)}
+          aria-label={`${task.status === "completed" ? "撤销完成" : "补记完成"}：${task.title}`}
+        >{task.status === "completed" ? "撤销" : "完成"}</button>}
+        {canMove && <button type="button" className="week-task__move" onClick={() => onMove(task)} aria-label={`改期：${task.title}`}>改到</button>}
+      </div>}
     </li>
   );
 }
@@ -66,6 +78,12 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
       setSelectedDate(targetDate);
       setMovingTask(undefined);
     }
+  }
+
+  function toggleTask(task: WeekPlanTask) {
+    dispatch(task.kind === "scheduled"
+      ? { type: "scheduled/toggle", id: task.taskId }
+      : { type: "fixed/toggle-date", templateId: task.taskId, date: task.date });
   }
 
   function saveTask(values: TaskFormValues) {
@@ -153,7 +171,15 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
           </div>
         ) : (
           <ol className="week-task-list">
-            {selectedDay.tasks.map((task) => <WeekTaskCard key={task.id} task={task} onMove={setMovingTask} />)}
+            {selectedDay.tasks.map((task) => (
+              <WeekTaskCard
+                key={task.id}
+                task={task}
+                canToggle={task.date <= today}
+                onMove={setMovingTask}
+                onToggle={toggleTask}
+              />
+            ))}
           </ol>
         )}
       </section>

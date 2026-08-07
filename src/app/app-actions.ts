@@ -16,6 +16,7 @@ export type AppAction =
   | { type: "fixed/add"; input: AddFixedTaskInput }
   | { type: "fixed/update"; id: string; input: UpdateFixedTaskInput }
   | { type: "fixed/toggle"; recordId: string }
+  | { type: "fixed/toggle-date"; templateId: string; date: DateKey }
   | { type: "fixed/set-active"; id: string; active: boolean }
   | { type: "category/add"; name: string; icon: string }
   | { type: "category/delete"; id: string }

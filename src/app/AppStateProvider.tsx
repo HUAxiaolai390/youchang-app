@@ -9,6 +9,7 @@ import {
   deleteTask,
   setFixedTaskActive,
   toggleFixedRecord,
+  toggleFixedTaskForDate,
   toggleScheduledTask,
   updateFixedTask,
   updateScheduledTask
@@ -77,6 +78,8 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
       return updateFixedTask(state, action.id, action.input, toDateKey(now));
     case "fixed/toggle":
       return toggleFixedRecord(state, action.recordId, now);
+    case "fixed/toggle-date":
+      return toggleFixedTaskForDate(state, action.templateId, action.date, now);
     case "fixed/set-active":
       return setFixedTaskActive(state, action.id, action.active, now);
     case "category/add":

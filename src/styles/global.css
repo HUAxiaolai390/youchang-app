@@ -490,6 +490,9 @@ button:focus-visible {
 .backlog-card__copy p { margin: 0 0 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .backlog-card__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
 .backlog-card__actions button, .archived-tasks summary, .reschedule-picker button { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; }
+.backlog-card__actions .backlog-card__complete { color: #4f6848; font-weight: 800; }
+.backlog-panel__notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 13px; background: #e7efe2; color: #4f6848; font-size: 12px; }
+.backlog-panel__notice button { flex: 0 0 auto; border: 0; background: transparent; color: inherit; cursor: pointer; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
 .archived-tasks { border-top: 1px solid var(--line); padding-top: 13px; }
 .archived-tasks summary { color: var(--ink); font-weight: 700; }
 .archived-tasks[open] { display: grid; gap: 10px; }
@@ -536,7 +539,10 @@ button:focus-visible {
 .week-task__status { padding: 3px 6px; border-radius: 999px; background: #eee9e1; color: #6d5b47; font-weight: 700; }
 .week-task__status--completed { background: #e1eadb; color: #55704d; }
 .week-task__status--backlog { background: #f5dfd3; color: #8a4f3d; }
-.week-task__move { min-height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); cursor: pointer; font-size: 12px; }
+.week-task__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+.week-task__actions button { min-height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); cursor: pointer; font-size: 12px; }
+.week-task__actions .week-task__complete { border-color: var(--ink); background: var(--ink); color: var(--surface); }
+.week-task--completed .week-task__actions .week-task__complete { border-color: var(--line); background: var(--surface); color: var(--muted); }
 .week-task--completed .week-task__copy p { color: var(--muted); text-decoration: line-through; }
 .week-move-panel { display: grid; gap: 13px; padding: 18px; }
 .week-move-panel > div:first-child { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -664,7 +670,8 @@ button:focus-visible {
   .week-day-card__metrics strong { font-size: 12px; }
   .week-task { grid-template-columns: 50px minmax(0, 1fr); gap: 9px; padding: 10px; }
   .week-task__time { padding-right: 7px; }
-  .week-task__move { grid-column: 2; justify-self: start; min-height: 30px; }
+  .week-task__actions { grid-column: 2; justify-self: start; justify-content: flex-start; }
+  .week-task__actions button { min-height: 30px; }
   .week-move-panel__dates { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .today-page { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .focus-drawer, .category-filter { grid-column: 1; }
