@@ -95,6 +95,13 @@ test("customizes and remembers the focus timer", async ({ page }) => {
   await page.evaluate(() => window.localStorage.clear());
   await page.reload();
 
+  if ((page.viewportSize()?.width ?? 0) >= 480) {
+    const collapsedFocusBounds = await page.getByRole("region", { name: "专注工具" }).boundingBox();
+    const collapsedMedalBounds = await page.getByRole("region", { name: "我的勋章" }).boundingBox();
+    expect(collapsedFocusBounds?.height).toBeGreaterThanOrEqual(78);
+    expect(collapsedMedalBounds?.height).toBeGreaterThanOrEqual(78);
+  }
+
   await page.getByRole("button", { name: /专注计时/ }).click();
 
   const focusBounds = await page.getByRole("region", { name: "专注工具" }).boundingBox();
