@@ -5,6 +5,7 @@ import type {
   UpdateScheduledTaskInput
 } from "../domain/tasks";
 import type { AppState, DateKey } from "../domain/types";
+import type { CatRewardItem } from "../domain/cat-growth";
 
 export type AppAction =
   | { type: "scheduled/add"; input: AddScheduledTaskInput }
@@ -32,6 +33,7 @@ export type AppAction =
   | { type: "scheduled/time-set"; id: string; minutes: number }
   | { type: "scheduled/time-add"; id: string; minutes: number }
   | { type: "time-entry/add"; title: string; categoryId: string; date: DateKey; minutes: number }
+  | { type: "cat/equip"; item: CatRewardItem }
   | { type: "backup/import"; state: AppState }
   | { type: "data/clear" }
   | { type: "system/rollover"; now: Date }

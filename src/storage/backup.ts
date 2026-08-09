@@ -157,6 +157,28 @@ function hasValidFocus(value: unknown): boolean {
     && typeof experience === "number" && Number.isInteger(experience) && experience >= 0;
 }
 
+function hasValidCatGrowth(value: unknown): boolean {
+  if (value === undefined) return true;
+  if (!isRecord(value)) return false;
+
+  const outfits = new Set(["scarf", "star-hat", "crown"]);
+  const decors = new Set(["yarn-ball", "cushion", "moon-lamp"]);
+  const actions = new Set(["high-five", "happy-spin", "star-celebration"]);
+  const rooms = new Set(["starry-room"]);
+  const rewardedCompletionIds = value.rewardedCompletionIds;
+
+  return typeof value.experience === "number" && Number.isInteger(value.experience) && value.experience >= 0
+    && Array.isArray(rewardedCompletionIds)
+    && rewardedCompletionIds.every(isString)
+    && new Set(rewardedCompletionIds).size === rewardedCompletionIds.length
+    && typeof value.rewardedFocusSessions === "number" && Number.isInteger(value.rewardedFocusSessions) && value.rewardedFocusSessions >= 0
+    && typeof value.rewardedTimeBlocks === "number" && Number.isInteger(value.rewardedTimeBlocks) && value.rewardedTimeBlocks >= 0
+    && (value.outfit === undefined || (isString(value.outfit) && outfits.has(value.outfit)))
+    && (value.decor === undefined || (isString(value.decor) && decors.has(value.decor)))
+    && (value.specialAction === undefined || (isString(value.specialAction) && actions.has(value.specialAction)))
+    && (value.room === undefined || (isString(value.room) && rooms.has(value.room)));
+}
+
 function assertValidBackup(value: unknown): asserts value is AppState {
   if (!isRecord(value)) {
     throw new Error(INVALID_BACKUP);
@@ -166,6 +188,7 @@ function assertValidBackup(value: unknown): asserts value is AppState {
   }
   if (!hasValidSettings(value.settings)
     || !hasValidFocus(value.focus)
+    || !hasValidCatGrowth(value.catGrowth)
     || !Array.isArray(value.categories)
     || !Array.isArray(value.fixedTasks)
     || !Array.isArray(value.fixedRecords)

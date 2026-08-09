@@ -86,6 +86,22 @@ export interface FocusProgress {
   experience: number;
 }
 
+export type CatOutfit = "scarf" | "star-hat" | "crown";
+export type CatDecor = "yarn-ball" | "cushion" | "moon-lamp";
+export type CatSpecialAction = "high-five" | "happy-spin" | "star-celebration";
+export type CatRoom = "starry-room";
+
+export interface CatGrowthProgress {
+  experience: number;
+  rewardedCompletionIds: string[];
+  rewardedFocusSessions: number;
+  rewardedTimeBlocks: number;
+  outfit?: CatOutfit;
+  decor?: CatDecor;
+  specialAction?: CatSpecialAction;
+  room?: CatRoom;
+}
+
 export interface TimeEntry {
   id: string;
   title: string;
@@ -112,4 +128,5 @@ export interface AppState {
   reschedules: RescheduleRecord[];
   focus?: FocusProgress;
   timeEntries?: TimeEntry[];
+  catGrowth?: CatGrowthProgress;
 }

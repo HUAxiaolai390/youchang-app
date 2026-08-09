@@ -61,6 +61,27 @@ describe("versioned backups", () => {
     expect(parseBackup(JSON.stringify(legacy)).timeEntries).toEqual([]);
   });
 
+  it("accepts older backups without cat growth and validates wardrobe data", () => {
+    const legacy = createInitialState(new Date(2026, 6, 31, 9));
+    delete legacy.catGrowth;
+    expect(parseBackup(JSON.stringify(legacy)).catGrowth).toBeUndefined();
+
+    const customized = createInitialState(new Date(2026, 6, 31, 9));
+    customized.catGrowth = {
+      experience: 560,
+      rewardedCompletionIds: ["scheduled:task-1"],
+      rewardedFocusSessions: 2,
+      rewardedTimeBlocks: 3,
+      outfit: "scarf",
+      decor: "yarn-ball"
+    };
+    expect(parseBackup(JSON.stringify(customized)).catGrowth).toEqual(customized.catGrowth);
+    expect(() => parseBackup(JSON.stringify({
+      ...customized,
+      catGrowth: { ...customized.catGrowth, outfit: "unknown-outfit" }
+    }))).toThrow("备份文件格式无效");
+  });
+
   it("rejects malformed actual time and time entries", () => {
     expect(() => parseBackup(JSON.stringify({
       ...state,

@@ -66,6 +66,27 @@ test("keeps the mascot visible and responds to interaction and completion", asyn
   await expectMascotImageDecoded(mascot);
 });
 
+test("earns cat growth once and previews the ten-level wardrobe", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  await page.getByRole("button", { name: "添加任务" }).click();
+  await page.getByLabel("任务名称").fill("小猫成长测试任务");
+  await page.getByRole("button", { name: "保存任务" }).click();
+  await page.getByRole("checkbox", { name: "完成：小猫成长测试任务" }).check();
+
+  await page.getByRole("button", { name: "成长", exact: true }).click();
+  await expect(page.getByRole("region", { name: "小猫成长 · Lv.1" })).toBeVisible();
+  await expect(page.getByLabel("本级成长 12/280")).toBeVisible();
+  await page.getByRole("button", { name: "打开衣橱" }).click();
+
+  await expect(page.locator(".cat-reward-card")).toHaveCount(10);
+  await expect(page.getByRole("heading", { name: "元气领巾" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Lv.2 解锁" }).first()).toBeDisabled();
+  await expectNoHorizontalOverflow(page);
+});
+
 test("loads the extracted background music and remembers its volume", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => window.localStorage.clear());
@@ -122,7 +143,7 @@ test("customizes and remembers the focus timer", async ({ page }) => {
 
   await page.reload();
   await expect(page.locator(".focus-timer")).toContainText("37:00");
-  await page.getByRole("button", { name: "成长" }).click();
+  await page.getByRole("button", { name: "成长", exact: true }).click();
   await expect(page.getByText("等级 1", { exact: true })).toBeVisible();
   await expect(page.getByText("0 次", { exact: true })).toBeVisible();
 });
@@ -213,7 +234,7 @@ test("records manual and stopwatch time into the allocation", async ({ page }) =
   await expect(page.getByText(/实际 46 分钟/)).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
-  await page.getByRole("button", { name: "成长" }).click();
+  await page.getByRole("button", { name: "成长", exact: true }).click();
   await expect(page.getByLabel("分类时间饼图，共 46 分钟")).toBeVisible();
   await expect(page.getByLabel("学习 46 分钟，占 100%")).toBeVisible();
   await page.getByRole("button", { name: "近 7 天" }).click();
@@ -301,8 +322,8 @@ test("completes the core task, growth, and backup flow", async ({ page }, testIn
   })).toBe(true);
   await expect(page.getByRole("checkbox", { name: "完成：拉伸训练" })).toBeChecked();
 
-  await page.getByRole("button", { name: "成长" }).click();
-  await expect(page.getByRole("heading", { name: "成长" })).toBeVisible();
+  await page.getByRole("button", { name: "成长", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "成长", exact: true })).toBeVisible();
   await expect(page.getByText("累计完成 1 项", { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 

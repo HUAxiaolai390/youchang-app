@@ -210,4 +210,21 @@ describe("CatMascot", () => {
     fireEvent.click(button);
     expect(screen.getByRole("presentation")).toHaveAttribute("src", "/mascot/idle/02.gif");
   });
+
+  it("renders equipped outfit, decoration, action, and room layers", () => {
+    render(<CatMascot
+      baseState="idle"
+      celebrationKey={0}
+      customization={{ outfit: "scarf", decor: "yarn-ball", specialAction: "high-five", room: "starry-room" }}
+    />);
+
+    const mascot = screen.getByRole("button", { name: "和小猫互动" });
+    expect(mascot).toHaveAttribute("data-cat-outfit", "scarf");
+    expect(mascot).toHaveAttribute("data-cat-decor", "yarn-ball");
+    expect(mascot).toHaveAttribute("data-cat-special-action", "high-five");
+    expect(mascot).toHaveAttribute("data-cat-room", "starry-room");
+    expect(mascot.querySelector(".cat-mascot__outfit--scarf")).toBeInTheDocument();
+    expect(mascot.querySelector(".cat-mascot__decor--yarn-ball")).toBeInTheDocument();
+    expect(mascot.querySelector(".cat-mascot__room--starry-room")).toBeInTheDocument();
+  });
 });

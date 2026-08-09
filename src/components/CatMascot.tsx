@@ -1,10 +1,17 @@
 import { useEffect, useRef, useState } from "react";
+import type { CatDecor, CatOutfit, CatRoom, CatSpecialAction } from "../domain/types";
 
 export type MascotBaseState = "idle" | "sleep";
 export type MascotState = MascotBaseState | "celebrate";
 export type CatMascotProps = {
   baseState: MascotBaseState;
   celebrationKey: number;
+  customization?: {
+    outfit?: CatOutfit;
+    decor?: CatDecor;
+    specialAction?: CatSpecialAction;
+    room?: CatRoom;
+  };
 };
 
 export const mascotIdleVariants = [
@@ -46,12 +53,14 @@ function usePrefersReducedMotion() {
   return prefersReducedMotion;
 }
 
-export function CatMascot({ baseState, celebrationKey }: CatMascotProps) {
+export function CatMascot({ baseState, celebrationKey, customization }: CatMascotProps) {
   const [temporaryState, setTemporaryState] = useState<"celebrate" | null>(null);
   const [selectedIdleVariant, setSelectedIdleVariant] = useState<MascotIdleVariant | null>(null);
   const [playbackKey, setPlaybackKey] = useState(0);
   const lastCelebrationKey = useRef(celebrationKey);
   const temporaryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const specialActionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [specialActionPlaying, setSpecialActionPlaying] = useState(false);
   const [failedSources, setFailedSources] = useState<ReadonlySet<string>>(() => new Set());
   const prefersReducedMotion = usePrefersReducedMotion();
 
@@ -93,6 +102,17 @@ export function CatMascot({ baseState, celebrationKey }: CatMascotProps) {
     setPlaybackKey((current) => current + 1);
   }
 
+  function playSpecialAction() {
+    if (!customization?.specialAction || prefersReducedMotion) return;
+    if (specialActionTimer.current !== null) clearTimeout(specialActionTimer.current);
+    setSpecialActionPlaying(false);
+    window.requestAnimationFrame(() => setSpecialActionPlaying(true));
+    specialActionTimer.current = setTimeout(() => {
+      specialActionTimer.current = null;
+      setSpecialActionPlaying(false);
+    }, 1100);
+  }
+
   useEffect(() => {
     if (celebrationKey === lastCelebrationKey.current) return;
 
@@ -111,7 +131,10 @@ export function CatMascot({ baseState, celebrationKey }: CatMascotProps) {
     return () => window.clearTimeout(timer);
   }, [prefersReducedMotion, selectedIdleVariant, temporaryState]);
 
-  useEffect(() => () => clearTemporaryTimer(), []);
+  useEffect(() => () => {
+    clearTemporaryTimer();
+    if (specialActionTimer.current !== null) clearTimeout(specialActionTimer.current);
+  }, []);
 
   const state: MascotState = temporaryState ?? (selectedIdleVariant ? "idle" : baseState);
   const idleVariant = state === "idle" ? (selectedIdleVariant ?? defaultIdleVariant) : null;
@@ -125,15 +148,24 @@ export function CatMascot({ baseState, celebrationKey }: CatMascotProps) {
   return (
     <button
       type="button"
-      className="cat-mascot"
+      className={`cat-mascot${customization?.room ? ` cat-mascot--room-${customization.room}` : ""}${specialActionPlaying && customization?.specialAction ? ` cat-mascot--action-${customization.specialAction}` : ""}`}
       aria-label="和小猫互动"
       title="点击切换小猫待机动作"
       data-mascot-state={state}
       data-mascot-idle-variant={idleVariant ?? undefined}
+      data-cat-outfit={customization?.outfit}
+      data-cat-decor={customization?.decor}
+      data-cat-special-action={customization?.specialAction}
+      data-cat-room={customization?.room}
       onClick={() => {
-        if (state !== "celebrate") selectNextIdleVariant();
+        if (state !== "celebrate") {
+          playSpecialAction();
+          selectNextIdleVariant();
+        }
       }}
     >
+      {customization?.room && <span className={`cat-mascot__room cat-mascot__room--${customization.room}`} aria-hidden="true" />}
+      {customization?.decor && <span className={`cat-mascot__decor cat-mascot__decor--${customization.decor}`} aria-hidden="true" />}
       <img
         key={`${displayedSource}-${playbackKey}`}
         className="cat-mascot__image"
@@ -149,6 +181,8 @@ export function CatMascot({ baseState, celebrationKey }: CatMascotProps) {
           });
         }}
       />
+      {customization?.outfit && <span className={`cat-mascot__outfit cat-mascot__outfit--${customization.outfit}`} aria-hidden="true" />}
+      {specialActionPlaying && customization?.specialAction && <span className="cat-mascot__special-effect" aria-hidden="true">✦</span>}
     </button>
   );
 }

@@ -6,6 +6,7 @@ import { toDateKey } from "../../domain/date";
 import { experiencePerLevel, getFocusLevel, getFocusProgress, getLevelExperience } from "../../domain/focus";
 import { getActivityHeatmap, getCurrentStreak, getPeriodStat, getSevenDayStats, getTotalCompleted } from "../../domain/stats";
 import { formatTrackedTime, getTimeAllocation } from "../../domain/time";
+import { CatWardrobe } from "./CatWardrobe";
 
 function formatDay(date: string): string {
   const [, month, day] = date.split("-");
@@ -68,6 +69,8 @@ export function GrowthPage() {
           <small>再获得 {experiencePerLevel - levelExperience} EXP 升级</small>
         </div>
       </article>
+
+      <CatWardrobe />
 
       <section className="growth-period-overview" aria-label="任务和时长概览">
         <article className="surface-card growth-period-card">
