@@ -214,7 +214,7 @@ test("records manual and stopwatch time into the allocation", async ({ page }) =
   await expectNoHorizontalOverflow(page);
 
   await page.getByRole("button", { name: "成长" }).click();
-  await expect(page.getByText("46 分钟", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("分类时间饼图，共 46 分钟")).toBeVisible();
   await expect(page.getByLabel("学习 46 分钟，占 100%")).toBeVisible();
   await page.getByRole("button", { name: "近 7 天" }).click();
   await expectNoHorizontalOverflow(page);

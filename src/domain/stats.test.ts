@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState } from "./defaults";
 import {
+  getActivityHeatmap,
   getCatMessage,
   getCurrentStreak,
+  getPeriodStat,
   getSevenDayStats,
   getTodayProgress,
   getTotalCompleted
@@ -172,5 +174,41 @@ describe("progress and growth statistics", () => {
     expect(getCatMessage({ completed: 0, total: 3, ratio: 0 })).toContain("一件小事");
     expect(getCatMessage({ completed: 1, total: 3, ratio: 1 / 3 })).toContain("已经开始");
     expect(getCatMessage({ completed: 3, total: 3, ratio: 1 })).toContain("已经足够");
+  });
+
+  it("summarizes completed tasks, active days, and tracked time for a period", () => {
+    const history = {
+      ...state(),
+      fixedRecords: [{ ...fixedRecord("2026-07-30", true), actualMinutes: 30 }],
+      scheduledTasks: [
+        { ...scheduledTask("done", "2026-07-31", "completed"), actualMinutes: 45 },
+        scheduledTask("open", "2026-07-31", "pending")
+      ],
+      timeEntries: [{
+        id: "free-time", title: "自由阅读", categoryId: "study", categoryNameSnapshot: "学习",
+        date: "2026-07-29" as const, minutes: 20, createdAt: today.toISOString()
+      }]
+    };
+
+    expect(getPeriodStat(history, "2026-07-29", "2026-07-31")).toMatchObject({
+      completed: 2,
+      total: 3,
+      trackedMinutes: 95,
+      activeDays: 3
+    });
+  });
+
+  it("builds a Monday-aligned twelve-week activity heatmap", () => {
+    const history = {
+      ...state(),
+      scheduledTasks: [{ ...scheduledTask("done", "2026-07-31", "completed"), actualMinutes: 60 }]
+    };
+    const heatmap = getActivityHeatmap(history, today);
+    const todayCell = heatmap.find((day) => day.date === "2026-07-31");
+
+    expect(heatmap).toHaveLength(84);
+    expect(new Date(`${heatmap[0].date}T00:00:00`).getDay()).toBe(1);
+    expect(todayCell).toMatchObject({ completed: 1, total: 1, trackedMinutes: 60, level: 4, isFuture: false });
+    expect(heatmap.some((day) => day.isFuture)).toBe(true);
   });
 });

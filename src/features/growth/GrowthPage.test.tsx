@@ -60,6 +60,8 @@ describe("GrowthPage", () => {
     expect(screen.getByText("连续 3 天")).toBeInTheDocument();
     expect(screen.getByLabelText("7月31日，完成 2/3")).toBeInTheDocument();
     expect(screen.getByText("累计完成 18 项")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "坚持热力图" })).toBeInTheDocument();
+    expect(screen.getByLabelText("近十二周任务完成热力图").children).toHaveLength(84);
     vi.useRealTimers();
   });
 
@@ -130,11 +132,11 @@ describe("GrowthPage", () => {
 
     renderGrowth(state);
 
-    expect(screen.getByText("45 分钟")).toBeVisible();
     expect(screen.getByLabelText("学习 30 分钟，占 67%")).toBeVisible();
+    expect(screen.getByLabelText("分类时间饼图，共 45 分钟")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "近 7 天" }));
-    expect(screen.getByText("1 小时 45 分")).toBeVisible();
     expect(screen.getByLabelText("运动 1 小时，占 57%")).toBeVisible();
+    expect(screen.getByLabelText("分类时间饼图，共 1 小时 45 分")).toBeVisible();
     vi.useRealTimers();
   });
 });

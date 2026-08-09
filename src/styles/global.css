@@ -582,6 +582,11 @@ button:focus-visible {
 .reschedule-picker > button { justify-self: start; padding: 0; }
 
 .growth-page { display: grid; gap: 18px; }
+.growth-period-overview { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.growth-period-card { display: grid; min-width: 0; gap: 5px; padding: 19px 21px; }
+.growth-period-card > span { color: #a56f38; font-size: 11px; font-weight: 900; letter-spacing: .08em; }
+.growth-period-card strong { font-size: clamp(24px, 5vw, 32px); letter-spacing: -.05em; }
+.growth-period-card small { color: var(--muted); font-size: 12px; line-height: 1.5; }
 .growth-card { padding: 22px; }
 .growth-card p { margin: 0; color: var(--muted); font-size: 14px; }
 .growth-card--streak { display: grid; gap: 8px; background: var(--ink); color: var(--surface); }
@@ -598,6 +603,30 @@ button:focus-visible {
 .growth-bars__date { overflow: hidden; color: var(--muted); font-size: 11px; line-height: 1.1; white-space: nowrap; }
 .growth-card--total { text-align: center; }
 .growth-card--total p { color: var(--ink); font-size: 18px; font-weight: 700; }
+.activity-heatmap-card { display: grid; gap: 15px; padding: 22px; overflow: hidden; }
+.activity-heatmap-card .growth-card__heading { align-items: end; margin: 0; }
+.activity-heatmap-card .growth-card__heading > div { display: grid; gap: 3px; }
+.activity-heatmap-card .growth-card__heading > div > span { font-size: 12px; }
+.activity-heatmap-card .growth-card__heading > strong { color: #a56f38; font-size: 12px; }
+.activity-heatmap-scroll { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.activity-heatmap-weekdays { display: grid; grid-template-rows: repeat(7, 14px); gap: 4px; color: var(--muted); font-size: 9px; line-height: 14px; }
+.activity-heatmap-weekdays span:nth-child(1) { grid-row: 1; }
+.activity-heatmap-weekdays span:nth-child(2) { grid-row: 3; }
+.activity-heatmap-weekdays span:nth-child(3) { grid-row: 5; }
+.activity-heatmap-weekdays span:nth-child(4) { grid-row: 7; }
+.activity-heatmap { display: grid; grid-auto-flow: column; grid-template-columns: repeat(12, minmax(14px, 1fr)); grid-template-rows: repeat(7, 14px); gap: 4px; width: 100%; min-width: 260px; }
+.activity-heatmap__day { display: block; width: 100%; height: 14px; border-radius: 4px; background: #ece9e3; }
+.activity-heatmap__day--1 { background: #f6dfc2; }
+.activity-heatmap__day--2 { background: #edbd80; }
+.activity-heatmap__day--3 { background: #d58a41; }
+.activity-heatmap__day--4 { background: #82542e; }
+.activity-heatmap__day--future { background: transparent; box-shadow: inset 0 0 0 1px #eeeae4; }
+.activity-heatmap-legend { display: flex; justify-content: flex-end; align-items: center; gap: 4px; color: var(--muted); font-size: 10px; }
+.activity-heatmap-legend i { width: 11px; height: 11px; border-radius: 3px; background: #ece9e3; }
+.activity-heatmap-legend i:nth-of-type(2) { background: #f6dfc2; }
+.activity-heatmap-legend i:nth-of-type(3) { background: #edbd80; }
+.activity-heatmap-legend i:nth-of-type(4) { background: #d58a41; }
+.activity-heatmap-legend i:nth-of-type(5) { background: #82542e; }
 .growth-level-card { display: grid; grid-template-columns: 94px minmax(0, 1fr); gap: 20px; align-items: center; padding: 22px; background: linear-gradient(135deg, #292720, #3a3328); color: #fffaf2; }
 .growth-level-card__badge { display: grid; width: 86px; aspect-ratio: 1; place-items: center; border: 1px solid rgba(255,255,255,.14); border-radius: 26px; background: linear-gradient(145deg, #f2b76e, #d58a41); box-shadow: inset 0 1px rgba(255,255,255,.38), 0 10px 24px rgba(0,0,0,.2); color: #282017; font-size: 24px; font-weight: 900; transform: rotate(-3deg); }
 .growth-level-card__copy { display: grid; gap: 5px; }
@@ -673,6 +702,11 @@ button:focus-visible {
 .time-allocation-card__total strong { font-size: 30px; letter-spacing: -.05em; }
 .time-allocation-card__total span { color: var(--muted); font-size: 12px; }
 .time-allocation-card__empty { margin: 0; padding: 18px; border-radius: 15px; background: #f3eee6; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.time-allocation-visual { display: grid; grid-template-columns: minmax(150px, .7fr) minmax(240px, 1.3fr); gap: 28px; align-items: center; }
+.time-allocation-pie { display: grid; width: min(100%, 210px); aspect-ratio: 1; place-items: center; justify-self: center; border-radius: 50%; background: var(--pie-background); box-shadow: 0 12px 28px rgba(72,53,31,.11); }
+.time-allocation-pie > div { display: grid; width: 58%; aspect-ratio: 1; place-content: center; gap: 3px; border-radius: 50%; background: var(--surface); box-shadow: 0 2px 14px rgba(72,53,31,.1); text-align: center; }
+.time-allocation-pie strong { max-width: 92px; font-size: 18px; line-height: 1.2; letter-spacing: -.04em; }
+.time-allocation-pie span { color: var(--muted); font-size: 10px; }
 .time-allocation-list { display: grid; gap: 15px; }
 .time-allocation-row { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 11px; align-items: center; }
 .time-allocation-row__icon { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 13px; font-size: 13px; font-weight: 800; }
@@ -789,6 +823,10 @@ button:focus-visible {
   .focus-card__heading { align-items: start; }
   .level-chip { min-width: 78px; padding: 8px 9px; }
   .growth-focus-stats { grid-template-columns: 1fr; }
+  .growth-period-overview { grid-template-columns: 1fr; }
+  .growth-period-card { padding: 16px 18px; }
+  .activity-heatmap-card { padding: 18px; }
+  .activity-heatmap-scroll { margin-right: -18px; padding-right: 18px; }
   .growth-level-card { grid-template-columns: 72px minmax(0, 1fr); gap: 14px; padding: 18px; }
   .growth-level-card__badge { width: 70px; border-radius: 21px; font-size: 19px; }
   .achievement-wall { padding: 18px; }
@@ -807,6 +845,8 @@ button:focus-visible {
   .achievement-medal--compact .achievement-medal__copy small { display: none; }
   .time-allocation-card { padding: 18px; }
   .time-allocation-card__heading { align-items: start; }
+  .time-allocation-visual { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .time-allocation-pie { width: min(68vw, 210px); }
 }
 
 @media (min-width: 640px) {
