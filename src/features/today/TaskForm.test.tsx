@@ -68,6 +68,26 @@ describe("TaskForm", () => {
     }));
   });
 
+  it("offers clear date shortcuts when editing a temporary task", async () => {
+    const state = createInitialState(new Date(2026, 6, 31, 9));
+    const onSubmit = vi.fn();
+    const user = userEvent.setup();
+    render(<TaskForm
+      categories={state.categories}
+      today="2026-07-31"
+      initialValues={{ title: "整理笔记", kind: "scheduled", categoryId: "study", date: "2026-07-31" }}
+      onCancel={() => {}}
+      onSubmit={onSubmit}
+    />);
+
+    expect(screen.getByLabelText("改到哪一天")).toHaveValue("2026-07-31");
+    await user.click(screen.getByRole("button", { name: "明天" }));
+    expect(screen.getByText(/将从 7月31日周五 改到 8月1日周六/)).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "保存修改" }));
+
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ date: "2026-08-01" }));
+  });
+
   it("explains that reminders require a start time", async () => {
     const state = createInitialState(new Date(2026, 6, 31, 9));
     const onSubmit = vi.fn();

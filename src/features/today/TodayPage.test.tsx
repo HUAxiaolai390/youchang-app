@@ -216,6 +216,24 @@ describe("TodayPage", () => {
     expect(repository.load().scheduledTasks[0].title).toBe("背 30 个英语单词");
   });
 
+  it("moves a pending task to another date from the edit form", async () => {
+    const state = createInitialState(new Date());
+    addTask(state, "study-1", "整理课堂笔记", "study");
+    const today = toDateKey(new Date());
+    const tomorrowDate = new Date();
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const tomorrow = toDateKey(tomorrowDate);
+    const { user, repository } = renderToday(state);
+
+    await user.click(screen.getByRole("button", { name: "编辑：整理课堂笔记" }));
+    expect(screen.getByLabelText("改到哪一天")).toHaveValue(today);
+    await user.click(screen.getByRole("button", { name: "明天" }));
+    await user.click(screen.getByRole("button", { name: "保存修改" }));
+
+    expect(screen.queryByText("整理课堂笔记")).not.toBeInTheDocument();
+    expect(repository.load().scheduledTasks[0]?.scheduledDate).toBe(tomorrow);
+  });
+
   it("confirms before deleting a task", async () => {
     const state = createInitialState(new Date());
     addTask(state, "study-1", "背单词", "study");

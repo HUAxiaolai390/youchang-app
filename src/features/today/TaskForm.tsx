@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { RepeatRuleFields } from "../../components/RepeatRuleFields";
+import { fromDateKey, toDateKey } from "../../domain/date";
 import { maximumEstimatedMinutes, normalizeEstimatedMinutes, normalizePlannedStartTime } from "../../domain/planning";
 import { normalizeFixedRepeatRule } from "../../domain/repeat";
 import { normalizeReminderMinutesBefore, reminderMinuteOptions } from "../../domain/reminders";
@@ -52,6 +53,23 @@ function FormSurface({ children }: { children: ReactNode }) {
   return <dialog ref={dialogRef} className="task-form-panel" aria-labelledby="task-form-title">{children}</dialog>;
 }
 
+function addDays(dateKey: DateKey, days: number): DateKey {
+  const date = fromDateKey(dateKey);
+  date.setDate(date.getDate() + days);
+  return toDateKey(date);
+}
+
+function getNextMonday(dateKey: DateKey): DateKey {
+  const date = fromDateKey(dateKey);
+  const daysUntilMonday = ((8 - date.getDay()) % 7) || 7;
+  return addDays(dateKey, daysUntilMonday);
+}
+
+function formatDateLabel(dateKey: DateKey) {
+  return new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric", weekday: "short" })
+    .format(fromDateKey(dateKey));
+}
+
 export function TaskForm({ categories, today, defaultDate, initialValues, error, onSubmit, onCancel }: TaskFormProps) {
   const [values, setValues] = useState<TaskFormDraft>(() => ({
     title: initialValues?.title ?? "",
@@ -65,6 +83,14 @@ export function TaskForm({ categories, today, defaultDate, initialValues, error,
   }));
   const [formError, setFormError] = useState<string>();
   const isEditing = Boolean(initialValues);
+  const isEditingScheduled = isEditing && values.kind === "scheduled";
+  const originalDate = initialValues?.date;
+  const quickMoveDates = [
+    { label: "今天", date: today },
+    { label: "明天", date: addDays(today, 1) },
+    { label: "后天", date: addDays(today, 2) },
+    { label: "下周一", date: getNextMonday(today) }
+  ].filter((option, index, options) => options.findIndex((item) => item.date === option.date) === index);
   const displayedError = formError ?? error;
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -134,10 +160,33 @@ export function TaskForm({ categories, today, defaultDate, initialValues, error,
             ))}
           </div>
         </fieldset>
-        {values.kind === "scheduled" && <>
+        {values.kind === "scheduled" && (isEditingScheduled ? (
+          <div className="task-form__move-date">
+            <div className="task-form__move-date-heading">
+              <label id="task-move-date-label" className="field-label" htmlFor="task-date">改到哪一天</label>
+              <span>{formatDateLabel(values.date)}</span>
+            </div>
+            <input id="task-date" className="field-control" type="date" value={values.date} onChange={(event) => setValues((current) => ({ ...current, date: event.target.value as DateKey }))} />
+            <div className="task-form__quick-dates" aria-label="快捷改期">
+              {quickMoveDates.map((option) => (
+                <button
+                  key={option.date}
+                  type="button"
+                  aria-pressed={values.date === option.date}
+                  onClick={() => setValues((current) => ({ ...current, date: option.date }))}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <p>{originalDate && originalDate !== values.date
+              ? `保存后，将从 ${formatDateLabel(originalDate)} 改到 ${formatDateLabel(values.date)}。`
+              : "选择新日期后，点击保存修改即可完成改期。"}</p>
+          </div>
+        ) : <>
           <label className="field-label" htmlFor="task-date">执行日期</label>
           <input id="task-date" className="field-control" type="date" value={values.date} onChange={(event) => setValues((current) => ({ ...current, date: event.target.value as DateKey }))} />
-        </>}
+        </>)}
         {values.kind === "fixed" && (
           <RepeatRuleFields
             idPrefix="task"

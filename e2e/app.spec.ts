@@ -321,6 +321,7 @@ test("completes the core task, growth, and backup flow", async ({ page }, testIn
   await page.reload();
   const firstTask = page.getByRole("checkbox", { name: "完成：每日阅读" });
   await expect(firstTask).toBeVisible();
+  await firstTask.locator("xpath=ancestor::li[1]").scrollIntoViewIfNeeded();
   expect(await firstTask.evaluate((element) => {
     const bounds = element.closest("li")?.getBoundingClientRect();
     return Boolean(bounds && bounds.top >= 0 && bounds.bottom <= window.innerHeight);

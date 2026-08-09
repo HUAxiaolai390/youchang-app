@@ -485,6 +485,13 @@ button:focus-visible {
 .choice-group { display: grid; gap: 9px; margin: 0; padding: 0; border: 0; }
 .choice-group > label { display: inline-flex; align-items: center; gap: 6px; margin-right: 15px; }
 .task-form__kind-note { margin: 0; color: var(--muted); font-size: 13px; }
+.task-form__move-date { display: grid; gap: 9px; padding: 13px; border: 1px solid var(--line); border-radius: 15px; background: #f5f1ea; }
+.task-form__move-date-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.task-form__move-date-heading span { color: var(--muted); font-size: 13px; }
+.task-form__quick-dates { display: flex; flex-wrap: wrap; gap: 7px; }
+.task-form__quick-dates button { min-height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); cursor: pointer; }
+.task-form__quick-dates button[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--surface); font-weight: 700; }
+.task-form__move-date > p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
 .task-form__planning { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .task-form__planning label { display: grid; min-width: 0; gap: 7px; font-size: 14px; font-weight: 700; }
 .task-form__planning .task-form__reminder { grid-column: 1 / -1; }
