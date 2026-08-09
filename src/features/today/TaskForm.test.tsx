@@ -51,8 +51,26 @@ describe("TaskForm", () => {
     }));
   });
 
+  it("configures a custom repeat rule for a fixed task", async () => {
+    const state = createInitialState(new Date(2026, 6, 31, 9));
+    const onSubmit = vi.fn();
+    const user = userEvent.setup();
+    render(<TaskForm categories={state.categories} today="2026-07-31" onCancel={() => {}} onSubmit={onSubmit} />);
+
+    await user.type(screen.getByLabelText("任务名称"), "周一周五跑步");
+    await user.click(screen.getByRole("radio", { name: "固定任务" }));
+    await user.selectOptions(screen.getByLabelText("重复方式"), "custom-weekdays");
+    await user.click(screen.getByText("三", { selector: ".repeat-weekdays span" }));
+    await user.click(screen.getByRole("button", { name: "保存任务" }));
+
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+      kind: "fixed",
+      repeatRule: { type: "custom-weekdays", weekdays: [1, 5] }
+    }));
+  });
+
   it.each([
-    { kind: "fixed" as const, title: "晨间拉伸", checkedName: "每日固定" },
+    { kind: "fixed" as const, title: "晨间拉伸", checkedName: "固定任务" },
     { kind: "scheduled" as const, title: "整理书桌", checkedName: "临时任务" }
   ])("locks both plan-mode choices when editing a $kind task", ({ kind, title, checkedName }) => {
     const state = createInitialState(new Date(2026, 6, 31, 9));
@@ -65,7 +83,7 @@ describe("TaskForm", () => {
       onSubmit={() => {}}
     />);
 
-    expect(screen.getByRole("radio", { name: "每日固定" })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: "固定任务" })).toBeDisabled();
     expect(screen.getByRole("radio", { name: "临时任务" })).toBeDisabled();
     expect(screen.getByRole("radio", { name: checkedName })).toBeChecked();
     expect(screen.getByText("编辑时不能更改计划方式。")).toBeVisible();

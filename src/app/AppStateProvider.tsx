@@ -9,6 +9,8 @@ import {
   deleteCategory,
   deleteTask,
   setFixedTaskActive,
+  setFixedTaskPausedUntil,
+  toggleFixedTaskSkipDate,
   toggleFixedRecord,
   toggleFixedTaskForDate,
   toggleScheduledTask,
@@ -44,6 +46,10 @@ const knownErrorMessages = new Set([
   "请输入有效用时",
   "请输入有效开始时间",
   "请输入有效预计用时",
+  "请至少选择一个星期",
+  "每周次数应为 1 到 7 次",
+  "间隔天数应为 2 到 30 天",
+  "暂停日期不能早于今天",
   "这个任务现在不能改期",
   "请选择本周内的日期",
   "备份文件格式无效",
@@ -83,6 +89,10 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
       return toggleFixedTaskForDate(state, action.templateId, action.date, now);
     case "fixed/set-active":
       return setFixedTaskActive(state, action.id, action.active, now);
+    case "fixed/toggle-skip-date":
+      return toggleFixedTaskSkipDate(state, action.id, action.date, now);
+    case "fixed/set-paused-until":
+      return setFixedTaskPausedUntil(state, action.id, action.date, now);
     case "category/add":
       return addCategory(state, { name: action.name, icon: action.icon }, now);
     case "category/delete":

@@ -17,6 +17,13 @@ export interface Category {
   createdAt: string;
 }
 
+export type FixedRepeatRule =
+  | { type: "daily" }
+  | { type: "weekdays" }
+  | { type: "custom-weekdays"; weekdays: number[] }
+  | { type: "weekly-count"; timesPerWeek: number }
+  | { type: "interval"; intervalDays: number };
+
 export interface FixedTaskTemplate {
   id: string;
   title: string;
@@ -27,6 +34,9 @@ export interface FixedTaskTemplate {
   successorId?: string;
   plannedStartTime?: TimeKey;
   estimatedMinutes?: number;
+  repeatRule?: FixedRepeatRule;
+  skippedDates?: DateKey[];
+  pausedUntil?: DateKey;
   order: number;
   createdAt: string;
 }

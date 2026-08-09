@@ -100,6 +100,26 @@ describe("versioned backups", () => {
     }))).toThrow("备份文件格式无效");
   });
 
+  it("round trips fixed repeat rules and rejects malformed repeat settings", () => {
+    const repeated = {
+      ...state,
+      fixedTasks: [{
+        id: "habit", title: "锻炼", categoryId: "exercise", categoryNameSnapshot: "运动",
+        activeFrom: "2026-07-31" as const, repeatRule: { type: "custom-weekdays" as const, weekdays: [1, 3, 5] },
+        skippedDates: ["2026-08-03" as const], pausedUntil: "2026-08-05" as const,
+        order: 0, createdAt: "2026-07-31T01:00:00.000Z"
+      }]
+    };
+    expect(parseBackup(JSON.stringify(repeated)).fixedTasks[0]).toMatchObject({
+      repeatRule: { type: "custom-weekdays", weekdays: [1, 3, 5] },
+      skippedDates: ["2026-08-03"], pausedUntil: "2026-08-05"
+    });
+    expect(() => parseBackup(JSON.stringify({
+      ...repeated,
+      fixedTasks: [{ ...repeated.fixedTasks[0], repeatRule: { type: "weekly-count", timesPerWeek: 9 } }]
+    }))).toThrow("备份文件格式无效");
+  });
+
   it("rejects malformed focus progress", () => {
     expect(() => parseBackup(JSON.stringify({
       ...state,

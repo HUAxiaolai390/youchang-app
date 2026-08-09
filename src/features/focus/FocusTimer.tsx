@@ -52,7 +52,7 @@ export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps
   const stopwatchTargets = useMemo(() => {
     const fixed = state.fixedRecords
       .filter((record) => record.date === today)
-      .map((record) => ({ value: `fixed:${record.id}`, label: `每日固定 · ${record.titleSnapshot}` }));
+      .map((record) => ({ value: `fixed:${record.id}`, label: `固定任务 · ${record.titleSnapshot}` }));
     const scheduled = state.scheduledTasks
       .filter((task) => task.scheduledDate === today && !["rescheduled", "archived"].includes(task.status))
       .map((task) => ({ value: `scheduled:${task.id}`, label: `今日安排 · ${task.title}` }));

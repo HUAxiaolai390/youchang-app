@@ -1,9 +1,11 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { useAppState } from "../../app/AppStateProvider";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { RepeatRuleFields } from "../../components/RepeatRuleFields";
 import { toDateKey } from "../../domain/date";
 import { maximumEstimatedMinutes } from "../../domain/planning";
-import type { AppState, Category, FixedTaskTemplate, TimeKey } from "../../domain/types";
+import { formatFixedRepeatRule, getFixedRepeatRule } from "../../domain/repeat";
+import type { AppState, Category, DateKey, FixedRepeatRule, FixedTaskTemplate, TimeKey } from "../../domain/types";
 import { downloadBackup, parseBackup } from "../../storage/backup";
 
 function backupErrorMessage(error: unknown): string {
@@ -32,12 +34,16 @@ export function SettingsPage() {
   const [fixedCategoryId, setFixedCategoryId] = useState("study");
   const [fixedStartTime, setFixedStartTime] = useState("");
   const [fixedEstimatedMinutes, setFixedEstimatedMinutes] = useState("");
+  const [fixedRepeatRule, setFixedRepeatRule] = useState<FixedRepeatRule>({ type: "daily" });
   const [fixedTaskError, setFixedTaskError] = useState<string>();
   const [editingFixedId, setEditingFixedId] = useState<string>();
   const [editingFixedTitle, setEditingFixedTitle] = useState("");
   const [editingFixedCategoryId, setEditingFixedCategoryId] = useState("study");
   const [editingFixedStartTime, setEditingFixedStartTime] = useState("");
   const [editingFixedEstimatedMinutes, setEditingFixedEstimatedMinutes] = useState("");
+  const [editingFixedRepeatRule, setEditingFixedRepeatRule] = useState<FixedRepeatRule>({ type: "daily" });
+  const [exceptionFixedId, setExceptionFixedId] = useState<string>();
+  const [exceptionDate, setExceptionDate] = useState<DateKey>(() => toDateKey(new Date()));
   const [pendingBackup, setPendingBackup] = useState<AppState>();
   const [backupError, setBackupError] = useState<string>();
   const [categoryToDelete, setCategoryToDelete] = useState<Category>();
@@ -86,12 +92,14 @@ export function SettingsPage() {
         categoryId: fixedCategoryId,
         activeFrom: toDateKey(new Date()),
         plannedStartTime: fixedStartTime ? fixedStartTime as TimeKey : undefined,
-        estimatedMinutes: fixedEstimatedMinutes ? Number(fixedEstimatedMinutes) : undefined
+        estimatedMinutes: fixedEstimatedMinutes ? Number(fixedEstimatedMinutes) : undefined,
+        repeatRule: fixedRepeatRule
       }
     })) {
       setFixedTitle("");
       setFixedStartTime("");
       setFixedEstimatedMinutes("");
+      setFixedRepeatRule({ type: "daily" });
     }
   }
 
@@ -101,6 +109,7 @@ export function SettingsPage() {
     setEditingFixedCategoryId(task.categoryId);
     setEditingFixedStartTime(task.plannedStartTime ?? "");
     setEditingFixedEstimatedMinutes(task.estimatedMinutes?.toString() ?? "");
+    setEditingFixedRepeatRule(getFixedRepeatRule(task));
   }
 
   function saveFixedTask(event: FormEvent<HTMLFormElement>) {
@@ -115,7 +124,8 @@ export function SettingsPage() {
       title: editingFixedTitle,
       categoryId: editingFixedCategoryId,
       plannedStartTime: editingFixedStartTime ? editingFixedStartTime as TimeKey : undefined,
-      estimatedMinutes: editingFixedEstimatedMinutes ? Number(editingFixedEstimatedMinutes) : undefined
+      estimatedMinutes: editingFixedEstimatedMinutes ? Number(editingFixedEstimatedMinutes) : undefined,
+      repeatRule: editingFixedRepeatRule
     } })) {
       setEditingFixedId(undefined);
     }
@@ -143,6 +153,8 @@ export function SettingsPage() {
 
   const customCategories = state.categories.filter((category) => !category.builtIn);
   const managedFixedTasks = state.fixedTasks.filter((task) => !task.successorId);
+  const exceptionTask = managedFixedTasks.find((task) => task.id === exceptionFixedId);
+  const todayKey = toDateKey(new Date());
   const categoryHistory = [
     ...state.scheduledTasks.map((task) => ({ id: task.id, label: "当前任务", title: task.title, categoryId: task.categoryId, originalCategory: task.categoryNameSnapshot })),
     ...state.fixedRecords.map((record) => ({ id: record.id, label: "历史任务", title: record.titleSnapshot, categoryId: record.categoryId, originalCategory: record.categoryNameSnapshot }))
@@ -169,6 +181,7 @@ export function SettingsPage() {
             {state.categories.length === 0 && <option value="">暂无可用分类</option>}
             {state.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
           </select>
+          <RepeatRuleFields idPrefix="fixed" value={fixedRepeatRule} onChange={setFixedRepeatRule} />
           <div className="task-form__planning">
             <label htmlFor="fixed-start-time"><span>开始时间（选填）</span><input id="fixed-start-time" className="field-control" type="time" value={fixedStartTime} onChange={(event) => setFixedStartTime(event.target.value)} /></label>
             <label htmlFor="fixed-estimated-minutes"><span>预计用时（分钟）</span><input id="fixed-estimated-minutes" className="field-control" type="number" min="1" max={maximumEstimatedMinutes} placeholder="例如 30" value={fixedEstimatedMinutes} onChange={(event) => setFixedEstimatedMinutes(event.target.value)} /></label>
@@ -180,14 +193,38 @@ export function SettingsPage() {
           {managedFixedTasks.length === 0 && <li className="settings-muted">还没有固定任务</li>}
           {managedFixedTasks.map((task) => (
             <li key={task.id} className="settings-list__item">
-              <span><strong>{task.title}</strong><small>{categoryName(state.categories, task.categoryId)}{task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}{task.estimatedMinutes ? ` · 预计 ${task.estimatedMinutes} 分钟` : ""} · {task.inactiveFrom ? "已停用" : "进行中"}</small></span>
+              <span><strong>{task.title}</strong><small>{categoryName(state.categories, task.categoryId)} · {formatFixedRepeatRule(task.repeatRule)}{task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}{task.estimatedMinutes ? ` · 预计 ${task.estimatedMinutes} 分钟` : ""}{task.pausedUntil && task.pausedUntil >= todayKey ? ` · 暂停至 ${task.pausedUntil}` : ""}{(task.skippedDates ?? []).some((date) => date >= todayKey) ? ` · 已请假 ${(task.skippedDates ?? []).filter((date) => date >= todayKey).length} 天` : ""} · {task.inactiveFrom ? "已停用" : "进行中"}</small></span>
               <span className="settings-inline-actions">
                 <button type="button" onClick={() => beginEditFixedTask(task)} aria-label={`编辑固定任务：${task.title}`}>编辑</button>
+                {!task.inactiveFrom && <button type="button" onClick={() => { setExceptionFixedId(task.id); setExceptionDate(todayKey); }} aria-label={`请假或暂停：${task.title}`}>请假/暂停</button>}
                 <button type="button" onClick={() => dispatch({ type: "fixed/set-active", id: task.id, active: Boolean(task.inactiveFrom) })} aria-label={`${task.inactiveFrom ? "启用" : "停用"}：${task.title}`}>{task.inactiveFrom ? "启用" : "停用"}</button>
               </span>
             </li>
           ))}
         </ul>
+        {exceptionTask && <section className="settings-form settings-form--edit fixed-exception-panel" aria-label={`为“${exceptionTask.title}”设置请假或暂停`}>
+          <div>
+            <h3>{exceptionTask.title}</h3>
+            <p className="settings-muted">请假当天不会生成任务，也不会算作未完成；临时暂停会在所选日期之后自动恢复。</p>
+          </div>
+          <label className="field-label" htmlFor="fixed-exception-date">选择日期</label>
+          <input id="fixed-exception-date" className="field-control" type="date" min={todayKey} value={exceptionDate} onChange={(event) => setExceptionDate(event.target.value as DateKey)} />
+          <div className="settings-inline-actions">
+            <button className="button" type="button" onClick={() => {
+              dispatch({ type: "fixed/toggle-skip-date", id: exceptionTask.id, date: exceptionDate });
+              setExceptionFixedId(undefined);
+            }}>{(exceptionTask.skippedDates ?? []).includes(exceptionDate) ? "取消这天请假" : "仅请假这一天"}</button>
+            <button className="button button--primary" type="button" onClick={() => {
+              dispatch({ type: "fixed/set-paused-until", id: exceptionTask.id, date: exceptionDate });
+              setExceptionFixedId(undefined);
+            }}>暂停到这一天</button>
+            {exceptionTask.pausedUntil && <button type="button" onClick={() => {
+              dispatch({ type: "fixed/set-paused-until", id: exceptionTask.id });
+              setExceptionFixedId(undefined);
+            }}>取消临时暂停</button>}
+            <button type="button" onClick={() => setExceptionFixedId(undefined)}>关闭</button>
+          </div>
+        </section>}
         {editingFixedId && <form className="settings-form settings-form--edit" onSubmit={saveFixedTask} aria-label="编辑固定任务">
           <label className="field-label" htmlFor="editing-fixed-title">编辑固定任务名称</label>
           <input id="editing-fixed-title" className="field-control" value={editingFixedTitle} onChange={(event) => setEditingFixedTitle(event.target.value)} />
@@ -196,6 +233,7 @@ export function SettingsPage() {
             {state.categories.length === 0 && <option value="">暂无可用分类</option>}
             {state.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
           </select>
+          <RepeatRuleFields idPrefix="editing-fixed" value={editingFixedRepeatRule} onChange={setEditingFixedRepeatRule} />
           <div className="task-form__planning">
             <label htmlFor="editing-fixed-start-time"><span>编辑开始时间（选填）</span><input id="editing-fixed-start-time" className="field-control" type="time" value={editingFixedStartTime} onChange={(event) => setEditingFixedStartTime(event.target.value)} /></label>
             <label htmlFor="editing-fixed-estimated-minutes"><span>编辑预计用时（分钟）</span><input id="editing-fixed-estimated-minutes" className="field-control" type="number" min="1" max={maximumEstimatedMinutes} value={editingFixedEstimatedMinutes} onChange={(event) => setEditingFixedEstimatedMinutes(event.target.value)} /></label>

@@ -18,6 +18,8 @@ export type AppAction =
   | { type: "fixed/toggle"; recordId: string }
   | { type: "fixed/toggle-date"; templateId: string; date: DateKey }
   | { type: "fixed/set-active"; id: string; active: boolean }
+  | { type: "fixed/toggle-skip-date"; id: string; date: DateKey }
+  | { type: "fixed/set-paused-until"; id: string; date?: DateKey }
   | { type: "category/add"; name: string; icon: string }
   | { type: "category/delete"; id: string }
   | { type: "settings/name"; value: string }

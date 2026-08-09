@@ -41,11 +41,38 @@ function isCategory(value: unknown): boolean {
     && typeof value.builtIn === "boolean";
 }
 
+function isFixedRepeatRule(value: unknown): boolean {
+  if (value === undefined) return true;
+  if (!isRecord(value) || !isString(value.type)) return false;
+  if (value.type === "daily" || value.type === "weekdays") return true;
+  if (value.type === "custom-weekdays") {
+    return Array.isArray(value.weekdays)
+      && value.weekdays.length > 0
+      && value.weekdays.every((day) => typeof day === "number" && Number.isInteger(day) && day >= 0 && day <= 6)
+      && new Set(value.weekdays).size === value.weekdays.length;
+  }
+  if (value.type === "weekly-count") {
+    return typeof value.timesPerWeek === "number" && Number.isInteger(value.timesPerWeek)
+      && value.timesPerWeek >= 1 && value.timesPerWeek <= 7;
+  }
+  if (value.type === "interval") {
+    return typeof value.intervalDays === "number" && Number.isInteger(value.intervalDays)
+      && value.intervalDays >= 2 && value.intervalDays <= 30;
+  }
+  return false;
+}
+
 function isFixedTask(value: unknown): boolean {
   return hasStrings(value, ["id", "title", "categoryId", "categoryNameSnapshot", "createdAt"])
     && isDateKey(value.activeFrom)
     && (value.inactiveFrom === undefined || isDateKey(value.inactiveFrom))
     && (value.successorId === undefined || isString(value.successorId))
+    && isFixedRepeatRule(value.repeatRule)
+    && (value.pausedUntil === undefined || isDateKey(value.pausedUntil))
+    && (value.skippedDates === undefined
+      || (Array.isArray(value.skippedDates)
+        && value.skippedDates.every(isDateKey)
+        && new Set(value.skippedDates).size === value.skippedDates.length))
     && isOptionalPlanning(value)
     && typeof value.order === "number";
 }

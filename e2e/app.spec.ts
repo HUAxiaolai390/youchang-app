@@ -267,7 +267,7 @@ test("completes the core task, growth, and backup flow", async ({ page }, testIn
 
   await page.getByRole("button", { name: "添加任务" }).click();
   await page.getByLabel("任务名称").fill("每日阅读");
-  await page.getByRole("radio", { name: "每日固定" }).check();
+  await page.getByRole("radio", { name: "固定任务" }).check();
   await page.getByRole("radio", { name: "学习" }).check();
   await page.getByRole("button", { name: "保存任务" }).click();
   await expect(page.getByRole("checkbox", { name: "完成：每日阅读" })).toBeVisible();

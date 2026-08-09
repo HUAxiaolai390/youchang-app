@@ -169,4 +169,33 @@ describe("SettingsPage", () => {
       vi.useRealTimers();
     }
   });
+
+  it("adds a weekly target and supports one-day leave and temporary pause", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date(2026, 7, 3, 12));
+    const repository = renderSettings();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    try {
+      await user.type(screen.getByLabelText("固定任务名称"), "每周跑步");
+      await user.selectOptions(screen.getByLabelText("重复方式"), "weekly-count");
+      await user.clear(screen.getByLabelText("每周完成次数"));
+      await user.type(screen.getByLabelText("每周完成次数"), "2");
+      await user.click(screen.getByRole("button", { name: "新增固定任务" }));
+
+      expect(repository.load().fixedTasks[0].repeatRule).toEqual({ type: "weekly-count", timesPerWeek: 2 });
+      await user.click(screen.getByRole("button", { name: "请假或暂停：每周跑步" }));
+      await user.click(screen.getByRole("button", { name: "仅请假这一天" }));
+      expect(repository.load().fixedTasks[0].skippedDates).toEqual(["2026-08-03"]);
+      expect(repository.load().fixedRecords).toHaveLength(0);
+
+      await user.click(screen.getByRole("button", { name: "请假或暂停：每周跑步" }));
+      await user.clear(screen.getByLabelText("选择日期"));
+      await user.type(screen.getByLabelText("选择日期"), "2026-08-05");
+      await user.click(screen.getByRole("button", { name: "暂停到这一天" }));
+      expect(repository.load().fixedTasks[0].pausedUntil).toBe("2026-08-05");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

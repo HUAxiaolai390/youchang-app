@@ -23,7 +23,7 @@ function formatFullDate(key: DateKey): string {
 function statusLabel(task: WeekPlanTask): string {
   if (task.status === "completed") return "已完成";
   if (task.status === "backlog") return "待安排";
-  return task.kind === "fixed" ? "每日固定" : "当天任务";
+  return task.kind === "fixed" ? task.repeatLabel ?? "每天" : "当天任务";
 }
 
 function WeekTaskCard({ task, canToggle, onMove, onToggle }: {
@@ -93,7 +93,8 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
           categoryId: values.categoryId,
           activeFrom: today,
           plannedStartTime: values.plannedStartTime,
-          estimatedMinutes: values.estimatedMinutes
+          estimatedMinutes: values.estimatedMinutes,
+          repeatRule: values.repeatRule
         } })
       : dispatch({ type: "scheduled/add", input: {
           title: values.title,

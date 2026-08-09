@@ -1,5 +1,6 @@
 import { fromDateKey, getWeek, toDateKey } from "./date";
 import type { AppState, DateKey, TimeKey } from "./types";
+import { formatFixedRepeatRule, shouldShowFixedTaskOnDate } from "./repeat";
 
 export type WeekPlanTask = {
   id: string;
@@ -13,6 +14,7 @@ export type WeekPlanTask = {
   plannedStartTime?: TimeKey;
   estimatedMinutes?: number;
   actualMinutes?: number;
+  repeatLabel?: string;
 };
 
 export type WeekPlanDay = {
@@ -33,10 +35,6 @@ export function getWeekDates(anchor: Date): DateKey[] {
   });
 }
 
-function isFixedTaskActive(task: AppState["fixedTasks"][number], date: DateKey): boolean {
-  return task.activeFrom <= date && (!task.inactiveFrom || date < task.inactiveFrom);
-}
-
 function compareTasks(left: WeekPlanTask, right: WeekPlanTask): number {
   const leftTime = left.plannedStartTime ?? "99:99";
   const rightTime = right.plannedStartTime ?? "99:99";
@@ -51,12 +49,13 @@ export function getWeekPlan(state: AppState, anchor: Date): WeekPlanDay[] {
     ?? categoryNames.get("other")
     ?? "其他";
 
+  const today = toDateKey(anchor);
   return getWeekDates(anchor).map((date) => {
     const tasks: WeekPlanTask[] = [];
 
     for (const template of state.fixedTasks) {
-      if (!isFixedTaskActive(template, date)) continue;
       const record = state.fixedRecords.find((item) => item.templateId === template.id && item.date === date);
+      if (!record && !shouldShowFixedTaskOnDate(state, template, date, today)) continue;
       tasks.push({
         id: record?.id ?? `${template.id}:${date}`,
         taskId: template.id,
@@ -68,7 +67,8 @@ export function getWeekPlan(state: AppState, anchor: Date): WeekPlanDay[] {
         status: record?.completedAt ? "completed" : "pending",
         plannedStartTime: record?.plannedStartTime ?? template.plannedStartTime,
         estimatedMinutes: record?.estimatedMinutes ?? template.estimatedMinutes,
-        actualMinutes: record?.actualMinutes
+        actualMinutes: record?.actualMinutes,
+        repeatLabel: formatFixedRepeatRule(template.repeatRule)
       });
     }
 

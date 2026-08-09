@@ -7,6 +7,7 @@ import { TimeEntryDialog } from "../../components/TimeEntryDialog";
 import { achievementTierLabels, getFeaturedAchievements } from "../../domain/achievements";
 import { toDateKey } from "../../domain/date";
 import { getCatMessage, getTodayProgress } from "../../domain/stats";
+import { formatFixedRepeatRule } from "../../domain/repeat";
 import { formatTrackedTime, getTimeAllocation } from "../../domain/time";
 import type { DateKey } from "../../domain/types";
 import { TaskForm, type TaskFormValues } from "./TaskForm";
@@ -48,13 +49,18 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
         return record.date === today
           && template.activeFrom <= today
           && (!template.inactiveFrom || today < template.inactiveFrom);
-      }).map((record): TodayTask => ({
-        id: record.id, taskId: record.templateId, kind: "fixed", title: record.titleSnapshot, categoryId: record.categoryId,
-        categoryName: liveCategoryName(record.categoryId), completed: Boolean(record.completedAt), editable: true,
-        plannedStartTime: record.plannedStartTime ?? templatesById.get(record.templateId)?.plannedStartTime,
-        estimatedMinutes: record.estimatedMinutes ?? templatesById.get(record.templateId)?.estimatedMinutes,
-        actualMinutes: record.actualMinutes
-      })),
+      }).map((record): TodayTask => {
+        const template = templatesById.get(record.templateId)!;
+        return {
+          id: record.id, taskId: record.templateId, kind: "fixed", title: record.titleSnapshot, categoryId: record.categoryId,
+          categoryName: liveCategoryName(record.categoryId), completed: Boolean(record.completedAt), editable: true,
+          plannedStartTime: record.plannedStartTime ?? template.plannedStartTime,
+          estimatedMinutes: record.estimatedMinutes ?? template.estimatedMinutes,
+          actualMinutes: record.actualMinutes,
+          repeatRule: template.repeatRule,
+          repeatLabel: formatFixedRepeatRule(template.repeatRule)
+        };
+      }),
       allScheduledTasks: state.scheduledTasks.filter((task) => (
         task.scheduledDate === today && !["rescheduled", "archived"].includes(task.status)
       )).map((task): TodayTask => ({
@@ -87,7 +93,8 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
       if (editing.kind === "fixed") {
         saved = dispatch({ type: "fixed/update", id: editing.taskId, input: {
           title: values.title, categoryId: values.categoryId,
-          plannedStartTime: values.plannedStartTime, estimatedMinutes: values.estimatedMinutes
+          plannedStartTime: values.plannedStartTime, estimatedMinutes: values.estimatedMinutes,
+          repeatRule: values.repeatRule
         } });
       } else {
         saved = dispatch({ type: "scheduled/update", id: editing.taskId, input: {
@@ -98,7 +105,8 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
     } else if (values.kind === "fixed") {
       saved = dispatch({ type: "fixed/add", input: {
         title: values.title, categoryId: values.categoryId, activeFrom: today,
-        plannedStartTime: values.plannedStartTime, estimatedMinutes: values.estimatedMinutes
+        plannedStartTime: values.plannedStartTime, estimatedMinutes: values.estimatedMinutes,
+        repeatRule: values.repeatRule
       } });
     } else {
       saved = dispatch({ type: "scheduled/add", input: {
@@ -142,7 +150,8 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
     categoryId: editing.categoryId,
     date: editing.date,
     plannedStartTime: editing.plannedStartTime,
-    estimatedMinutes: editing.estimatedMinutes
+    estimatedMinutes: editing.estimatedMinutes,
+    repeatRule: editing.repeatRule
   } : undefined;
 
   const focusVisible = focusOpen || focusRunning;
@@ -256,7 +265,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
         <button type="button" aria-pressed={filter === "all"} onClick={() => setFilter("all")}>全部</button>
         {state.categories.map((category) => <button key={category.id} type="button" aria-label={`只看${category.name}`} aria-pressed={filter === category.id} onClick={() => setFilter(category.id)}>{category.name}</button>)}
       </section>
-      <TaskList title="每日固定" tasks={fixedTasks} onToggle={toggle} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
+      <TaskList title="固定任务" tasks={fixedTasks} onToggle={toggle} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
       <TaskList title="今日安排" tasks={scheduledTasks} onToggle={toggle} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
       <Backlog now={now} />
       <button type="button" className="add-task-button" aria-label="添加任务" onClick={openNewTask}>＋<span>添加任务</span></button>

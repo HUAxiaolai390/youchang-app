@@ -6,6 +6,7 @@ import type {
   RescheduleRecord,
   ScheduledTask
 } from "./types";
+import { shouldShowFixedTaskOnDate } from "./repeat";
 
 function eachDateAfter(lastOpenedDate: DateKey, today: DateKey): DateKey[] {
   const date = fromDateKey(lastOpenedDate);
@@ -18,13 +19,6 @@ function eachDateAfter(lastOpenedDate: DateKey, today: DateKey): DateKey[] {
   }
 
   return dates;
-}
-
-function isActiveOnDate(
-  task: AppState["fixedTasks"][number],
-  date: DateKey
-): boolean {
-  return task.activeFrom <= date && (!task.inactiveFrom || date < task.inactiveFrom);
 }
 
 function createFixedRecord(
@@ -50,7 +44,7 @@ export function rollover(state: AppState, now: Date): AppState {
   for (const date of eachDateAfter(state.settings.lastOpenedDate, today)) {
     for (const task of state.fixedTasks) {
       const hasRecord = fixedRecords.some((record) => record.templateId === task.id && record.date === date);
-      if (isActiveOnDate(task, date) && !hasRecord) {
+      if (!hasRecord && shouldShowFixedTaskOnDate({ ...state, fixedRecords }, task, date, today)) {
         fixedRecords.push(createFixedRecord(task, date));
       }
     }

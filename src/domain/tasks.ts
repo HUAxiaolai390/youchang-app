@@ -8,7 +8,8 @@ import type {
 } from "./types";
 import { isWithinWeek, toDateKey } from "./date";
 import { normalizeEstimatedMinutes, normalizePlannedStartTime } from "./planning";
-import type { TimeKey } from "./types";
+import { getFixedRepeatRule, isFixedTaskDueOnDate, normalizeFixedRepeatRule } from "./repeat";
+import type { FixedRepeatRule, TimeKey } from "./types";
 
 export interface AddCategoryInput {
   name: string;
@@ -31,6 +32,7 @@ export interface AddFixedTaskInput {
   activeFrom: DateKey;
   plannedStartTime?: TimeKey;
   estimatedMinutes?: number;
+  repeatRule?: FixedRepeatRule;
 }
 
 export interface UpdateFixedTaskInput {
@@ -38,6 +40,7 @@ export interface UpdateFixedTaskInput {
   categoryId: string;
   plannedStartTime?: TimeKey;
   estimatedMinutes?: number;
+  repeatRule?: FixedRepeatRule;
 }
 
 export type TaskKind = "fixed" | "scheduled";
@@ -112,6 +115,20 @@ export function deleteCategory(state: AppState, categoryId: string): AppState {
   };
 }
 
+function createFixedRecord(task: FixedTaskTemplate, date: DateKey, completedAt?: string): FixedTaskRecord {
+  return {
+    id: crypto.randomUUID(),
+    templateId: task.id,
+    date,
+    titleSnapshot: task.title,
+    categoryId: task.categoryId,
+    categoryNameSnapshot: task.categoryNameSnapshot,
+    completedAt,
+    plannedStartTime: task.plannedStartTime,
+    estimatedMinutes: task.estimatedMinutes
+  };
+}
+
 export function addFixedTask(state: AppState, input: AddFixedTaskInput, now: Date): AppState {
   const title = requireTitle(input.title);
   const category = requireCategory(state, input.categoryId);
@@ -122,24 +139,20 @@ export function addFixedTask(state: AppState, input: AddFixedTaskInput, now: Dat
     activeFrom: input.activeFrom,
     plannedStartTime: normalizePlannedStartTime(input.plannedStartTime),
     estimatedMinutes: normalizeEstimatedMinutes(input.estimatedMinutes),
+    repeatRule: normalizeFixedRepeatRule(input.repeatRule),
     order: state.fixedTasks.length,
     createdAt: now.toISOString()
   };
 
-  const record: FixedTaskRecord = {
-    id: crypto.randomUUID(),
-    templateId: task.id,
-    date: toDateKey(now),
-    titleSnapshot: task.title,
-    ...categorySnapshot(category),
-    plannedStartTime: task.plannedStartTime,
-    estimatedMinutes: task.estimatedMinutes
-  };
+  const today = toDateKey(now);
+  const nextState = { ...state, fixedTasks: [...state.fixedTasks, task] };
 
   return {
     ...state,
     fixedTasks: [...state.fixedTasks, task],
-    fixedRecords: [...state.fixedRecords, record]
+    fixedRecords: isFixedTaskDueOnDate(nextState, task, today)
+      ? [...state.fixedRecords, createFixedRecord(task, today)]
+      : state.fixedRecords
   };
 }
 
@@ -155,15 +168,24 @@ export function updateFixedTask(
   const estimatedMinutes = normalizeEstimatedMinutes(input.estimatedMinutes);
   const task = state.fixedTasks.find((item) => item.id === id);
   if (!task) return state;
+  const repeatRule = normalizeFixedRepeatRule(input.repeatRule ?? getFixedRepeatRule(task));
+  const updatedTask = { ...task, title, ...categorySnapshot(category), plannedStartTime, estimatedMinutes, repeatRule };
+  const fixedTasks = state.fixedTasks.map((item) => item.id === id ? updatedTask : item);
+  let fixedRecords = state.fixedRecords.map((record) => record.templateId === id && record.date === today
+    ? { ...record, titleSnapshot: title, ...categorySnapshot(category), plannedStartTime, estimatedMinutes }
+    : record);
+  const todayRecord = fixedRecords.find((record) => record.templateId === id && record.date === today);
+  const previewState = { ...state, fixedTasks, fixedRecords };
+  const dueToday = isFixedTaskDueOnDate(previewState, updatedTask, today);
+  if (dueToday && !todayRecord) fixedRecords = [...fixedRecords, createFixedRecord(updatedTask, today)];
+  if (!dueToday && todayRecord && !todayRecord.completedAt) {
+    fixedRecords = fixedRecords.filter((record) => record.id !== todayRecord.id);
+  }
 
   return {
     ...state,
-    fixedTasks: state.fixedTasks.map((item) => item.id === id
-      ? { ...item, title, ...categorySnapshot(category), plannedStartTime, estimatedMinutes }
-      : item),
-    fixedRecords: state.fixedRecords.map((record) => record.templateId === id && record.date === today
-      ? { ...record, titleSnapshot: title, ...categorySnapshot(category), plannedStartTime, estimatedMinutes }
-      : record)
+    fixedTasks,
+    fixedRecords
   };
 }
 
@@ -200,27 +222,70 @@ export function setFixedTaskActive(
     activeFrom: today,
     inactiveFrom: undefined,
     successorId: undefined,
+    pausedUntil: undefined,
+    skippedDates: [],
     order: state.fixedTasks.length,
     createdAt: now.toISOString()
   };
-  const record: FixedTaskRecord = {
-    id: crypto.randomUUID(),
-    templateId: successor.id,
-    date: today,
-    titleSnapshot: successor.title,
-    categoryId: successor.categoryId,
-    categoryNameSnapshot: successor.categoryNameSnapshot,
-    plannedStartTime: successor.plannedStartTime,
-    estimatedMinutes: successor.estimatedMinutes
-  };
+  const fixedTasks = state.fixedTasks.map((item) => item.id === id
+    ? { ...item, successorId }
+    : item).concat(successor);
+  const previewState = { ...state, fixedTasks };
 
   return {
     ...state,
-    fixedTasks: state.fixedTasks.map((item) => item.id === id
-      ? { ...item, successorId }
-      : item).concat(successor),
-    fixedRecords: [...state.fixedRecords, record]
+    fixedTasks,
+    fixedRecords: isFixedTaskDueOnDate(previewState, successor, today)
+      ? [...state.fixedRecords, createFixedRecord(successor, today)]
+      : state.fixedRecords
   };
+}
+
+export function toggleFixedTaskSkipDate(state: AppState, id: string, date: DateKey, now: Date): AppState {
+  const task = state.fixedTasks.find((item) => item.id === id);
+  if (!task) return state;
+  const skippedDates = task.skippedDates ?? [];
+  const isSkipped = skippedDates.includes(date);
+  const nextTask = {
+    ...task,
+    skippedDates: isSkipped ? skippedDates.filter((item) => item !== date) : [...skippedDates, date].sort()
+  };
+  const fixedTasks = state.fixedTasks.map((item) => item.id === id ? nextTask : item);
+  let fixedRecords = isSkipped
+    ? state.fixedRecords
+    : state.fixedRecords.filter((record) => record.templateId !== id || record.date !== date || Boolean(record.completedAt));
+
+  const today = toDateKey(now);
+  const existing = fixedRecords.some((record) => record.templateId === id && record.date === date);
+  if (isSkipped && date === today && !existing && isFixedTaskDueOnDate({ ...state, fixedTasks, fixedRecords }, nextTask, date)) {
+    fixedRecords = [...fixedRecords, createFixedRecord(nextTask, date)];
+  }
+
+  return { ...state, fixedTasks, fixedRecords };
+}
+
+export function setFixedTaskPausedUntil(state: AppState, id: string, pausedUntil: DateKey | undefined, now: Date): AppState {
+  const task = state.fixedTasks.find((item) => item.id === id);
+  if (!task) return state;
+  const today = toDateKey(now);
+  if (pausedUntil && pausedUntil < today) throw new Error("暂停日期不能早于今天");
+
+  const nextTask = { ...task, pausedUntil };
+  const fixedTasks = state.fixedTasks.map((item) => item.id === id ? nextTask : item);
+  let fixedRecords = pausedUntil
+    ? state.fixedRecords.filter((record) => (
+        record.templateId !== id
+        || record.date < today
+        || record.date > pausedUntil
+        || Boolean(record.completedAt)
+      ))
+    : state.fixedRecords;
+  const existing = fixedRecords.some((record) => record.templateId === id && record.date === today);
+  if (!pausedUntil && !existing && isFixedTaskDueOnDate({ ...state, fixedTasks, fixedRecords }, nextTask, today)) {
+    fixedRecords = [...fixedRecords, createFixedRecord(nextTask, today)];
+  }
+
+  return { ...state, fixedTasks, fixedRecords };
 }
 
 export function addScheduledTask(state: AppState, input: AddScheduledTaskInput, now: Date): AppState {
@@ -288,23 +353,13 @@ export function toggleFixedTaskForDate(
   if (existing) return toggleFixedRecord(state, existing.id, now);
 
   const template = state.fixedTasks.find((task) => task.id === templateId);
-  if (!template || template.activeFrom > date || (template.inactiveFrom && date >= template.inactiveFrom)) {
+  if (!template || !isFixedTaskDueOnDate(state, template, date)) {
     return state;
   }
 
   return {
     ...state,
-    fixedRecords: [...state.fixedRecords, {
-      id: crypto.randomUUID(),
-      templateId: template.id,
-      date,
-      titleSnapshot: template.title,
-      categoryId: template.categoryId,
-      categoryNameSnapshot: template.categoryNameSnapshot,
-      completedAt: now.toISOString(),
-      plannedStartTime: template.plannedStartTime,
-      estimatedMinutes: template.estimatedMinutes
-    }]
+    fixedRecords: [...state.fixedRecords, createFixedRecord(template, date, now.toISOString())]
   };
 }
 

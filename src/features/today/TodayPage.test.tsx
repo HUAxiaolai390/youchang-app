@@ -136,7 +136,7 @@ describe("TodayPage", () => {
 
     await user.click(screen.getByRole("button", { name: "添加任务" }));
     await user.type(screen.getByLabelText("任务名称"), "晨间拉伸");
-    await user.click(screen.getByRole("radio", { name: "每日固定" }));
+    await user.click(screen.getByRole("radio", { name: "固定任务" }));
     await user.click(screen.getByRole("button", { name: "保存任务" }));
 
     expect(screen.getByText("晨间拉伸")).toBeInTheDocument();

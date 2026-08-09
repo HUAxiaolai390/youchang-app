@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { RepeatRuleFields } from "../../components/RepeatRuleFields";
 import { maximumEstimatedMinutes, normalizeEstimatedMinutes, normalizePlannedStartTime } from "../../domain/planning";
-import type { Category, DateKey, TimeKey } from "../../domain/types";
+import { normalizeFixedRepeatRule } from "../../domain/repeat";
+import type { Category, DateKey, FixedRepeatRule, TimeKey } from "../../domain/types";
 
 export type TaskFormValues = {
   title: string;
@@ -9,11 +11,13 @@ export type TaskFormValues = {
   date: DateKey;
   plannedStartTime?: TimeKey;
   estimatedMinutes?: number;
+  repeatRule?: FixedRepeatRule;
 };
 
 type TaskFormDraft = Omit<TaskFormValues, "plannedStartTime" | "estimatedMinutes"> & {
   plannedStartTime: string;
   estimatedMinutes: string;
+  repeatRule: FixedRepeatRule;
 };
 
 type TaskFormProps = {
@@ -52,7 +56,8 @@ export function TaskForm({ categories, today, defaultDate, initialValues, error,
     categoryId: initialValues?.categoryId ?? "study",
     date: initialValues?.date ?? defaultDate ?? today,
     plannedStartTime: initialValues?.plannedStartTime ?? "",
-    estimatedMinutes: initialValues?.estimatedMinutes?.toString() ?? ""
+    estimatedMinutes: initialValues?.estimatedMinutes?.toString() ?? "",
+    repeatRule: initialValues?.repeatRule ?? { type: "daily" }
   }));
   const [formError, setFormError] = useState<string>();
   const isEditing = Boolean(initialValues);
@@ -76,7 +81,8 @@ export function TaskForm({ categories, today, defaultDate, initialValues, error,
         categoryId: values.categoryId,
         date: values.date,
         plannedStartTime: normalizePlannedStartTime(values.plannedStartTime),
-        estimatedMinutes: normalizeEstimatedMinutes(estimatedValue === "" ? undefined : Number(estimatedValue))
+        estimatedMinutes: normalizeEstimatedMinutes(estimatedValue === "" ? undefined : Number(estimatedValue)),
+        repeatRule: values.kind === "fixed" ? normalizeFixedRepeatRule(values.repeatRule) : undefined
       });
     } catch (caught) {
       setFormError(caught instanceof Error ? caught.message : "请检查计划时间");
@@ -101,7 +107,7 @@ export function TaskForm({ categories, today, defaultDate, initialValues, error,
         />
         <fieldset className="choice-group">
           <legend>计划方式</legend>
-          <label><input type="radio" name="task-kind" checked={values.kind === "fixed"} disabled={isEditing} onChange={() => setValues((current) => ({ ...current, kind: "fixed" }))} /> 每日固定</label>
+          <label><input type="radio" name="task-kind" checked={values.kind === "fixed"} disabled={isEditing} onChange={() => setValues((current) => ({ ...current, kind: "fixed" }))} /> 固定任务</label>
           <label><input type="radio" name="task-kind" checked={values.kind === "scheduled"} disabled={isEditing} onChange={() => setValues((current) => ({ ...current, kind: "scheduled" }))} /> 临时任务</label>
           {isEditing && <p className="task-form__kind-note">编辑时不能更改计划方式。</p>}
         </fieldset>
@@ -120,6 +126,13 @@ export function TaskForm({ categories, today, defaultDate, initialValues, error,
           <label className="field-label" htmlFor="task-date">执行日期</label>
           <input id="task-date" className="field-control" type="date" value={values.date} onChange={(event) => setValues((current) => ({ ...current, date: event.target.value as DateKey }))} />
         </>}
+        {values.kind === "fixed" && (
+          <RepeatRuleFields
+            idPrefix="task"
+            value={values.repeatRule}
+            onChange={(repeatRule) => setValues((current) => ({ ...current, repeatRule }))}
+          />
+        )}
         <div className="task-form__planning">
           <label htmlFor="task-start-time">
             <span>开始时间（选填）</span>

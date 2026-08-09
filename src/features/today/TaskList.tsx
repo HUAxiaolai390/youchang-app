@@ -1,5 +1,5 @@
 import { formatPlanComparison } from "../../domain/planning";
-import type { TimeKey } from "../../domain/types";
+import type { FixedRepeatRule, TimeKey } from "../../domain/types";
 
 export type TodayTask = {
   id: string;
@@ -13,6 +13,8 @@ export type TodayTask = {
   plannedStartTime?: TimeKey;
   estimatedMinutes?: number;
   actualMinutes?: number;
+  repeatRule?: FixedRepeatRule;
+  repeatLabel?: string;
 };
 
 type TaskListProps = {
@@ -40,6 +42,7 @@ export function TaskList({ title, tasks, onToggle, onEdit, onDelete, onTime }: T
                 <p>{task.title}</p>
                 <span>
                   {task.categoryName}
+                  {task.repeatLabel ? ` · ${task.repeatLabel}` : ""}
                   {task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}
                   {` · ${formatPlanComparison(task.estimatedMinutes, task.actualMinutes)}`}
                 </span>
