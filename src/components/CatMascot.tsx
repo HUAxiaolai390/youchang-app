@@ -138,7 +138,6 @@ export function CatMascot({ baseState, celebrationKey, customization }: CatMasco
 
   const state: MascotState = temporaryState ?? (selectedIdleVariant ? "idle" : baseState);
   const idleVariant = state === "idle" ? (selectedIdleVariant ?? defaultIdleVariant) : null;
-  const outfitPose = state === "idle" ? (idleVariant ?? defaultIdleVariant) : state;
   const extension = prefersReducedMotion ? "png" : "gif";
   const desiredSource = state === "idle" && selectedIdleVariant
     ? `/mascot/idle/${selectedIdleVariant}.${extension}`
@@ -155,7 +154,6 @@ export function CatMascot({ baseState, celebrationKey, customization }: CatMasco
       data-mascot-state={state}
       data-mascot-idle-variant={idleVariant ?? undefined}
       data-cat-outfit={customization?.outfit}
-      data-cat-outfit-pose={customization?.outfit ? outfitPose : undefined}
       data-cat-decor={customization?.decor}
       data-cat-special-action={customization?.specialAction}
       data-cat-room={customization?.room}

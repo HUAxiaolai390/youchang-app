@@ -386,36 +386,8 @@ button:focus-visible {
 .cat-mascot__decor--cushion { bottom: 2%; left: 50%; width: 86px; height: 25px; border: 2px solid #9a693f; border-radius: 50%; background: #d8ad7b; box-shadow: inset 0 -5px rgba(135,87,48,.12); transform: translateX(-50%); }
 .cat-mascot__decor--moon-lamp { right: -5%; bottom: 8%; width: 28px; height: 39px; border-radius: 50% 50% 42% 42%; background: #f2c46f; box-shadow: 0 0 15px rgba(244,190,87,.58); }
 .cat-mascot__decor--moon-lamp::after { position: absolute; right: 5px; bottom: -7px; width: 19px; height: 8px; border-radius: 50%; background: #7c654e; content: ""; }
-.cat-mascot {
-  --scarf-top: 57%;
-  --scarf-left: 50%;
-  --scarf-width: 42px;
-  --scarf-height: 9px;
-  --scarf-rotate: -3deg;
-  --scarf-border: 2px;
-  --scarf-tail-width: 9px;
-  --scarf-tail-height: 20px;
-  --scarf-tail-rotate: -14deg;
-}
-.cat-mascot[data-cat-outfit-pose="03"] { --scarf-top: 81%; --scarf-left: 48%; --scarf-width: 40px; --scarf-rotate: 1deg; }
-.cat-mascot[data-cat-outfit-pose="04"] { --scarf-top: 59%; --scarf-left: 48%; --scarf-width: 38px; --scarf-rotate: 2deg; }
-.cat-mascot[data-cat-outfit-pose="05"] { --scarf-top: 62%; --scarf-left: 46%; --scarf-width: 29px; --scarf-height: 7px; --scarf-rotate: 6deg; --scarf-tail-width: 7px; --scarf-tail-height: 15px; --scarf-tail-rotate: -5deg; }
-.cat-mascot[data-cat-outfit-pose="06"] { --scarf-top: 72%; --scarf-left: 38%; --scarf-width: 28px; --scarf-height: 7px; --scarf-rotate: -12deg; --scarf-tail-width: 7px; --scarf-tail-height: 15px; --scarf-tail-rotate: -18deg; }
-.cat-mascot[data-cat-outfit-pose="08"] { --scarf-top: 47%; --scarf-left: 50%; --scarf-width: 11px; --scarf-height: 3px; --scarf-border: 1px; --scarf-rotate: 0deg; --scarf-tail-width: 3px; --scarf-tail-height: 6px; --scarf-tail-rotate: -8deg; }
-.cat-mascot[data-cat-outfit-pose="10"] { --scarf-top: 49%; --scarf-left: 53%; --scarf-width: 28px; --scarf-height: 7px; --scarf-rotate: 35deg; --scarf-tail-width: 7px; --scarf-tail-height: 15px; --scarf-tail-rotate: -8deg; }
-.cat-mascot[data-cat-outfit-pose="12"] { --scarf-top: 62%; --scarf-left: 52%; --scarf-width: 38px; --scarf-rotate: 1deg; }
-.cat-mascot[data-cat-outfit-pose="13"] { --scarf-top: 73%; --scarf-left: 50%; --scarf-width: 36px; --scarf-rotate: 3deg; --scarf-tail-height: 18px; }
-.cat-mascot[data-cat-outfit-pose="14"] { --scarf-top: 64%; --scarf-left: 51%; --scarf-width: 36px; --scarf-rotate: -1deg; --scarf-tail-height: 18px; }
-.cat-mascot[data-cat-outfit-pose="15"] { --scarf-top: 61%; --scarf-left: 48%; --scarf-width: 38px; --scarf-rotate: 2deg; }
-.cat-mascot[data-cat-outfit-pose="16"] { --scarf-top: 61%; --scarf-left: 49%; --scarf-width: 38px; --scarf-rotate: 0deg; }
-.cat-mascot[data-cat-outfit-pose="17"] { --scarf-top: 57%; --scarf-left: 50%; --scarf-width: 40px; --scarf-rotate: 1deg; }
-.cat-mascot[data-cat-outfit-pose="18"] { --scarf-top: 61%; --scarf-left: 50%; --scarf-width: 36px; --scarf-rotate: 1deg; --scarf-tail-height: 18px; }
-.cat-mascot[data-cat-outfit-pose="20"] { --scarf-top: 59%; --scarf-left: 52%; --scarf-width: 36px; --scarf-rotate: 0deg; --scarf-tail-height: 18px; }
-.cat-mascot__outfit--scarf { top: var(--scarf-top); left: var(--scarf-left); width: var(--scarf-width); height: var(--scarf-height); border: var(--scarf-border) solid #4f638f; border-radius: 50%; background: #7589bd; transform: translateX(-50%) rotate(var(--scarf-rotate)); transform-origin: center; transition: top 120ms ease, left 120ms ease, width 120ms ease, transform 120ms ease; }
-.cat-mascot__outfit--scarf::after { position: absolute; top: calc(var(--scarf-height) - 5px); right: 3px; width: var(--scarf-tail-width); height: var(--scarf-tail-height); border-radius: 3px 3px 8px 8px; background: #667aaa; content: ""; transform: rotate(var(--scarf-tail-rotate)); transform-origin: top; }
-.cat-mascot[data-cat-outfit-pose="08"] .cat-mascot__outfit--scarf,
-.cat-mascot[data-cat-outfit-pose="08"] .cat-mascot__outfit--scarf::after { box-shadow: -64px 0 #7589bd, 64px 0 #7589bd; }
-.cat-mascot:is([data-cat-outfit-pose="02"], [data-cat-outfit-pose="09"], [data-cat-outfit-pose="11"], [data-cat-outfit-pose="sleep"], [data-cat-outfit-pose="celebrate"]) .cat-mascot__outfit--scarf { opacity: 0; }
+.cat-mascot__outfit--scarf { top: 49%; left: 50%; width: 55px; height: 12px; border: 2px solid #4f638f; border-radius: 50%; background: #7589bd; transform: translateX(-50%) rotate(-3deg); }
+.cat-mascot__outfit--scarf::after { position: absolute; top: 7px; right: 3px; width: 13px; height: 29px; border-radius: 3px 3px 8px 8px; background: #667aaa; content: ""; transform: rotate(-14deg); transform-origin: top; }
 .cat-mascot__outfit--star-hat { top: 0; left: 50%; width: 50px; height: 37px; clip-path: polygon(50% 0, 100% 100%, 0 100%); background: #6478ad; color: #f8cf75; filter: drop-shadow(0 3px 2px rgba(61,51,44,.18)); transform: translateX(-50%) rotate(-4deg); }
 .cat-mascot__outfit--star-hat::after { position: absolute; top: 18px; left: 19px; font-size: 13px; line-height: 1; content: "★"; }
 .cat-mascot__outfit--crown { top: -2%; left: 50%; width: 55px; height: 34px; clip-path: polygon(0 30%, 24% 65%, 47% 12%, 70% 65%, 100% 25%, 88% 100%, 10% 100%); background: linear-gradient(#f7d77d, #c58a2d); filter: drop-shadow(0 3px 2px rgba(88,59,22,.22)); transform: translateX(-50%) rotate(-2deg); }
