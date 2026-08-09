@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useAppState } from "../../app/AppStateProvider";
 import { CatMascot } from "../../components/CatMascot";
 import { AchievementMedal } from "../../components/AchievementMedal";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { TimeEntryDialog } from "../../components/TimeEntryDialog";
 import { achievementTierLabels, getFeaturedAchievements } from "../../domain/achievements";
-import { calculateCatGrowthProgress, catLevelRewards, getCatCustomization, getCatLevel } from "../../domain/cat-growth";
 import { toDateKey } from "../../domain/date";
 import { getCatMessage, getTodayProgress } from "../../domain/stats";
 import { formatFixedRepeatRule } from "../../domain/repeat";
@@ -34,26 +33,10 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
   const [celebrationKey, setCelebrationKey] = useState(0);
   const [focusOpen, setFocusOpen] = useState(false);
   const [focusRunning, setFocusRunning] = useState(false);
-  const [catUnlockLevel, setCatUnlockLevel] = useState<number>();
   const focusDrawerRef = useRef<HTMLElement>(null);
   const progress = getTodayProgress(state, now);
   const todayTime = getTimeAllocation(state, today, today);
   const featuredAchievements = getFeaturedAchievements(state, now);
-  const catGrowth = calculateCatGrowthProgress(state);
-  const catCustomization = getCatCustomization(state);
-  const catLevel = getCatLevel(catGrowth.experience);
-  const previousCatLevel = useRef(catLevel);
-
-  useEffect(() => {
-    if (catLevel <= previousCatLevel.current) {
-      previousCatLevel.current = catLevel;
-      return;
-    }
-    previousCatLevel.current = catLevel;
-    setCatUnlockLevel(catLevel);
-    const timer = window.setTimeout(() => setCatUnlockLevel(undefined), 5000);
-    return () => window.clearTimeout(timer);
-  }, [catLevel]);
 
   const { allFixedTasks, allScheduledTasks } = useMemo(() => {
     const templatesById = new Map(state.fixedTasks.map((task) => [task.id, task]));
@@ -193,7 +176,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
 
   return (
     <div className={`today-page${focusVisible ? " today-page--focus-open" : ""}`}>
-      <header className={`today-hero surface-card${catCustomization.room ? ` today-hero--${catCustomization.room}` : ""}`} aria-label="今日概览">
+      <header className="today-hero surface-card" aria-label="今日概览">
         <div className="today-hero__copy">
           <div className="today-hero__topline">
             <p>{formatToday(now)}</p>
@@ -202,10 +185,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
           <h1>早上好，{state.settings.displayName || "朋友"}</h1>
           <p className="today-hero__cat-message">{getCatMessage(progress)}</p>
         </div>
-        <div className="today-hero__mascot">
-          <CatMascot baseState={progress.total === 0 ? "sleep" : "idle"} celebrationKey={celebrationKey} customization={catCustomization} />
-          <span className="today-hero__cat-level">小猫 Lv.{catLevel}</span>
-        </div>
+        <CatMascot baseState={progress.total === 0 ? "sleep" : "idle"} celebrationKey={celebrationKey} />
         <section className="today-hero__progress" aria-label="今日完成进度">
           <div className="today-hero__metric">
             <span>今日完成</span>
@@ -240,10 +220,6 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
               : null}
         </section>
       </header>
-      {catUnlockLevel && <div className="cat-level-unlock" role="status">
-        <span aria-hidden="true">✦</span>
-        <div><strong>小猫升到 Lv.{catUnlockLevel}</strong><small>解锁：{catLevelRewards.find((reward) => reward.level === catUnlockLevel)?.name}</small></div>
-      </div>}
       <section className="surface-card today-achievements" aria-labelledby="today-achievements-title">
         <div className="today-achievements__heading">
           <span>MY MEDALS</span>

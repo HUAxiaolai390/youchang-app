@@ -20,7 +20,6 @@ import {
 import { moveArchivedTaskToCurrentWeek, rescheduleTask, rollover } from "../domain/rollover";
 import type { AppState } from "../domain/types";
 import { completeFocusSession, configureFocus } from "../domain/focus";
-import { equipCatReward, syncCatGrowth } from "../domain/cat-growth";
 import {
   addFixedActualMinutes,
   addScheduledActualMinutes,
@@ -133,8 +132,6 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
         date: action.date,
         minutes: action.minutes
       }, now);
-    case "cat/equip":
-      return equipCatReward(state, action.item);
     case "backup/import":
       return rollover(action.state, now);
     case "system/rollover":
@@ -170,10 +167,9 @@ export function AppStateProvider({ repository, children }: { repository: AppRepo
 
     try {
       const clearsRepository = action.type === "data/clear";
-      const reducedState = clearsRepository
+      const nextState = clearsRepository
         ? repository.clear()
         : reduceAppState(stateRef.current, action, new Date());
-      const nextState = clearsRepository ? reducedState : syncCatGrowth(reducedState);
       if (!clearsRepository) repository.save(nextState);
       stateRef.current = nextState;
       setState(nextState);

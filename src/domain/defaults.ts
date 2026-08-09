@@ -39,12 +39,6 @@ export function createInitialState(now: Date): AppState {
       totalFocusMinutes: 0,
       experience: 0
     },
-    timeEntries: [],
-    catGrowth: {
-      experience: 0,
-      rewardedCompletionIds: [],
-      rewardedFocusSessions: 0,
-      rewardedTimeBlocks: 0
-    }
+    timeEntries: []
   };
 }

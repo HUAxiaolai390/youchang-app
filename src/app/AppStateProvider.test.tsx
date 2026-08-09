@@ -82,11 +82,6 @@ function DispatchResultButton() {
   return <><button onClick={submit}>提交并显示结果</button><p>{result}</p></>;
 }
 
-function CompleteTaskButton() {
-  const { dispatch } = useAppState();
-  return <button onClick={() => dispatch({ type: "scheduled/toggle", id: "growth-task" })}>完成成长任务</button>;
-}
-
 function ImportOlderBackupButton({ imported }: { imported: AppState }) {
   const { dispatch, state } = useAppState();
   const todayRecord = state.fixedRecords.find((record) => record.date === "2026-08-01");
@@ -165,24 +160,6 @@ describe("AppStateProvider", () => {
     await user.click(screen.getByRole("button", { name: "提交并显示结果" }));
 
     expect(screen.getByText("true")).toBeInTheDocument();
-  });
-
-  it("persists cat growth when a task is completed", async () => {
-    const state = createInitialState(new Date(2026, 6, 31, 9));
-    state.scheduledTasks.push({
-      id: "growth-task", title: "成长任务", categoryId: "study", categoryNameSnapshot: "学习",
-      scheduledDate: "2026-07-31", status: "pending", createdAt: "2026-07-31T01:00:00.000Z"
-    });
-    const repository = new InMemoryRepository(state);
-    const user = userEvent.setup();
-
-    render(<Harness repository={repository}><CompleteTaskButton /></Harness>);
-    await user.click(screen.getByRole("button", { name: "完成成长任务" }));
-
-    expect(repository.state.catGrowth).toMatchObject({
-      experience: 12,
-      rewardedCompletionIds: ["scheduled:growth-task"]
-    });
   });
 
   it("replaces an unknown repository error with a safe message", async () => {
