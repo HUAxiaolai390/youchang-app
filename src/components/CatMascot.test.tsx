@@ -220,11 +220,24 @@ describe("CatMascot", () => {
 
     const mascot = screen.getByRole("button", { name: "和小猫互动" });
     expect(mascot).toHaveAttribute("data-cat-outfit", "scarf");
+    expect(mascot).toHaveAttribute("data-cat-outfit-pose", "19");
     expect(mascot).toHaveAttribute("data-cat-decor", "yarn-ball");
     expect(mascot).toHaveAttribute("data-cat-special-action", "high-five");
     expect(mascot).toHaveAttribute("data-cat-room", "starry-room");
     expect(mascot.querySelector(".cat-mascot__outfit--scarf")).toBeInTheDocument();
     expect(mascot.querySelector(".cat-mascot__decor--yarn-ball")).toBeInTheDocument();
     expect(mascot.querySelector(".cat-mascot__room--starry-room")).toBeInTheDocument();
+
+    fireEvent.click(mascot);
+    expect(mascot).toHaveAttribute("data-cat-outfit-pose", "20");
+  });
+
+  it("tracks sleep and celebration poses for outfit alignment", () => {
+    const view = render(<CatMascot baseState="sleep" celebrationKey={0} customization={{ outfit: "scarf" }} />);
+    const mascot = screen.getByRole("button", { name: "和小猫互动" });
+
+    expect(mascot).toHaveAttribute("data-cat-outfit-pose", "sleep");
+    view.rerender(<CatMascot baseState="sleep" celebrationKey={1} customization={{ outfit: "scarf" }} />);
+    expect(mascot).toHaveAttribute("data-cat-outfit-pose", "celebrate");
   });
 });
