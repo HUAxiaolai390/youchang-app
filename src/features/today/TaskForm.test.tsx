@@ -51,6 +51,37 @@ describe("TaskForm", () => {
     }));
   });
 
+  it("submits a reminder after a start time is entered", async () => {
+    const state = createInitialState(new Date(2026, 6, 31, 9));
+    const onSubmit = vi.fn();
+    const user = userEvent.setup();
+    render(<TaskForm categories={state.categories} today="2026-07-31" onCancel={() => {}} onSubmit={onSubmit} />);
+
+    await user.type(screen.getByLabelText("任务名称"), "晚上复习");
+    await user.type(screen.getByLabelText("开始时间（选填）"), "20:00");
+    await user.selectOptions(screen.getByLabelText("任务提醒"), "10");
+    await user.click(screen.getByRole("button", { name: "保存任务" }));
+
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+      plannedStartTime: "20:00",
+      reminderMinutesBefore: 10
+    }));
+  });
+
+  it("explains that reminders require a start time", async () => {
+    const state = createInitialState(new Date(2026, 6, 31, 9));
+    const onSubmit = vi.fn();
+    const user = userEvent.setup();
+    render(<TaskForm categories={state.categories} today="2026-07-31" onCancel={() => {}} onSubmit={onSubmit} />);
+
+    await user.type(screen.getByLabelText("任务名称"), "未定时间的任务");
+    await user.selectOptions(screen.getByLabelText("任务提醒"), "10");
+    await user.click(screen.getByRole("button", { name: "保存任务" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("设置提醒前，请先填写开始时间");
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
   it("configures a custom repeat rule for a fixed task", async () => {
     const state = createInitialState(new Date(2026, 6, 31, 9));
     const onSubmit = vi.fn();

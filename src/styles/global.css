@@ -487,6 +487,7 @@ button:focus-visible {
 .task-form__kind-note { margin: 0; color: var(--muted); font-size: 13px; }
 .task-form__planning { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .task-form__planning label { display: grid; min-width: 0; gap: 7px; font-size: 14px; font-weight: 700; }
+.task-form__planning .task-form__reminder { grid-column: 1 / -1; }
 .task-form__planning-note { margin: -4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
 .repeat-rule-fields { display: grid; gap: 10px; margin: 0; padding: 13px; border: 1px solid var(--line); border-radius: 15px; background: #f5f1ea; }
 .repeat-rule-fields legend { padding: 0 5px; font-size: 14px; font-weight: 800; }
@@ -734,6 +735,10 @@ button:focus-visible {
 .settings-section h2, .settings-section h3 { margin: 0; letter-spacing: -0.03em; }
 .settings-section h2 { font-size: 19px; }
 .settings-section h3 { font-size: 15px; }
+.settings-section__heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.settings-section__heading > div { display: grid; gap: 5px; }
+.notification-status { flex: 0 0 auto; padding: 5px 9px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 11px; font-weight: 800; }
+.notification-status--on { border-color: #9eab91; background: #eef3e9; color: #4f6248; }
 .settings-form { display: grid; gap: 9px; }
 .settings-form--edit, .backup-preview, .clear-confirmation, .settings-history { display: grid; gap: 10px; padding: 13px; border-radius: var(--radius-control); background: #f0efea; }
 .fixed-exception-panel h3, .fixed-exception-panel p { margin: 0; }
@@ -758,8 +763,20 @@ button:focus-visible {
 .pwa-update-prompt { position: fixed; z-index: 30; top: max(16px, env(safe-area-inset-top)); left: 50%; display: flex; width: min(calc(100% - 32px), 560px); min-width: 0; align-items: center; justify-content: space-between; gap: 14px; padding: 13px 14px 13px 17px; transform: translateX(-50%); border: 1px solid #333; border-radius: var(--radius-control); background: var(--ink); box-shadow: 0 10px 30px rgba(23, 23, 23, .24); color: var(--surface); font-size: 14px; }
 .pwa-update-prompt span { min-width: 0; }
 .pwa-update-prompt button { flex: 0 0 auto; min-height: 36px; padding: 0 12px; border: 1px solid color-mix(in srgb, var(--surface) 55%, transparent); border-radius: 999px; background: var(--surface); color: var(--ink); cursor: pointer; font-weight: 700; }
+.task-reminder { position: fixed; z-index: 25; right: 16px; bottom: calc(88px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; width: min(calc(100% - 32px), 520px); align-items: center; gap: 12px; padding: 13px 14px; border: 1px solid #d8d2c8; border-radius: 20px; background: rgba(255,253,249,.97); box-shadow: 0 14px 36px rgba(48,39,28,.16); backdrop-filter: blur(16px); }
+.task-reminder__icon { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 50%; background: var(--accent-soft); font-size: 20px; }
+.task-reminder__copy { display: grid; min-width: 0; gap: 2px; }
+.task-reminder__copy > span { color: #8a6941; font-size: 10px; font-weight: 900; letter-spacing: .12em; }
+.task-reminder__copy strong { overflow: hidden; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+.task-reminder__copy small { color: var(--muted); font-size: 12px; }
+.task-reminder__actions { display: flex; gap: 5px; }
+.task-reminder__actions button { min-height: 34px; padding: 0 9px; border: 0; border-radius: 10px; background: transparent; cursor: pointer; font-size: 12px; font-weight: 700; }
+.task-reminder__actions button:first-child { background: var(--ink); color: var(--surface); }
 
 @media (max-width: 479px) {
+  .task-reminder { right: 12px; bottom: calc(82px + env(safe-area-inset-bottom)); grid-template-columns: 34px minmax(0, 1fr); width: calc(100% - 24px); gap: 9px; padding: 12px; border-radius: 17px; }
+  .task-reminder__icon { width: 34px; height: 34px; }
+  .task-reminder__actions { grid-column: 1 / -1; justify-content: flex-end; }
   .page-intro { padding: 20px; }
   .page-intro--quote { gap: 16px; }
   .daily-quote__heading { align-items: flex-start; }

@@ -3,6 +3,7 @@ import type { AppState, DateKey } from "../domain/types";
 import { maximumActualMinutes } from "../domain/time";
 import { isTimeKey, maximumEstimatedMinutes } from "../domain/planning";
 import { isAchievementId } from "../domain/achievements";
+import { isReminderMinutesBefore } from "../domain/reminders";
 
 const INVALID_BACKUP = "备份文件格式无效";
 const UNSUPPORTED_VERSION = "备份文件版本不受支持";
@@ -81,6 +82,7 @@ function isFixedRecord(value: unknown): boolean {
   return hasStrings(value, ["id", "templateId", "titleSnapshot", "categoryId", "categoryNameSnapshot"])
     && isDateKey(value.date)
     && (value.completedAt === undefined || isString(value.completedAt))
+    && (value.reminderSentAt === undefined || isString(value.reminderSentAt))
     && isOptionalPlanning(value)
     && isOptionalActualMinutes(value.actualMinutes);
 }
@@ -92,12 +94,14 @@ function isScheduledTask(value: unknown): boolean {
     && taskStatuses.has(value.status)
     && (value.sourceTaskId === undefined || isString(value.sourceTaskId))
     && (value.completedAt === undefined || isString(value.completedAt))
+    && (value.reminderSentAt === undefined || isString(value.reminderSentAt))
     && isOptionalPlanning(value)
     && isOptionalActualMinutes(value.actualMinutes);
 }
 
 function isOptionalPlanning(value: Record<string, unknown>): boolean {
   return (value.plannedStartTime === undefined || isTimeKey(value.plannedStartTime))
+    && (value.reminderMinutesBefore === undefined || isReminderMinutesBefore(value.reminderMinutesBefore))
     && (value.estimatedMinutes === undefined
       || (typeof value.estimatedMinutes === "number"
         && Number.isInteger(value.estimatedMinutes)
@@ -137,7 +141,8 @@ function hasValidSettings(value: unknown): boolean {
       || (typeof value.musicVolume === "number"
         && Number.isFinite(value.musicVolume)
         && value.musicVolume >= 0
-        && value.musicVolume <= 1));
+        && value.musicVolume <= 1))
+    && (value.systemNotificationsEnabled === undefined || typeof value.systemNotificationsEnabled === "boolean");
 }
 
 function hasValidFocus(value: unknown): boolean {

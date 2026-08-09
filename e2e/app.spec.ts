@@ -147,6 +147,32 @@ test("plans a timed task and shows it in the weekly view", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
+test("reminds a scheduled task once at its planned time", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  const currentTime = await page.evaluate(() => {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  });
+  await page.getByRole("button", { name: "添加任务", exact: true }).click();
+  await page.getByLabel("任务名称").fill("准时开始复习");
+  await page.getByLabel("开始时间（选填）").fill(currentTime);
+  await page.getByLabel("任务提醒").selectOption("0");
+  await page.getByRole("button", { name: "保存任务" }).click();
+
+  const reminder = page.getByRole("alert", { name: "任务提醒" });
+  await expect(reminder).toContainText("准时开始复习");
+  await expect(page.getByText(/准时提醒/)).toBeVisible();
+  await reminder.getByRole("button", { name: "知道了" }).click();
+  await expect(reminder).toBeHidden();
+
+  await page.reload();
+  await expect(page.getByRole("alert", { name: "任务提醒" })).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+});
+
 test("retroactively completes a forgotten task on its original day", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => window.localStorage.clear());

@@ -5,6 +5,7 @@ import { RepeatRuleFields } from "../../components/RepeatRuleFields";
 import { toDateKey } from "../../domain/date";
 import { maximumEstimatedMinutes } from "../../domain/planning";
 import { formatFixedRepeatRule, getFixedRepeatRule } from "../../domain/repeat";
+import { formatReminderMinutes, normalizeReminderMinutesBefore, reminderMinuteOptions } from "../../domain/reminders";
 import type { AppState, Category, DateKey, FixedRepeatRule, FixedTaskTemplate, TimeKey } from "../../domain/types";
 import { downloadBackup, parseBackup } from "../../storage/backup";
 
@@ -33,6 +34,7 @@ export function SettingsPage() {
   const [fixedTitle, setFixedTitle] = useState("");
   const [fixedCategoryId, setFixedCategoryId] = useState("study");
   const [fixedStartTime, setFixedStartTime] = useState("");
+  const [fixedReminderMinutes, setFixedReminderMinutes] = useState("");
   const [fixedEstimatedMinutes, setFixedEstimatedMinutes] = useState("");
   const [fixedRepeatRule, setFixedRepeatRule] = useState<FixedRepeatRule>({ type: "daily" });
   const [fixedTaskError, setFixedTaskError] = useState<string>();
@@ -40,6 +42,7 @@ export function SettingsPage() {
   const [editingFixedTitle, setEditingFixedTitle] = useState("");
   const [editingFixedCategoryId, setEditingFixedCategoryId] = useState("study");
   const [editingFixedStartTime, setEditingFixedStartTime] = useState("");
+  const [editingFixedReminderMinutes, setEditingFixedReminderMinutes] = useState("");
   const [editingFixedEstimatedMinutes, setEditingFixedEstimatedMinutes] = useState("");
   const [editingFixedRepeatRule, setEditingFixedRepeatRule] = useState<FixedRepeatRule>({ type: "daily" });
   const [exceptionFixedId, setExceptionFixedId] = useState<string>();
@@ -50,6 +53,12 @@ export function SettingsPage() {
   const [clearPhrase, setClearPhrase] = useState("");
   const [clearArmed, setClearArmed] = useState(false);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const notificationsSupported = typeof Notification !== "undefined";
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">(
+    notificationsSupported ? Notification.permission : "unsupported"
+  );
+  const systemNotificationsActive = Boolean(state.settings.systemNotificationsEnabled)
+    && notificationPermission === "granted";
 
   useEffect(() => {
     setDisplayName(state.settings.displayName);
@@ -64,6 +73,13 @@ export function SettingsPage() {
   useEffect(() => {
     if (editingFixedId && !state.fixedTasks.some((task) => task.id === editingFixedId)) setEditingFixedId(undefined);
   }, [editingFixedId, state.fixedTasks]);
+
+  useEffect(() => {
+    if (!notificationsSupported) return;
+    const refreshPermission = () => setNotificationPermission(Notification.permission);
+    window.addEventListener("focus", refreshPermission);
+    return () => window.removeEventListener("focus", refreshPermission);
+  }, [notificationsSupported]);
 
   function saveDisplayName(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -84,6 +100,10 @@ export function SettingsPage() {
       setFixedTaskError("没有可用分类，请先添加分类");
       return;
     }
+    if (!fixedStartTime && fixedReminderMinutes !== "") {
+      setFixedTaskError("设置提醒前，请先填写开始时间");
+      return;
+    }
     setFixedTaskError(undefined);
     if (dispatch({
       type: "fixed/add",
@@ -92,12 +112,14 @@ export function SettingsPage() {
         categoryId: fixedCategoryId,
         activeFrom: toDateKey(new Date()),
         plannedStartTime: fixedStartTime ? fixedStartTime as TimeKey : undefined,
+        reminderMinutesBefore: fixedStartTime ? normalizeReminderMinutesBefore(fixedReminderMinutes) : undefined,
         estimatedMinutes: fixedEstimatedMinutes ? Number(fixedEstimatedMinutes) : undefined,
         repeatRule: fixedRepeatRule
       }
     })) {
       setFixedTitle("");
       setFixedStartTime("");
+      setFixedReminderMinutes("");
       setFixedEstimatedMinutes("");
       setFixedRepeatRule({ type: "daily" });
     }
@@ -108,6 +130,7 @@ export function SettingsPage() {
     setEditingFixedTitle(task.title);
     setEditingFixedCategoryId(task.categoryId);
     setEditingFixedStartTime(task.plannedStartTime ?? "");
+    setEditingFixedReminderMinutes(task.reminderMinutesBefore?.toString() ?? "");
     setEditingFixedEstimatedMinutes(task.estimatedMinutes?.toString() ?? "");
     setEditingFixedRepeatRule(getFixedRepeatRule(task));
   }
@@ -119,11 +142,16 @@ export function SettingsPage() {
       setFixedTaskError("没有可用分类，请先添加分类");
       return;
     }
+    if (!editingFixedStartTime && editingFixedReminderMinutes !== "") {
+      setFixedTaskError("设置提醒前，请先填写开始时间");
+      return;
+    }
     setFixedTaskError(undefined);
     if (dispatch({ type: "fixed/update", id: editingFixedId, input: {
       title: editingFixedTitle,
       categoryId: editingFixedCategoryId,
       plannedStartTime: editingFixedStartTime ? editingFixedStartTime as TimeKey : undefined,
+      reminderMinutesBefore: editingFixedStartTime ? normalizeReminderMinutesBefore(editingFixedReminderMinutes) : undefined,
       estimatedMinutes: editingFixedEstimatedMinutes ? Number(editingFixedEstimatedMinutes) : undefined,
       repeatRule: editingFixedRepeatRule
     } })) {
@@ -151,6 +179,21 @@ export function SettingsPage() {
     if (dispatch({ type: "backup/import", state: pendingBackup })) setPendingBackup(undefined);
   }
 
+  async function toggleSystemNotifications() {
+    if (!notificationsSupported || notificationPermission === "denied") return;
+    if (systemNotificationsActive) {
+      dispatch({ type: "settings/system-notifications", enabled: false });
+      return;
+    }
+    const permission = notificationPermission === "granted"
+      ? "granted"
+      : await Notification.requestPermission();
+    setNotificationPermission(permission);
+    if (permission === "granted") {
+      dispatch({ type: "settings/system-notifications", enabled: true });
+    }
+  }
+
   const customCategories = state.categories.filter((category) => !category.builtIn);
   const managedFixedTasks = state.fixedTasks.filter((task) => !task.successorId);
   const exceptionTask = managedFixedTasks.find((task) => task.id === exceptionFixedId);
@@ -171,6 +214,30 @@ export function SettingsPage() {
         </form>
       </section>
 
+      <section className="surface-card settings-section" aria-labelledby="reminder-settings-title">
+        <div className="settings-section__heading">
+          <div>
+            <h2 id="reminder-settings-title">任务提醒</h2>
+            <p className="settings-muted">有常打开时会显示应用内提醒；开启系统通知后，还会弹出电脑通知。</p>
+          </div>
+          <span className={`notification-status notification-status--${systemNotificationsActive ? "on" : "off"}`}>
+            {systemNotificationsActive ? "已开启" : "未开启"}
+          </span>
+        </div>
+        <button
+          type="button"
+          className="button"
+          disabled={!notificationsSupported || notificationPermission === "denied"}
+          onClick={toggleSystemNotifications}
+        >
+          {!notificationsSupported ? "当前浏览器不支持系统通知"
+            : notificationPermission === "denied" ? "通知权限已被拒绝"
+              : systemNotificationsActive ? "关闭系统通知" : "开启系统通知"}
+        </button>
+        {notificationPermission === "denied" && <p className="settings-muted">请在浏览器的网站权限中重新允许通知；应用内提醒仍然有效。</p>}
+        <p className="settings-muted">任务需要填写开始时间并选择提醒时间。手机后台提醒会在安装手机版时继续增强。</p>
+      </section>
+
       <section className="surface-card settings-section" aria-labelledby="fixed-settings-title">
         <h2 id="fixed-settings-title">固定任务管理</h2>
         <form className="settings-form" onSubmit={addFixedTask}>
@@ -185,6 +252,7 @@ export function SettingsPage() {
           <div className="task-form__planning">
             <label htmlFor="fixed-start-time"><span>开始时间（选填）</span><input id="fixed-start-time" className="field-control" type="time" value={fixedStartTime} onChange={(event) => setFixedStartTime(event.target.value)} /></label>
             <label htmlFor="fixed-estimated-minutes"><span>预计用时（分钟）</span><input id="fixed-estimated-minutes" className="field-control" type="number" min="1" max={maximumEstimatedMinutes} placeholder="例如 30" value={fixedEstimatedMinutes} onChange={(event) => setFixedEstimatedMinutes(event.target.value)} /></label>
+            <label className="task-form__reminder" htmlFor="fixed-reminder"><span>任务提醒</span><select id="fixed-reminder" className="field-control" value={fixedReminderMinutes} onChange={(event) => setFixedReminderMinutes(event.target.value)}><option value="">不提醒</option>{reminderMinuteOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
           </div>
           <button className="button" type="submit">新增固定任务</button>
           {fixedTaskError && <p className="form-error" role="alert">{fixedTaskError}</p>}
@@ -193,7 +261,7 @@ export function SettingsPage() {
           {managedFixedTasks.length === 0 && <li className="settings-muted">还没有固定任务</li>}
           {managedFixedTasks.map((task) => (
             <li key={task.id} className="settings-list__item">
-              <span><strong>{task.title}</strong><small>{categoryName(state.categories, task.categoryId)} · {formatFixedRepeatRule(task.repeatRule)}{task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}{task.estimatedMinutes ? ` · 预计 ${task.estimatedMinutes} 分钟` : ""}{task.pausedUntil && task.pausedUntil >= todayKey ? ` · 暂停至 ${task.pausedUntil}` : ""}{(task.skippedDates ?? []).some((date) => date >= todayKey) ? ` · 已请假 ${(task.skippedDates ?? []).filter((date) => date >= todayKey).length} 天` : ""} · {task.inactiveFrom ? "已停用" : "进行中"}</small></span>
+              <span><strong>{task.title}</strong><small>{categoryName(state.categories, task.categoryId)} · {formatFixedRepeatRule(task.repeatRule)}{task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}{task.reminderMinutesBefore !== undefined ? ` · ${formatReminderMinutes(task.reminderMinutesBefore)}` : ""}{task.estimatedMinutes ? ` · 预计 ${task.estimatedMinutes} 分钟` : ""}{task.pausedUntil && task.pausedUntil >= todayKey ? ` · 暂停至 ${task.pausedUntil}` : ""}{(task.skippedDates ?? []).some((date) => date >= todayKey) ? ` · 已请假 ${(task.skippedDates ?? []).filter((date) => date >= todayKey).length} 天` : ""} · {task.inactiveFrom ? "已停用" : "进行中"}</small></span>
               <span className="settings-inline-actions">
                 <button type="button" onClick={() => beginEditFixedTask(task)} aria-label={`编辑固定任务：${task.title}`}>编辑</button>
                 {!task.inactiveFrom && <button type="button" onClick={() => { setExceptionFixedId(task.id); setExceptionDate(todayKey); }} aria-label={`请假或暂停：${task.title}`}>请假/暂停</button>}
@@ -237,6 +305,7 @@ export function SettingsPage() {
           <div className="task-form__planning">
             <label htmlFor="editing-fixed-start-time"><span>编辑开始时间（选填）</span><input id="editing-fixed-start-time" className="field-control" type="time" value={editingFixedStartTime} onChange={(event) => setEditingFixedStartTime(event.target.value)} /></label>
             <label htmlFor="editing-fixed-estimated-minutes"><span>编辑预计用时（分钟）</span><input id="editing-fixed-estimated-minutes" className="field-control" type="number" min="1" max={maximumEstimatedMinutes} value={editingFixedEstimatedMinutes} onChange={(event) => setEditingFixedEstimatedMinutes(event.target.value)} /></label>
+            <label className="task-form__reminder" htmlFor="editing-fixed-reminder"><span>编辑任务提醒</span><select id="editing-fixed-reminder" className="field-control" value={editingFixedReminderMinutes} onChange={(event) => setEditingFixedReminderMinutes(event.target.value)}><option value="">不提醒</option>{reminderMinuteOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
           </div>
           {fixedTaskError && <p className="form-error" role="alert">{fixedTaskError}</p>}
           <div className="settings-inline-actions"><button className="button" type="button" onClick={() => setEditingFixedId(undefined)}>取消编辑</button><button className="button button--primary" type="submit">保存固定任务</button></div>

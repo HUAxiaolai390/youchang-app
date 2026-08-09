@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useAppState } from "../../app/AppStateProvider";
 import { fromDateKey, toDateKey } from "../../domain/date";
 import { formatPlanComparison } from "../../domain/planning";
+import { formatReminderMinutes } from "../../domain/reminders";
 import { formatTrackedTime } from "../../domain/time";
 import type { DateKey } from "../../domain/types";
 import { getWeekPlan, type WeekPlanTask } from "../../domain/week";
@@ -45,7 +46,7 @@ function WeekTaskCard({ task, canToggle, onMove, onToggle }: {
           <span>{task.categoryName}</span>
         </div>
         <p>{task.title}</p>
-        <small>{formatPlanComparison(task.estimatedMinutes, task.actualMinutes)}</small>
+        <small>{formatPlanComparison(task.estimatedMinutes, task.actualMinutes)}{task.reminderMinutesBefore !== undefined ? ` · ${formatReminderMinutes(task.reminderMinutesBefore)}` : ""}</small>
       </div>
       {(canToggle || canMove) && <div className="week-task__actions">
         {canToggle && <button
@@ -93,6 +94,7 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
           categoryId: values.categoryId,
           activeFrom: today,
           plannedStartTime: values.plannedStartTime,
+          reminderMinutesBefore: values.reminderMinutesBefore,
           estimatedMinutes: values.estimatedMinutes,
           repeatRule: values.repeatRule
         } })
@@ -101,6 +103,7 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
           categoryId: values.categoryId,
           scheduledDate: values.date,
           plannedStartTime: values.plannedStartTime,
+          reminderMinutesBefore: values.reminderMinutesBefore,
           estimatedMinutes: values.estimatedMinutes
         } });
 

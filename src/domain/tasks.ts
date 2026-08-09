@@ -8,8 +8,9 @@ import type {
 } from "./types";
 import { isWithinWeek, toDateKey } from "./date";
 import { normalizeEstimatedMinutes, normalizePlannedStartTime } from "./planning";
+import { normalizeReminderMinutesBefore } from "./reminders";
 import { getFixedRepeatRule, isFixedTaskDueOnDate, normalizeFixedRepeatRule } from "./repeat";
-import type { FixedRepeatRule, TimeKey } from "./types";
+import type { FixedRepeatRule, ReminderMinutesBefore, TimeKey } from "./types";
 
 export interface AddCategoryInput {
   name: string;
@@ -21,6 +22,7 @@ export interface AddScheduledTaskInput {
   categoryId: string;
   scheduledDate: DateKey;
   plannedStartTime?: TimeKey;
+  reminderMinutesBefore?: ReminderMinutesBefore;
   estimatedMinutes?: number;
 }
 
@@ -31,6 +33,7 @@ export interface AddFixedTaskInput {
   categoryId: string;
   activeFrom: DateKey;
   plannedStartTime?: TimeKey;
+  reminderMinutesBefore?: ReminderMinutesBefore;
   estimatedMinutes?: number;
   repeatRule?: FixedRepeatRule;
 }
@@ -39,6 +42,7 @@ export interface UpdateFixedTaskInput {
   title: string;
   categoryId: string;
   plannedStartTime?: TimeKey;
+  reminderMinutesBefore?: ReminderMinutesBefore;
   estimatedMinutes?: number;
   repeatRule?: FixedRepeatRule;
 }
@@ -125,6 +129,7 @@ function createFixedRecord(task: FixedTaskTemplate, date: DateKey, completedAt?:
     categoryNameSnapshot: task.categoryNameSnapshot,
     completedAt,
     plannedStartTime: task.plannedStartTime,
+    reminderMinutesBefore: task.reminderMinutesBefore,
     estimatedMinutes: task.estimatedMinutes
   };
 }
@@ -138,6 +143,9 @@ export function addFixedTask(state: AppState, input: AddFixedTaskInput, now: Dat
     ...categorySnapshot(category),
     activeFrom: input.activeFrom,
     plannedStartTime: normalizePlannedStartTime(input.plannedStartTime),
+    reminderMinutesBefore: input.plannedStartTime
+      ? normalizeReminderMinutesBefore(input.reminderMinutesBefore)
+      : undefined,
     estimatedMinutes: normalizeEstimatedMinutes(input.estimatedMinutes),
     repeatRule: normalizeFixedRepeatRule(input.repeatRule),
     order: state.fixedTasks.length,
@@ -165,14 +173,17 @@ export function updateFixedTask(
   const title = requireTitle(input.title);
   const category = requireCategory(state, input.categoryId);
   const plannedStartTime = normalizePlannedStartTime(input.plannedStartTime);
+  const reminderMinutesBefore = plannedStartTime
+    ? normalizeReminderMinutesBefore(input.reminderMinutesBefore)
+    : undefined;
   const estimatedMinutes = normalizeEstimatedMinutes(input.estimatedMinutes);
   const task = state.fixedTasks.find((item) => item.id === id);
   if (!task) return state;
   const repeatRule = normalizeFixedRepeatRule(input.repeatRule ?? getFixedRepeatRule(task));
-  const updatedTask = { ...task, title, ...categorySnapshot(category), plannedStartTime, estimatedMinutes, repeatRule };
+  const updatedTask = { ...task, title, ...categorySnapshot(category), plannedStartTime, reminderMinutesBefore, estimatedMinutes, repeatRule };
   const fixedTasks = state.fixedTasks.map((item) => item.id === id ? updatedTask : item);
   let fixedRecords = state.fixedRecords.map((record) => record.templateId === id && record.date === today
-    ? { ...record, titleSnapshot: title, ...categorySnapshot(category), plannedStartTime, estimatedMinutes }
+    ? { ...record, titleSnapshot: title, ...categorySnapshot(category), plannedStartTime, reminderMinutesBefore, reminderSentAt: undefined, estimatedMinutes }
     : record);
   const todayRecord = fixedRecords.find((record) => record.templateId === id && record.date === today);
   const previewState = { ...state, fixedTasks, fixedRecords };
@@ -297,6 +308,9 @@ export function addScheduledTask(state: AppState, input: AddScheduledTaskInput, 
     ...categorySnapshot(category),
     scheduledDate: input.scheduledDate,
     plannedStartTime: normalizePlannedStartTime(input.plannedStartTime),
+    reminderMinutesBefore: input.plannedStartTime
+      ? normalizeReminderMinutesBefore(input.reminderMinutesBefore)
+      : undefined,
     estimatedMinutes: normalizeEstimatedMinutes(input.estimatedMinutes),
     status: "pending",
     createdAt: now.toISOString()
@@ -316,6 +330,9 @@ export function updateScheduledTask(
   const title = requireTitle(input.title);
   const category = requireCategory(state, input.categoryId);
   const plannedStartTime = normalizePlannedStartTime(input.plannedStartTime);
+  const reminderMinutesBefore = plannedStartTime
+    ? normalizeReminderMinutesBefore(input.reminderMinutesBefore)
+    : undefined;
   const estimatedMinutes = normalizeEstimatedMinutes(input.estimatedMinutes);
   return {
     ...state,
@@ -326,6 +343,8 @@ export function updateScheduledTask(
           ...categorySnapshot(category),
           scheduledDate: input.scheduledDate,
           plannedStartTime,
+          reminderMinutesBefore,
+          reminderSentAt: undefined,
           estimatedMinutes
         }
       : item)

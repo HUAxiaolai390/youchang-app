@@ -1,5 +1,5 @@
 import { fromDateKey, getWeek, toDateKey } from "./date";
-import type { AppState, DateKey, TimeKey } from "./types";
+import type { AppState, DateKey, ReminderMinutesBefore, TimeKey } from "./types";
 import { formatFixedRepeatRule, shouldShowFixedTaskOnDate } from "./repeat";
 
 export type WeekPlanTask = {
@@ -12,6 +12,7 @@ export type WeekPlanTask = {
   date: DateKey;
   status: "pending" | "completed" | "backlog";
   plannedStartTime?: TimeKey;
+  reminderMinutesBefore?: ReminderMinutesBefore;
   estimatedMinutes?: number;
   actualMinutes?: number;
   repeatLabel?: string;
@@ -66,6 +67,7 @@ export function getWeekPlan(state: AppState, anchor: Date): WeekPlanDay[] {
         date,
         status: record?.completedAt ? "completed" : "pending",
         plannedStartTime: record?.plannedStartTime ?? template.plannedStartTime,
+        reminderMinutesBefore: record?.reminderMinutesBefore ?? template.reminderMinutesBefore,
         estimatedMinutes: record?.estimatedMinutes ?? template.estimatedMinutes,
         actualMinutes: record?.actualMinutes,
         repeatLabel: formatFixedRepeatRule(template.repeatRule)
@@ -84,6 +86,7 @@ export function getWeekPlan(state: AppState, anchor: Date): WeekPlanDay[] {
         date,
         status: task.status as WeekPlanTask["status"],
         plannedStartTime: task.plannedStartTime,
+        reminderMinutesBefore: task.reminderMinutesBefore,
         estimatedMinutes: task.estimatedMinutes,
         actualMinutes: task.actualMinutes
       });

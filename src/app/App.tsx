@@ -8,6 +8,7 @@ import { WeekPage } from "../features/week/WeekPage";
 import { PwaUpdatePrompt } from "../components/PwaUpdatePrompt";
 import { BackgroundMusic } from "../components/BackgroundMusic";
 import { getDailyQuote } from "../domain/daily-quotes";
+import { TaskReminderCenter } from "../components/TaskReminderCenter";
 
 import { useEffect, useState } from "react";
 import { createLocalRepository } from "../storage/repository";
@@ -97,6 +98,7 @@ function AppContents() {
           </div>
         )}
       </AppShell>
+      <TaskReminderCenter onOpenTask={() => setActivePage("today")} />
       <PwaUpdatePrompt />
     </>
   );

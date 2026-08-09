@@ -1,5 +1,6 @@
 export type DateKey = `${number}-${number}-${number}`;
 export type TimeKey = `${number}:${number}`;
+export type ReminderMinutesBefore = 0 | 5 | 10 | 30 | 60;
 
 export type TaskStatus =
   | "pending"
@@ -33,6 +34,7 @@ export interface FixedTaskTemplate {
   inactiveFrom?: DateKey;
   successorId?: string;
   plannedStartTime?: TimeKey;
+  reminderMinutesBefore?: ReminderMinutesBefore;
   estimatedMinutes?: number;
   repeatRule?: FixedRepeatRule;
   skippedDates?: DateKey[];
@@ -50,6 +52,8 @@ export interface FixedTaskRecord {
   categoryNameSnapshot: string;
   completedAt?: string;
   plannedStartTime?: TimeKey;
+  reminderMinutesBefore?: ReminderMinutesBefore;
+  reminderSentAt?: string;
   estimatedMinutes?: number;
   actualMinutes?: number;
 }
@@ -65,6 +69,8 @@ export interface ScheduledTask {
   createdAt: string;
   completedAt?: string;
   plannedStartTime?: TimeKey;
+  reminderMinutesBefore?: ReminderMinutesBefore;
+  reminderSentAt?: string;
   estimatedMinutes?: number;
   actualMinutes?: number;
 }
@@ -104,6 +110,7 @@ export interface AppState {
     lastOpenedDate: DateKey;
     musicVolume?: number;
     featuredAchievementIds?: string[];
+    systemNotificationsEnabled?: boolean;
   };
   categories: Category[];
   fixedTasks: FixedTaskTemplate[];

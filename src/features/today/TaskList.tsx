@@ -1,5 +1,6 @@
 import { formatPlanComparison } from "../../domain/planning";
-import type { FixedRepeatRule, TimeKey } from "../../domain/types";
+import { formatReminderMinutes } from "../../domain/reminders";
+import type { FixedRepeatRule, ReminderMinutesBefore, TimeKey } from "../../domain/types";
 
 export type TodayTask = {
   id: string;
@@ -11,6 +12,7 @@ export type TodayTask = {
   completed: boolean;
   editable: boolean;
   plannedStartTime?: TimeKey;
+  reminderMinutesBefore?: ReminderMinutesBefore;
   estimatedMinutes?: number;
   actualMinutes?: number;
   repeatRule?: FixedRepeatRule;
@@ -44,6 +46,7 @@ export function TaskList({ title, tasks, onToggle, onEdit, onDelete, onTime }: T
                   {task.categoryName}
                   {task.repeatLabel ? ` · ${task.repeatLabel}` : ""}
                   {task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}
+                  {task.reminderMinutesBefore !== undefined ? ` · ${formatReminderMinutes(task.reminderMinutesBefore)}` : ""}
                   {` · ${formatPlanComparison(task.estimatedMinutes, task.actualMinutes)}`}
                 </span>
               </div>

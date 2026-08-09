@@ -20,7 +20,8 @@ export function createInitialState(now: Date): AppState {
       firstUsedAt: createdAt,
       lastOpenedDate: toDateKey(now),
       musicVolume: 0.35,
-      featuredAchievementIds: []
+      featuredAchievementIds: [],
+      systemNotificationsEnabled: false
     },
     categories: builtInCategories.map((category, order) => ({
       ...category,

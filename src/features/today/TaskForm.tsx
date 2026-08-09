@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "rea
 import { RepeatRuleFields } from "../../components/RepeatRuleFields";
 import { maximumEstimatedMinutes, normalizeEstimatedMinutes, normalizePlannedStartTime } from "../../domain/planning";
 import { normalizeFixedRepeatRule } from "../../domain/repeat";
-import type { Category, DateKey, FixedRepeatRule, TimeKey } from "../../domain/types";
+import { normalizeReminderMinutesBefore, reminderMinuteOptions } from "../../domain/reminders";
+import type { Category, DateKey, FixedRepeatRule, ReminderMinutesBefore, TimeKey } from "../../domain/types";
 
 export type TaskFormValues = {
   title: string;
@@ -10,12 +11,14 @@ export type TaskFormValues = {
   categoryId: string;
   date: DateKey;
   plannedStartTime?: TimeKey;
+  reminderMinutesBefore?: ReminderMinutesBefore;
   estimatedMinutes?: number;
   repeatRule?: FixedRepeatRule;
 };
 
-type TaskFormDraft = Omit<TaskFormValues, "plannedStartTime" | "estimatedMinutes"> & {
+type TaskFormDraft = Omit<TaskFormValues, "plannedStartTime" | "reminderMinutesBefore" | "estimatedMinutes"> & {
   plannedStartTime: string;
+  reminderMinutesBefore: string;
   estimatedMinutes: string;
   repeatRule: FixedRepeatRule;
 };
@@ -56,6 +59,7 @@ export function TaskForm({ categories, today, defaultDate, initialValues, error,
     categoryId: initialValues?.categoryId ?? "study",
     date: initialValues?.date ?? defaultDate ?? today,
     plannedStartTime: initialValues?.plannedStartTime ?? "",
+    reminderMinutesBefore: initialValues?.reminderMinutesBefore?.toString() ?? "",
     estimatedMinutes: initialValues?.estimatedMinutes?.toString() ?? "",
     repeatRule: initialValues?.repeatRule ?? { type: "daily" }
   }));
@@ -75,12 +79,20 @@ export function TaskForm({ categories, today, defaultDate, initialValues, error,
     }
     try {
       const estimatedValue = values.estimatedMinutes.trim();
+      const plannedStartTime = normalizePlannedStartTime(values.plannedStartTime);
+      if (!plannedStartTime && values.reminderMinutesBefore !== "") {
+        setFormError("设置提醒前，请先填写开始时间");
+        return;
+      }
       onSubmit({
         title: values.title.trim(),
         kind: values.kind,
         categoryId: values.categoryId,
         date: values.date,
-        plannedStartTime: normalizePlannedStartTime(values.plannedStartTime),
+        plannedStartTime,
+        reminderMinutesBefore: plannedStartTime
+          ? normalizeReminderMinutesBefore(values.reminderMinutesBefore)
+          : undefined,
         estimatedMinutes: normalizeEstimatedMinutes(estimatedValue === "" ? undefined : Number(estimatedValue)),
         repeatRule: values.kind === "fixed" ? normalizeFixedRepeatRule(values.repeatRule) : undefined
       });
@@ -158,8 +170,20 @@ export function TaskForm({ categories, today, defaultDate, initialValues, error,
               onChange={(event) => setValues((current) => ({ ...current, estimatedMinutes: event.target.value }))}
             />
           </label>
+          <label className="task-form__reminder" htmlFor="task-reminder">
+            <span>任务提醒</span>
+            <select
+              id="task-reminder"
+              className="field-control"
+              value={values.reminderMinutesBefore}
+              onChange={(event) => setValues((current) => ({ ...current, reminderMinutesBefore: event.target.value }))}
+            >
+              <option value="">不提醒</option>
+              {reminderMinuteOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </label>
         </div>
-        <p className="task-form__planning-note">不确定时可以先不填，之后编辑任务再补上。</p>
+        <p className="task-form__planning-note">填写开始时间后，可以选择准时或提前提醒；不确定时也可以之后再补上。</p>
         {displayedError && <p id="task-form-error" role="alert" className="form-error">{displayedError}</p>}
         <div className="task-form__actions">
           <button type="button" className="button" onClick={onCancel}>取消</button>

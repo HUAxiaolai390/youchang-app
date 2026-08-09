@@ -55,6 +55,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
           id: record.id, taskId: record.templateId, kind: "fixed", title: record.titleSnapshot, categoryId: record.categoryId,
           categoryName: liveCategoryName(record.categoryId), completed: Boolean(record.completedAt), editable: true,
           plannedStartTime: record.plannedStartTime ?? template.plannedStartTime,
+          reminderMinutesBefore: record.reminderMinutesBefore ?? template.reminderMinutesBefore,
           estimatedMinutes: record.estimatedMinutes ?? template.estimatedMinutes,
           actualMinutes: record.actualMinutes,
           repeatRule: template.repeatRule,
@@ -66,7 +67,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
       )).map((task): TodayTask => ({
         id: task.id, taskId: task.id, kind: "scheduled", title: task.title, categoryId: task.categoryId,
         categoryName: liveCategoryName(task.categoryId), completed: task.status === "completed", editable: task.status === "pending",
-        plannedStartTime: task.plannedStartTime, estimatedMinutes: task.estimatedMinutes,
+        plannedStartTime: task.plannedStartTime, reminderMinutesBefore: task.reminderMinutesBefore, estimatedMinutes: task.estimatedMinutes,
         actualMinutes: task.actualMinutes
       }))
     };
@@ -93,25 +94,25 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
       if (editing.kind === "fixed") {
         saved = dispatch({ type: "fixed/update", id: editing.taskId, input: {
           title: values.title, categoryId: values.categoryId,
-          plannedStartTime: values.plannedStartTime, estimatedMinutes: values.estimatedMinutes,
+          plannedStartTime: values.plannedStartTime, reminderMinutesBefore: values.reminderMinutesBefore, estimatedMinutes: values.estimatedMinutes,
           repeatRule: values.repeatRule
         } });
       } else {
         saved = dispatch({ type: "scheduled/update", id: editing.taskId, input: {
           title: values.title, categoryId: values.categoryId, scheduledDate: values.date,
-          plannedStartTime: values.plannedStartTime, estimatedMinutes: values.estimatedMinutes
+          plannedStartTime: values.plannedStartTime, reminderMinutesBefore: values.reminderMinutesBefore, estimatedMinutes: values.estimatedMinutes
         } });
       }
     } else if (values.kind === "fixed") {
       saved = dispatch({ type: "fixed/add", input: {
         title: values.title, categoryId: values.categoryId, activeFrom: today,
-        plannedStartTime: values.plannedStartTime, estimatedMinutes: values.estimatedMinutes,
+        plannedStartTime: values.plannedStartTime, reminderMinutesBefore: values.reminderMinutesBefore, estimatedMinutes: values.estimatedMinutes,
         repeatRule: values.repeatRule
       } });
     } else {
       saved = dispatch({ type: "scheduled/add", input: {
         title: values.title, categoryId: values.categoryId, scheduledDate: values.date,
-        plannedStartTime: values.plannedStartTime, estimatedMinutes: values.estimatedMinutes
+        plannedStartTime: values.plannedStartTime, reminderMinutesBefore: values.reminderMinutesBefore, estimatedMinutes: values.estimatedMinutes
       } });
     }
     if (saved) {
@@ -150,6 +151,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
     categoryId: editing.categoryId,
     date: editing.date,
     plannedStartTime: editing.plannedStartTime,
+    reminderMinutesBefore: editing.reminderMinutesBefore,
     estimatedMinutes: editing.estimatedMinutes,
     repeatRule: editing.repeatRule
   } : undefined;

@@ -46,6 +46,13 @@ describe("SettingsPage", () => {
     expect(repository.load().settings.displayName).toBe("小伍");
   });
 
+  it("shows the system-notification capability without blocking in-app reminders", () => {
+    renderSettings();
+
+    expect(screen.getByRole("heading", { name: "任务提醒" })).toBeVisible();
+    expect(screen.getByText(/有常打开时会显示应用内提醒/)).toBeVisible();
+  });
+
   it("rejects an invalid backup without clearing tasks", async () => {
     const state = createInitialState(new Date(2026, 6, 31, 9));
     state.scheduledTasks.push({
@@ -165,6 +172,28 @@ describe("SettingsPage", () => {
 
       expect(repository.load().fixedTasks).toHaveLength(1);
       expect(repository.load().fixedTasks[0].inactiveFrom).toBe("2026-08-01");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("saves a reminder for a fixed task with a start time", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date(2026, 7, 1, 12));
+    const repository = renderSettings();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    try {
+      await user.type(screen.getByLabelText("固定任务名称"), "晚间复盘");
+      await user.type(screen.getByLabelText("开始时间（选填）"), "21:00");
+      await user.selectOptions(screen.getByRole("combobox", { name: "任务提醒" }), "30");
+      await user.click(screen.getByRole("button", { name: "新增固定任务" }));
+
+      expect(repository.load().fixedTasks[0]).toMatchObject({
+        plannedStartTime: "21:00",
+        reminderMinutesBefore: 30
+      });
+      expect(repository.load().fixedRecords[0]).toMatchObject({ reminderMinutesBefore: 30 });
     } finally {
       vi.useRealTimers();
     }

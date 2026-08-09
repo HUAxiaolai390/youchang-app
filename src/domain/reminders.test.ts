@@ -1,0 +1,67 @@
+import { describe, expect, it } from "vitest";
+import { createInitialState } from "./defaults";
+import {
+  describeTaskReminder,
+  getPendingTaskReminders,
+  markTaskReminderSent,
+  normalizeReminderMinutesBefore
+} from "./reminders";
+
+describe("task reminders", () => {
+  it("finds a scheduled reminder when its lead time arrives", () => {
+    const state = createInitialState(new Date(2026, 7, 9, 8));
+    state.scheduledTasks.push({
+      id: "task-1", title: "背单词", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-09", status: "pending", createdAt: "2026-08-09T00:00:00.000Z",
+      plannedStartTime: "09:00", reminderMinutesBefore: 10
+    });
+
+    expect(getPendingTaskReminders(state, new Date(2026, 7, 9, 8, 49))).toEqual([]);
+    const due = getPendingTaskReminders(state, new Date(2026, 7, 9, 8, 50));
+    expect(due).toHaveLength(1);
+    expect(due[0]).toMatchObject({ title: "背单词", reminderMinutesBefore: 10 });
+    expect(describeTaskReminder(due[0], new Date(2026, 7, 9, 8, 50))).toBe("还有 10 分钟开始");
+  });
+
+  it("does not remind completed, expired, or already notified tasks", () => {
+    const state = createInitialState(new Date(2026, 7, 9, 10));
+    state.scheduledTasks.push({
+      id: "sent", title: "已提醒", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-09", status: "pending", createdAt: "2026-08-09T00:00:00.000Z",
+      plannedStartTime: "10:00", reminderMinutesBefore: 10, reminderSentAt: "2026-08-09T01:50:00.000Z"
+    }, {
+      id: "done", title: "已完成", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-09", status: "completed", createdAt: "2026-08-09T00:00:00.000Z",
+      plannedStartTime: "10:00", reminderMinutesBefore: 10
+    }, {
+      id: "expired", title: "已过期", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-09", status: "pending", createdAt: "2026-08-09T00:00:00.000Z",
+      plannedStartTime: "08:00", reminderMinutesBefore: 10
+    });
+
+    expect(getPendingTaskReminders(state, new Date(2026, 7, 9, 10))).toEqual([]);
+  });
+
+  it("marks fixed and scheduled reminders without changing other tasks", () => {
+    const state = createInitialState(new Date(2026, 7, 9, 8));
+    state.fixedRecords.push({
+      id: "fixed-record", templateId: "fixed", date: "2026-08-09", titleSnapshot: "晨跑",
+      categoryId: "exercise", categoryNameSnapshot: "运动"
+    });
+    state.scheduledTasks.push({
+      id: "scheduled", title: "阅读", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-09", status: "pending", createdAt: "2026-08-09T00:00:00.000Z"
+    });
+
+    const fixedMarked = markTaskReminderSent(state, "fixed", "fixed-record", "sent-fixed");
+    const bothMarked = markTaskReminderSent(fixedMarked, "scheduled", "scheduled", "sent-scheduled");
+    expect(bothMarked.fixedRecords[0].reminderSentAt).toBe("sent-fixed");
+    expect(bothMarked.scheduledTasks[0].reminderSentAt).toBe("sent-scheduled");
+  });
+
+  it("accepts only supported reminder lead times", () => {
+    expect(normalizeReminderMinutesBefore("0")).toBe(0);
+    expect(normalizeReminderMinutesBefore("30")).toBe(30);
+    expect(() => normalizeReminderMinutesBefore(15)).toThrow("请选择有效提醒时间");
+  });
+});
