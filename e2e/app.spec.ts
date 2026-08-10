@@ -174,6 +174,7 @@ test("reminds a scheduled task once at its planned time", async ({ page }) => {
 });
 
 test("retroactively completes a forgotten task on its original day", async ({ page }) => {
+  await page.clock.setFixedTime(new Date(2026, 7, 11, 10, 0, 0));
   await page.goto("/");
   await page.evaluate(() => window.localStorage.clear());
   await page.reload();
@@ -275,6 +276,37 @@ test("unlocks a medal and pins it into one of three equal home slots", async ({ 
   await expectNoHorizontalOverflow(page);
 });
 
+test("sets task priorities and limits today's top tasks to three", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  const tasks = [
+    ["完成数学作业", /高 重要且紧急/],
+    ["复习英语单词", /中 重要或紧急/],
+    ["整理书桌", /低 日常且可灵活安排/],
+    ["准备明天书包", /中 重要或紧急/]
+  ] as const;
+
+  for (const [title, priority] of tasks) {
+    await page.getByRole("button", { name: "添加任务", exact: true }).click();
+    await page.getByLabel("任务名称").fill(title);
+    await page.getByRole("radio", { name: priority }).check();
+    await page.getByRole("button", { name: "保存任务" }).click();
+  }
+
+  for (const [title] of tasks.slice(0, 3)) {
+    await page.getByRole("button", { name: `设为今日重点：${title}` }).click();
+  }
+
+  const topThree = page.getByRole("region", { name: "今日三件事" });
+  await expect(topThree).toContainText("3 / 3");
+  await expect(topThree.getByText("完成数学作业", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "设为今日重点：准备明天书包" })).toBeDisabled();
+  await expect(page.getByRole("region", { name: "下一项任务" })).toContainText("完成数学作业");
+  await expectNoHorizontalOverflow(page);
+});
+
 test("completes the core task, growth, and backup flow", async ({ page }, testInfo) => {
   const runtimeErrors: string[] = [];
   page.on("console", (message) => {
@@ -308,7 +340,7 @@ test("completes the core task, growth, and backup flow", async ({ page }, testIn
   await page.getByRole("button", { name: "保存任务" }).click();
 
   await page.getByRole("button", { name: "只看运动" }).click();
-  await expect(page.getByText("拉伸训练", { exact: true })).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: "完成：拉伸训练" })).toBeVisible();
   await expect(page.getByText("每日阅读", { exact: true })).toBeHidden();
 
   const exerciseCheckbox = page.getByRole("checkbox", { name: "完成：拉伸训练" });

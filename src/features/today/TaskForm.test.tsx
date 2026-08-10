@@ -75,7 +75,7 @@ describe("TaskForm", () => {
     render(<TaskForm
       categories={state.categories}
       today="2026-07-31"
-      initialValues={{ title: "整理笔记", kind: "scheduled", categoryId: "study", date: "2026-07-31" }}
+      initialValues={{ title: "整理笔记", kind: "scheduled", categoryId: "study", date: "2026-07-31", priority: "medium" }}
       onCancel={() => {}}
       onSubmit={onSubmit}
     />);
@@ -120,6 +120,22 @@ describe("TaskForm", () => {
     }));
   });
 
+  it("explains and submits high, medium, and low priority", async () => {
+    const state = createInitialState(new Date(2026, 6, 31, 9));
+    const onSubmit = vi.fn();
+    const user = userEvent.setup();
+    render(<TaskForm categories={state.categories} today="2026-07-31" onCancel={() => {}} onSubmit={onSubmit} />);
+
+    expect(screen.getByText("重要且紧急")).toBeVisible();
+    expect(screen.getByText("重要或紧急")).toBeVisible();
+    expect(screen.getByText("日常且可灵活安排")).toBeVisible();
+    await user.type(screen.getByLabelText("任务名称"), "准备明天考试");
+    await user.click(screen.getByRole("radio", { name: /高.*重要且紧急/ }));
+    await user.click(screen.getByRole("button", { name: "保存任务" }));
+
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ priority: "high" }));
+  });
+
   it.each([
     { kind: "fixed" as const, title: "晨间拉伸", checkedName: "固定任务" },
     { kind: "scheduled" as const, title: "整理书桌", checkedName: "临时任务" }
@@ -129,7 +145,7 @@ describe("TaskForm", () => {
     render(<TaskForm
       categories={state.categories}
       today="2026-07-31"
-      initialValues={{ title, kind, categoryId: "study", date: "2026-07-31" }}
+      initialValues={{ title, kind, categoryId: "study", date: "2026-07-31", priority: "medium" }}
       onCancel={() => {}}
       onSubmit={() => {}}
     />);

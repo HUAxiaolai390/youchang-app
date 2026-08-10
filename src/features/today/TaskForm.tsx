@@ -4,7 +4,8 @@ import { fromDateKey, toDateKey } from "../../domain/date";
 import { maximumEstimatedMinutes, normalizeEstimatedMinutes, normalizePlannedStartTime } from "../../domain/planning";
 import { normalizeFixedRepeatRule } from "../../domain/repeat";
 import { normalizeReminderMinutesBefore, reminderMinuteOptions } from "../../domain/reminders";
-import type { Category, DateKey, FixedRepeatRule, ReminderMinutesBefore, TimeKey } from "../../domain/types";
+import { taskPriorityOptions } from "../../domain/priorities";
+import type { Category, DateKey, FixedRepeatRule, ReminderMinutesBefore, TaskPriority, TimeKey } from "../../domain/types";
 
 export type TaskFormValues = {
   title: string;
@@ -14,6 +15,7 @@ export type TaskFormValues = {
   plannedStartTime?: TimeKey;
   reminderMinutesBefore?: ReminderMinutesBefore;
   estimatedMinutes?: number;
+  priority: TaskPriority;
   repeatRule?: FixedRepeatRule;
 };
 
@@ -79,6 +81,7 @@ export function TaskForm({ categories, today, defaultDate, initialValues, error,
     plannedStartTime: initialValues?.plannedStartTime ?? "",
     reminderMinutesBefore: initialValues?.reminderMinutesBefore?.toString() ?? "",
     estimatedMinutes: initialValues?.estimatedMinutes?.toString() ?? "",
+    priority: initialValues?.priority ?? "medium",
     repeatRule: initialValues?.repeatRule ?? { type: "daily" }
   }));
   const [formError, setFormError] = useState<string>();
@@ -120,6 +123,7 @@ export function TaskForm({ categories, today, defaultDate, initialValues, error,
           ? normalizeReminderMinutesBefore(values.reminderMinutesBefore)
           : undefined,
         estimatedMinutes: normalizeEstimatedMinutes(estimatedValue === "" ? undefined : Number(estimatedValue)),
+        priority: values.priority,
         repeatRule: values.kind === "fixed" ? normalizeFixedRepeatRule(values.repeatRule) : undefined
       });
     } catch (caught) {
@@ -156,6 +160,22 @@ export function TaskForm({ categories, today, defaultDate, initialValues, error,
               <label key={category.id} className="category-option">
                 <input type="radio" name="task-category" checked={values.categoryId === category.id} onChange={() => setValues((current) => ({ ...current, categoryId: category.id }))} />
                 <span aria-hidden="true">{category.icon}</span>{category.name}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <fieldset className="choice-group priority-choice-group">
+          <legend>任务优先级</legend>
+          <div className="priority-options">
+            {taskPriorityOptions.map((option) => (
+              <label key={option.value} className={`priority-option priority-option--${option.value}`}>
+                <input
+                  type="radio"
+                  name="task-priority"
+                  checked={values.priority === option.value}
+                  onChange={() => setValues((current) => ({ ...current, priority: option.value }))}
+                />
+                <span><strong>{option.label}</strong><small>{option.description}</small></span>
               </label>
             ))}
           </div>

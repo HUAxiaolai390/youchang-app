@@ -1,6 +1,7 @@
 export type DateKey = `${number}-${number}-${number}`;
 export type TimeKey = `${number}:${number}`;
 export type ReminderMinutesBefore = 0 | 5 | 10 | 30 | 60;
+export type TaskPriority = "high" | "medium" | "low";
 
 export type TaskStatus =
   | "pending"
@@ -35,6 +36,7 @@ export interface FixedTaskTemplate {
   successorId?: string;
   plannedStartTime?: TimeKey;
   reminderMinutesBefore?: ReminderMinutesBefore;
+  priority?: TaskPriority;
   estimatedMinutes?: number;
   repeatRule?: FixedRepeatRule;
   skippedDates?: DateKey[];
@@ -54,6 +56,8 @@ export interface FixedTaskRecord {
   plannedStartTime?: TimeKey;
   reminderMinutesBefore?: ReminderMinutesBefore;
   reminderSentAt?: string;
+  priority?: TaskPriority;
+  isTodayFocus?: boolean;
   estimatedMinutes?: number;
   actualMinutes?: number;
 }
@@ -71,6 +75,8 @@ export interface ScheduledTask {
   plannedStartTime?: TimeKey;
   reminderMinutesBefore?: ReminderMinutesBefore;
   reminderSentAt?: string;
+  priority?: TaskPriority;
+  isTodayFocus?: boolean;
   estimatedMinutes?: number;
   actualMinutes?: number;
 }

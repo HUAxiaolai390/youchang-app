@@ -18,7 +18,7 @@ class MemoryRepository implements AppRepository {
 function renderWeek(state = createInitialState(new Date(2026, 7, 5, 9))) {
   const repository = new MemoryRepository(state);
   const user = userEvent.setup();
-  render(<AppStateProvider repository={repository}><WeekPage now={new Date(2026, 7, 5, 9)} /></AppStateProvider>);
+  render(<AppStateProvider repository={repository} now={() => new Date(2026, 7, 5, 9)}><WeekPage now={new Date(2026, 7, 5, 9)} /></AppStateProvider>);
   return { repository, user };
 }
 

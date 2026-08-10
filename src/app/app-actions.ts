@@ -27,6 +27,7 @@ export type AppAction =
   | { type: "settings/featured-achievements"; ids: string[] }
   | { type: "settings/system-notifications"; enabled: boolean }
   | { type: "reminder/mark-sent"; kind: "fixed" | "scheduled"; id: string; sentAt: string }
+  | { type: "today-focus/toggle"; kind: "fixed" | "scheduled"; id: string }
   | { type: "focus/configure"; focusMinutes: number; breakMinutes: number }
   | { type: "focus/session-complete"; minutes: number }
   | { type: "fixed/time-set"; recordId: string; minutes: number }

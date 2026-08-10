@@ -232,6 +232,25 @@ describe("task and category rules", () => {
     expect(threeTimes.scheduledTasks).toHaveLength(1);
   });
 
+  it("stores task priority and copies fixed priority into today's record", () => {
+    const scheduled = addScheduledTask(state(), {
+      title: "准备考试",
+      categoryId: "study",
+      scheduledDate: "2026-07-31",
+      priority: "high"
+    }, now);
+    const fixed = addFixedTask(state(), {
+      title: "睡前阅读",
+      categoryId: "study",
+      activeFrom: "2026-07-31",
+      priority: "low"
+    }, now);
+
+    expect(scheduled.scheduledTasks[0]?.priority).toBe("high");
+    expect(fixed.fixedTasks[0]?.priority).toBe("low");
+    expect(fixed.fixedRecords[0]?.priority).toBe("low");
+  });
+
   it.each([
     ["2026-07-30", "backlog"],
     ["2026-07-20", "archived"]

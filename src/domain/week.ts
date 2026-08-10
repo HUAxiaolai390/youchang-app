@@ -1,5 +1,6 @@
 import { fromDateKey, getWeek, toDateKey } from "./date";
-import type { AppState, DateKey, ReminderMinutesBefore, TimeKey } from "./types";
+import type { AppState, DateKey, ReminderMinutesBefore, TaskPriority, TimeKey } from "./types";
+import { taskPriorityRank } from "./priorities";
 import { formatFixedRepeatRule, shouldShowFixedTaskOnDate } from "./repeat";
 
 export type WeekPlanTask = {
@@ -15,6 +16,7 @@ export type WeekPlanTask = {
   reminderMinutesBefore?: ReminderMinutesBefore;
   estimatedMinutes?: number;
   actualMinutes?: number;
+  priority?: TaskPriority;
   repeatLabel?: string;
 };
 
@@ -37,6 +39,8 @@ export function getWeekDates(anchor: Date): DateKey[] {
 }
 
 function compareTasks(left: WeekPlanTask, right: WeekPlanTask): number {
+  const priorityOrder = taskPriorityRank(left.priority) - taskPriorityRank(right.priority);
+  if (priorityOrder !== 0) return priorityOrder;
   const leftTime = left.plannedStartTime ?? "99:99";
   const rightTime = right.plannedStartTime ?? "99:99";
   if (leftTime !== rightTime) return leftTime.localeCompare(rightTime);
@@ -70,6 +74,7 @@ export function getWeekPlan(state: AppState, anchor: Date): WeekPlanDay[] {
         reminderMinutesBefore: record?.reminderMinutesBefore ?? template.reminderMinutesBefore,
         estimatedMinutes: record?.estimatedMinutes ?? template.estimatedMinutes,
         actualMinutes: record?.actualMinutes,
+        priority: record?.priority ?? template.priority,
         repeatLabel: formatFixedRepeatRule(template.repeatRule)
       });
     }
@@ -88,7 +93,8 @@ export function getWeekPlan(state: AppState, anchor: Date): WeekPlanDay[] {
         plannedStartTime: task.plannedStartTime,
         reminderMinutesBefore: task.reminderMinutesBefore,
         estimatedMinutes: task.estimatedMinutes,
-        actualMinutes: task.actualMinutes
+        actualMinutes: task.actualMinutes,
+        priority: task.priority
       });
     }
 

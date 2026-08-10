@@ -6,7 +6,8 @@ import { toDateKey } from "../../domain/date";
 import { maximumEstimatedMinutes } from "../../domain/planning";
 import { formatFixedRepeatRule, getFixedRepeatRule } from "../../domain/repeat";
 import { formatReminderMinutes, normalizeReminderMinutesBefore, reminderMinuteOptions } from "../../domain/reminders";
-import type { AppState, Category, DateKey, FixedRepeatRule, FixedTaskTemplate, TimeKey } from "../../domain/types";
+import { formatTaskPriority, taskPriorityOptions } from "../../domain/priorities";
+import type { AppState, Category, DateKey, FixedRepeatRule, FixedTaskTemplate, TaskPriority, TimeKey } from "../../domain/types";
 import { downloadBackup, parseBackup } from "../../storage/backup";
 
 function backupErrorMessage(error: unknown): string {
@@ -33,6 +34,7 @@ export function SettingsPage() {
   const [categoryIconInput, setCategoryIconInput] = useState("分");
   const [fixedTitle, setFixedTitle] = useState("");
   const [fixedCategoryId, setFixedCategoryId] = useState("study");
+  const [fixedPriority, setFixedPriority] = useState<TaskPriority>("medium");
   const [fixedStartTime, setFixedStartTime] = useState("");
   const [fixedReminderMinutes, setFixedReminderMinutes] = useState("");
   const [fixedEstimatedMinutes, setFixedEstimatedMinutes] = useState("");
@@ -41,6 +43,7 @@ export function SettingsPage() {
   const [editingFixedId, setEditingFixedId] = useState<string>();
   const [editingFixedTitle, setEditingFixedTitle] = useState("");
   const [editingFixedCategoryId, setEditingFixedCategoryId] = useState("study");
+  const [editingFixedPriority, setEditingFixedPriority] = useState<TaskPriority>("medium");
   const [editingFixedStartTime, setEditingFixedStartTime] = useState("");
   const [editingFixedReminderMinutes, setEditingFixedReminderMinutes] = useState("");
   const [editingFixedEstimatedMinutes, setEditingFixedEstimatedMinutes] = useState("");
@@ -110,6 +113,7 @@ export function SettingsPage() {
       input: {
         title: fixedTitle,
         categoryId: fixedCategoryId,
+        priority: fixedPriority,
         activeFrom: toDateKey(new Date()),
         plannedStartTime: fixedStartTime ? fixedStartTime as TimeKey : undefined,
         reminderMinutesBefore: fixedStartTime ? normalizeReminderMinutesBefore(fixedReminderMinutes) : undefined,
@@ -118,6 +122,7 @@ export function SettingsPage() {
       }
     })) {
       setFixedTitle("");
+      setFixedPriority("medium");
       setFixedStartTime("");
       setFixedReminderMinutes("");
       setFixedEstimatedMinutes("");
@@ -129,6 +134,7 @@ export function SettingsPage() {
     setEditingFixedId(task.id);
     setEditingFixedTitle(task.title);
     setEditingFixedCategoryId(task.categoryId);
+    setEditingFixedPriority(task.priority ?? "medium");
     setEditingFixedStartTime(task.plannedStartTime ?? "");
     setEditingFixedReminderMinutes(task.reminderMinutesBefore?.toString() ?? "");
     setEditingFixedEstimatedMinutes(task.estimatedMinutes?.toString() ?? "");
@@ -150,6 +156,7 @@ export function SettingsPage() {
     if (dispatch({ type: "fixed/update", id: editingFixedId, input: {
       title: editingFixedTitle,
       categoryId: editingFixedCategoryId,
+      priority: editingFixedPriority,
       plannedStartTime: editingFixedStartTime ? editingFixedStartTime as TimeKey : undefined,
       reminderMinutesBefore: editingFixedStartTime ? normalizeReminderMinutesBefore(editingFixedReminderMinutes) : undefined,
       estimatedMinutes: editingFixedEstimatedMinutes ? Number(editingFixedEstimatedMinutes) : undefined,
@@ -248,6 +255,10 @@ export function SettingsPage() {
             {state.categories.length === 0 && <option value="">暂无可用分类</option>}
             {state.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
           </select>
+          <label className="field-label" htmlFor="fixed-priority">固定任务优先级</label>
+          <select id="fixed-priority" className="field-control" value={fixedPriority} onChange={(event) => setFixedPriority(event.target.value as TaskPriority)}>
+            {taskPriorityOptions.map((option) => <option key={option.value} value={option.value}>{option.label} · {option.description}</option>)}
+          </select>
           <RepeatRuleFields idPrefix="fixed" value={fixedRepeatRule} onChange={setFixedRepeatRule} />
           <div className="task-form__planning">
             <label htmlFor="fixed-start-time"><span>开始时间（选填）</span><input id="fixed-start-time" className="field-control" type="time" value={fixedStartTime} onChange={(event) => setFixedStartTime(event.target.value)} /></label>
@@ -261,7 +272,7 @@ export function SettingsPage() {
           {managedFixedTasks.length === 0 && <li className="settings-muted">还没有固定任务</li>}
           {managedFixedTasks.map((task) => (
             <li key={task.id} className="settings-list__item">
-              <span><strong>{task.title}</strong><small>{categoryName(state.categories, task.categoryId)} · {formatFixedRepeatRule(task.repeatRule)}{task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}{task.reminderMinutesBefore !== undefined ? ` · ${formatReminderMinutes(task.reminderMinutesBefore)}` : ""}{task.estimatedMinutes ? ` · 预计 ${task.estimatedMinutes} 分钟` : ""}{task.pausedUntil && task.pausedUntil >= todayKey ? ` · 暂停至 ${task.pausedUntil}` : ""}{(task.skippedDates ?? []).some((date) => date >= todayKey) ? ` · 已请假 ${(task.skippedDates ?? []).filter((date) => date >= todayKey).length} 天` : ""} · {task.inactiveFrom ? "已停用" : "进行中"}</small></span>
+              <span><strong>{task.title}</strong><small>{formatTaskPriority(task.priority)}优先级 · {categoryName(state.categories, task.categoryId)} · {formatFixedRepeatRule(task.repeatRule)}{task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}{task.reminderMinutesBefore !== undefined ? ` · ${formatReminderMinutes(task.reminderMinutesBefore)}` : ""}{task.estimatedMinutes ? ` · 预计 ${task.estimatedMinutes} 分钟` : ""}{task.pausedUntil && task.pausedUntil >= todayKey ? ` · 暂停至 ${task.pausedUntil}` : ""}{(task.skippedDates ?? []).some((date) => date >= todayKey) ? ` · 已请假 ${(task.skippedDates ?? []).filter((date) => date >= todayKey).length} 天` : ""} · {task.inactiveFrom ? "已停用" : "进行中"}</small></span>
               <span className="settings-inline-actions">
                 <button type="button" onClick={() => beginEditFixedTask(task)} aria-label={`编辑固定任务：${task.title}`}>编辑</button>
                 {!task.inactiveFrom && <button type="button" onClick={() => { setExceptionFixedId(task.id); setExceptionDate(todayKey); }} aria-label={`请假或暂停：${task.title}`}>请假/暂停</button>}
@@ -300,6 +311,10 @@ export function SettingsPage() {
           <select id="editing-fixed-category" className="field-control" value={editingFixedCategoryId} onChange={(event) => setEditingFixedCategoryId(event.target.value)}>
             {state.categories.length === 0 && <option value="">暂无可用分类</option>}
             {state.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+          </select>
+          <label className="field-label" htmlFor="editing-fixed-priority">编辑固定任务优先级</label>
+          <select id="editing-fixed-priority" className="field-control" value={editingFixedPriority} onChange={(event) => setEditingFixedPriority(event.target.value as TaskPriority)}>
+            {taskPriorityOptions.map((option) => <option key={option.value} value={option.value}>{option.label} · {option.description}</option>)}
           </select>
           <RepeatRuleFields idPrefix="editing-fixed" value={editingFixedRepeatRule} onChange={setEditingFixedRepeatRule} />
           <div className="task-form__planning">

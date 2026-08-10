@@ -3,6 +3,7 @@ import { useAppState } from "../../app/AppStateProvider";
 import { fromDateKey, toDateKey } from "../../domain/date";
 import { formatPlanComparison } from "../../domain/planning";
 import { formatReminderMinutes } from "../../domain/reminders";
+import { formatTaskPriority } from "../../domain/priorities";
 import { formatTrackedTime } from "../../domain/time";
 import type { DateKey } from "../../domain/types";
 import { getWeekPlan, type WeekPlanTask } from "../../domain/week";
@@ -42,6 +43,7 @@ function WeekTaskCard({ task, canToggle, onMove, onToggle }: {
       </div>
       <div className="week-task__copy">
         <div>
+          <span className={`task-priority-tag task-priority-tag--${task.priority ?? "medium"}`}>{formatTaskPriority(task.priority)}</span>
           <span className={`week-task__status week-task__status--${task.status}`}>{statusLabel(task)}</span>
           <span>{task.categoryName}</span>
         </div>
@@ -96,6 +98,7 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
           plannedStartTime: values.plannedStartTime,
           reminderMinutesBefore: values.reminderMinutesBefore,
           estimatedMinutes: values.estimatedMinutes,
+          priority: values.priority,
           repeatRule: values.repeatRule
         } })
       : dispatch({ type: "scheduled/add", input: {
@@ -104,7 +107,8 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
           scheduledDate: values.date,
           plannedStartTime: values.plannedStartTime,
           reminderMinutesBefore: values.reminderMinutesBefore,
-          estimatedMinutes: values.estimatedMinutes
+          estimatedMinutes: values.estimatedMinutes,
+          priority: values.priority
         } });
 
     if (saved) {

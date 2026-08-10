@@ -3,6 +3,7 @@ import { useAppState } from "../../app/AppStateProvider";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { TimeEntryDialog } from "../../components/TimeEntryDialog";
 import { fromDateKey, getWeek, isWithinWeek, toDateKey } from "../../domain/date";
+import { formatTaskPriority } from "../../domain/priorities";
 import type { DateKey, ScheduledTask } from "../../domain/types";
 
 type BacklogProps = {
@@ -51,7 +52,7 @@ function TaskCard({ task, categoryName, actionLabel, onComplete, onReschedule, o
   return (
     <li className="backlog-card">
       <div className="backlog-card__copy">
-        <p>{task.title}</p>
+        <p><span className={`task-priority-tag task-priority-tag--${task.priority ?? "medium"}`}>{formatTaskPriority(task.priority)}</span>{task.title}</p>
         <span>
           原定：{formatDate(task.scheduledDate)} · {categoryName}
           {task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}

@@ -34,6 +34,7 @@ function createFixedRecord(
     categoryNameSnapshot: task.categoryNameSnapshot,
     plannedStartTime: task.plannedStartTime,
     reminderMinutesBefore: task.reminderMinutesBefore,
+    priority: task.priority,
     estimatedMinutes: task.estimatedMinutes
   };
 }
@@ -103,6 +104,7 @@ export function rescheduleTask(
     sourceTaskId: source.id,
     plannedStartTime: source.plannedStartTime,
     reminderMinutesBefore: source.reminderMinutesBefore,
+    priority: source.priority,
     estimatedMinutes: source.estimatedMinutes,
     createdAt: now.toISOString()
   };

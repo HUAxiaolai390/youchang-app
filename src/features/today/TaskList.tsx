@@ -1,6 +1,7 @@
 import { formatPlanComparison } from "../../domain/planning";
 import { formatReminderMinutes } from "../../domain/reminders";
-import type { FixedRepeatRule, ReminderMinutesBefore, TimeKey } from "../../domain/types";
+import { formatTaskPriority } from "../../domain/priorities";
+import type { FixedRepeatRule, ReminderMinutesBefore, TaskPriority, TimeKey } from "../../domain/types";
 
 export type TodayTask = {
   id: string;
@@ -15,6 +16,8 @@ export type TodayTask = {
   reminderMinutesBefore?: ReminderMinutesBefore;
   estimatedMinutes?: number;
   actualMinutes?: number;
+  priority?: TaskPriority;
+  isTodayFocus?: boolean;
   repeatRule?: FixedRepeatRule;
   repeatLabel?: string;
 };
@@ -26,9 +29,11 @@ type TaskListProps = {
   onEdit(task: TodayTask): void;
   onDelete(task: TodayTask): void;
   onTime(task: TodayTask): void;
+  onFocus(task: TodayTask): void;
+  focusLimitReached: boolean;
 };
 
-export function TaskList({ title, tasks, onToggle, onEdit, onDelete, onTime }: TaskListProps) {
+export function TaskList({ title, tasks, onToggle, onEdit, onDelete, onTime, onFocus, focusLimitReached }: TaskListProps) {
   return (
     <section className="task-list" aria-labelledby={`${title}-title`}>
       <div className="task-list__header"><h2 id={`${title}-title`}>{title}</h2><span>{tasks.length} 项</span></div>
@@ -41,7 +46,7 @@ export function TaskList({ title, tasks, onToggle, onEdit, onDelete, onTime }: T
                 <span aria-hidden="true" />
               </label>
               <div className="task-item__copy">
-                <p>{task.title}</p>
+                <p><span className={`task-priority-tag task-priority-tag--${task.priority ?? "medium"}`}>{formatTaskPriority(task.priority)}</span>{task.title}</p>
                 <span>
                   {task.categoryName}
                   {task.repeatLabel ? ` · ${task.repeatLabel}` : ""}
@@ -51,6 +56,13 @@ export function TaskList({ title, tasks, onToggle, onEdit, onDelete, onTime }: T
                 </span>
               </div>
               <div className="task-item__actions">
+                {(!task.completed || task.isTodayFocus) && <button
+                  type="button"
+                  disabled={!task.isTodayFocus && focusLimitReached}
+                  title={!task.isTodayFocus && focusLimitReached ? "今日三件事已经选满" : undefined}
+                  onClick={() => onFocus(task)}
+                  aria-label={`${task.isTodayFocus ? "移出今日重点" : "设为今日重点"}：${task.title}`}
+                >{task.isTodayFocus ? "移出" : "重点"}</button>}
                 <button type="button" onClick={() => onTime(task)} aria-label={`记录用时：${task.title}`}>用时</button>
                 {task.editable && <button type="button" onClick={() => onEdit(task)} aria-label={`编辑：${task.title}`}>编辑</button>}
                 <button type="button" onClick={() => onDelete(task)} aria-label={`删除：${task.title}`}>删除</button>

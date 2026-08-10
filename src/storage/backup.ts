@@ -4,6 +4,7 @@ import { maximumActualMinutes } from "../domain/time";
 import { isTimeKey, maximumEstimatedMinutes } from "../domain/planning";
 import { isAchievementId } from "../domain/achievements";
 import { isReminderMinutesBefore } from "../domain/reminders";
+import { isTaskPriority } from "../domain/priorities";
 
 const INVALID_BACKUP = "备份文件格式无效";
 const UNSUPPORTED_VERSION = "备份文件版本不受支持";
@@ -83,6 +84,8 @@ function isFixedRecord(value: unknown): boolean {
     && isDateKey(value.date)
     && (value.completedAt === undefined || isString(value.completedAt))
     && (value.reminderSentAt === undefined || isString(value.reminderSentAt))
+    && (value.priority === undefined || isTaskPriority(value.priority))
+    && (value.isTodayFocus === undefined || typeof value.isTodayFocus === "boolean")
     && isOptionalPlanning(value)
     && isOptionalActualMinutes(value.actualMinutes);
 }
@@ -95,6 +98,8 @@ function isScheduledTask(value: unknown): boolean {
     && (value.sourceTaskId === undefined || isString(value.sourceTaskId))
     && (value.completedAt === undefined || isString(value.completedAt))
     && (value.reminderSentAt === undefined || isString(value.reminderSentAt))
+    && (value.priority === undefined || isTaskPriority(value.priority))
+    && (value.isTodayFocus === undefined || typeof value.isTodayFocus === "boolean")
     && isOptionalPlanning(value)
     && isOptionalActualMinutes(value.actualMinutes);
 }
@@ -102,6 +107,7 @@ function isScheduledTask(value: unknown): boolean {
 function isOptionalPlanning(value: Record<string, unknown>): boolean {
   return (value.plannedStartTime === undefined || isTimeKey(value.plannedStartTime))
     && (value.reminderMinutesBefore === undefined || isReminderMinutesBefore(value.reminderMinutesBefore))
+    && (value.priority === undefined || isTaskPriority(value.priority))
     && (value.estimatedMinutes === undefined
       || (typeof value.estimatedMinutes === "number"
         && Number.isInteger(value.estimatedMinutes)

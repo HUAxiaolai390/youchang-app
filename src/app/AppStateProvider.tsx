@@ -30,6 +30,7 @@ import {
 import type { AppRepository } from "../storage/repository";
 import type { AppAction } from "./app-actions";
 import { markTaskReminderSent } from "../domain/reminders";
+import { toggleTodayFocus } from "../domain/today-focus";
 
 export type AppStateContextValue = {
   state: AppState;
@@ -48,6 +49,7 @@ const knownErrorMessages = new Set([
   "请输入有效开始时间",
   "请输入有效预计用时",
   "请选择有效提醒时间",
+  "今日重点最多设置 3 项",
   "请至少选择一个星期",
   "每周次数应为 1 到 7 次",
   "间隔天数应为 2 到 30 天",
@@ -122,6 +124,8 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
       };
     case "reminder/mark-sent":
       return markTaskReminderSent(state, action.kind, action.id, action.sentAt);
+    case "today-focus/toggle":
+      return toggleTodayFocus(state, action.kind, action.id, now);
     case "focus/configure":
       return configureFocus(state, action.focusMinutes, action.breakMinutes);
     case "focus/session-complete":
@@ -162,7 +166,17 @@ function readInitialState(repository: AppRepository): { state: AppState; error?:
   }
 }
 
-export function AppStateProvider({ repository, children }: { repository: AppRepository; children: ReactNode }) {
+const readSystemTime = () => new Date();
+
+export function AppStateProvider({
+  repository,
+  children,
+  now = readSystemTime
+}: {
+  repository: AppRepository;
+  children: ReactNode;
+  now?: () => Date;
+}) {
   const [initial] = useState(() => readInitialState(repository));
   const [state, setState] = useState(initial.state);
   const [error, setError] = useState(initial.error);
@@ -178,7 +192,7 @@ export function AppStateProvider({ repository, children }: { repository: AppRepo
       const clearsRepository = action.type === "data/clear";
       const nextState = clearsRepository
         ? repository.clear()
-        : reduceAppState(stateRef.current, action, new Date());
+        : reduceAppState(stateRef.current, action, now());
       if (!clearsRepository) repository.save(nextState);
       stateRef.current = nextState;
       setState(nextState);
@@ -188,24 +202,25 @@ export function AppStateProvider({ repository, children }: { repository: AppRepo
       setError(getDisplayError(caught));
       return false;
     }
-  }, [repository]);
+  }, [now, repository]);
 
   useEffect(() => {
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        dispatch({ type: "system/rollover", now: new Date() });
+        dispatch({ type: "system/rollover", now: now() });
       }
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
 
     let timer: number | undefined;
     const scheduleMidnightRollover = () => {
-      const nextMidnight = new Date();
+      const currentTime = now();
+      const nextMidnight = new Date(currentTime);
       nextMidnight.setHours(24, 0, 0, 0);
       timer = window.setTimeout(() => {
-        dispatch({ type: "system/rollover", now: new Date() });
+        dispatch({ type: "system/rollover", now: now() });
         scheduleMidnightRollover();
-      }, nextMidnight.getTime() - Date.now());
+      }, nextMidnight.getTime() - currentTime.getTime());
     };
     scheduleMidnightRollover();
 
@@ -213,7 +228,7 @@ export function AppStateProvider({ repository, children }: { repository: AppRepo
       document.removeEventListener("visibilitychange", onVisibilityChange);
       if (timer !== undefined) window.clearTimeout(timer);
     };
-  }, [dispatch]);
+  }, [dispatch, now]);
 
   return (
     <AppStateContext.Provider value={{ state, dispatch, error }}>
