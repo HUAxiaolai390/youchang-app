@@ -4,6 +4,7 @@ import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { TimeEntryDialog } from "../../components/TimeEntryDialog";
 import { fromDateKey, getWeek, isWithinWeek, toDateKey } from "../../domain/date";
 import { formatTaskPriority } from "../../domain/priorities";
+import { getTaskStepProgress } from "../../domain/steps";
 import type { DateKey, ScheduledTask } from "../../domain/types";
 
 type BacklogProps = {
@@ -49,6 +50,7 @@ function TaskCard({ task, categoryName, actionLabel, onComplete, onReschedule, o
   onDelete(): void;
   onTime(): void;
 }) {
+  const stepProgress = getTaskStepProgress(task.steps);
   return (
     <li className="backlog-card">
       <div className="backlog-card__copy">
@@ -58,6 +60,7 @@ function TaskCard({ task, categoryName, actionLabel, onComplete, onReschedule, o
           {task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}
           {task.estimatedMinutes ? ` · 预计 ${task.estimatedMinutes} 分钟` : ""}
           {task.actualMinutes ? ` · 实际 ${task.actualMinutes} 分钟` : ""}
+          {stepProgress.total ? ` · 步骤 ${stepProgress.completed}/${stepProgress.total}` : ""}
         </span>
       </div>
       <div className="backlog-card__actions">

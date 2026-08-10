@@ -5,6 +5,7 @@ import { isTimeKey, maximumEstimatedMinutes } from "../domain/planning";
 import { isAchievementId } from "../domain/achievements";
 import { isReminderMinutesBefore } from "../domain/reminders";
 import { isTaskPriority } from "../domain/priorities";
+import { maximumTaskSteps } from "../domain/steps";
 
 const INVALID_BACKUP = "备份文件格式无效";
 const UNSUPPORTED_VERSION = "备份文件版本不受支持";
@@ -64,12 +65,23 @@ function isFixedRepeatRule(value: unknown): boolean {
   return false;
 }
 
+function isTaskSteps(value: unknown): boolean {
+  if (value === undefined) return true;
+  return Array.isArray(value)
+    && value.length <= maximumTaskSteps
+    && value.every((step) => hasStrings(step, ["id", "title"])
+      && step.title.trim().length > 0
+      && typeof step.completed === "boolean")
+    && new Set(value.map((step) => step.id)).size === value.length;
+}
+
 function isFixedTask(value: unknown): boolean {
   return hasStrings(value, ["id", "title", "categoryId", "categoryNameSnapshot", "createdAt"])
     && isDateKey(value.activeFrom)
     && (value.inactiveFrom === undefined || isDateKey(value.inactiveFrom))
     && (value.successorId === undefined || isString(value.successorId))
     && isFixedRepeatRule(value.repeatRule)
+    && isTaskSteps(value.steps)
     && (value.pausedUntil === undefined || isDateKey(value.pausedUntil))
     && (value.skippedDates === undefined
       || (Array.isArray(value.skippedDates)
@@ -85,6 +97,7 @@ function isFixedRecord(value: unknown): boolean {
     && (value.completedAt === undefined || isString(value.completedAt))
     && (value.reminderSentAt === undefined || isString(value.reminderSentAt))
     && (value.priority === undefined || isTaskPriority(value.priority))
+    && isTaskSteps(value.steps)
     && isOptionalPlanning(value)
     && isOptionalActualMinutes(value.actualMinutes);
 }
@@ -98,6 +111,7 @@ function isScheduledTask(value: unknown): boolean {
     && (value.completedAt === undefined || isString(value.completedAt))
     && (value.reminderSentAt === undefined || isString(value.reminderSentAt))
     && (value.priority === undefined || isTaskPriority(value.priority))
+    && isTaskSteps(value.steps)
     && isOptionalPlanning(value)
     && isOptionalActualMinutes(value.actualMinutes);
 }

@@ -44,6 +44,7 @@ describe("daily rollover and rescheduling", () => {
         categoryId: "exercise",
         categoryNameSnapshot: "运动",
         activeFrom: "2026-07-31",
+        steps: [{ id: "warmup", title: "热身", completed: true }],
         order: 0,
         createdAt: july30.toISOString()
       }]
@@ -60,6 +61,7 @@ describe("daily rollover and rescheduling", () => {
       categoryNameSnapshot: "运动"
     }]);
     expect(twice.fixedRecords).toHaveLength(1);
+    expect(twice.fixedRecords[0]?.steps).toEqual([{ id: "warmup", title: "热身", completed: false }]);
   });
 
   it("creates records for every active elapsed date, excluding the inactive boundary", () => {
@@ -127,7 +129,10 @@ describe("daily rollover and rescheduling", () => {
   it("keeps the old attempt incomplete and creates a new pending task on reschedule", () => {
     const result = rescheduleTask({
       ...state("2026-07-31"),
-      scheduledTasks: [scheduledTask({ status: "backlog" })]
+      scheduledTasks: [scheduledTask({
+        status: "backlog",
+        steps: [{ id: "draft", title: "写初稿", completed: true }]
+      })]
     }, "task-1", "2026-08-01", july31);
 
     expect(result.scheduledTasks.find((task) => task.id === "task-1")?.status).toBe("rescheduled");
@@ -136,6 +141,8 @@ describe("daily rollover and rescheduling", () => {
       status: "pending",
       title: "完成实验报告"
     });
+    expect(result.scheduledTasks.find((task) => task.sourceTaskId === "task-1")?.steps)
+      .toEqual([{ id: "draft", title: "写初稿", completed: true }]);
     expect(result.reschedules).toMatchObject([{
       sourceTaskId: "task-1",
       fromDate: "2026-07-30",

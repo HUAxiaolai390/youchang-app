@@ -302,6 +302,31 @@ test("sets task priorities and recommends the high-priority task first", async (
   await expectNoHorizontalOverflow(page);
 });
 
+test("breaks a large task into steps and tracks its progress", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  await page.getByRole("button", { name: "添加任务", exact: true }).click();
+  await page.getByLabel("任务名称").fill("完成论文");
+  for (const [index, title] of ["查资料", "写正文", "修改"].entries()) {
+    await page.getByRole("button", { name: /添加步骤/ }).click();
+    await page.getByRole("textbox", { name: `步骤 ${index + 1}`, exact: true }).fill(title);
+  }
+  await page.getByRole("button", { name: "保存任务" }).click();
+
+  await expect(page.getByLabel("完成论文步骤进度：0/3")).toBeVisible();
+  await page.getByRole("button", { name: "展开步骤：完成论文" }).click();
+  await page.getByRole("checkbox", { name: "完成步骤：完成论文 - 查资料" }).check();
+  await page.getByRole("checkbox", { name: "完成步骤：完成论文 - 写正文" }).check();
+  await expect(page.getByLabel("完成论文步骤进度：2/3")).toBeVisible();
+  await expect(page.getByRole("button", { name: "收起步骤：完成论文" })).toContainText("步骤 2/3");
+  await expectNoHorizontalOverflow(page);
+
+  await page.reload();
+  await expect(page.getByRole("button", { name: "展开步骤：完成论文" })).toContainText("步骤 2/3");
+});
+
 test("completes the core task, growth, and backup flow", async ({ page }, testInfo) => {
   const runtimeErrors: string[] = [];
   page.on("console", (message) => {

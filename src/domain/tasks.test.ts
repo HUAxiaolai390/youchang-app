@@ -105,7 +105,8 @@ describe("task and category rules", () => {
     const result = addFixedTask(state(), {
       title: "  背英语单词 ",
       categoryId: "study",
-      activeFrom: "2026-07-31"
+      activeFrom: "2026-07-31",
+      steps: [{ id: "learn", title: "学习新词", completed: true }]
     }, now);
 
     expect(result.fixedTasks[0]).toMatchObject({
@@ -116,6 +117,7 @@ describe("task and category rules", () => {
       order: 0,
       createdAt: now.toISOString()
     });
+    expect(result.fixedTasks[0]?.steps).toEqual([{ id: "learn", title: "学习新词", completed: false }]);
     expect(result.fixedRecords).toMatchObject([{
       templateId: result.fixedTasks[0]?.id,
       date: "2026-07-31",
@@ -123,6 +125,7 @@ describe("task and category rules", () => {
       categoryId: "study",
       categoryNameSnapshot: "学习"
     }]);
+    expect(result.fixedRecords[0]?.steps).toEqual([{ id: "learn", title: "学习新词", completed: false }]);
   });
 
   it("editing a fixed task changes its future template but not historical snapshots", () => {
@@ -237,7 +240,8 @@ describe("task and category rules", () => {
       title: "准备考试",
       categoryId: "study",
       scheduledDate: "2026-07-31",
-      priority: "high"
+      priority: "high",
+      steps: [{ id: "outline", title: "列提纲", completed: true }]
     }, now);
     const fixed = addFixedTask(state(), {
       title: "睡前阅读",
@@ -247,6 +251,7 @@ describe("task and category rules", () => {
     }, now);
 
     expect(scheduled.scheduledTasks[0]?.priority).toBe("high");
+    expect(scheduled.scheduledTasks[0]?.steps).toEqual([{ id: "outline", title: "列提纲", completed: true }]);
     expect(fixed.fixedTasks[0]?.priority).toBe("low");
     expect(fixed.fixedRecords[0]?.priority).toBe("low");
   });

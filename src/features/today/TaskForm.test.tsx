@@ -136,6 +136,27 @@ describe("TaskForm", () => {
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ priority: "high" }));
   });
 
+  it("adds, removes, and submits task steps", async () => {
+    const state = createInitialState(new Date(2026, 6, 31, 9));
+    const onSubmit = vi.fn();
+    const user = userEvent.setup();
+    render(<TaskForm categories={state.categories} today="2026-07-31" onCancel={() => {}} onSubmit={onSubmit} />);
+
+    await user.type(screen.getByLabelText("任务名称"), "完成论文");
+    await user.click(screen.getByRole("button", { name: /添加步骤/ }));
+    await user.type(screen.getByLabelText("步骤 1"), "查资料");
+    await user.click(screen.getByRole("button", { name: /添加步骤/ }));
+    await user.type(screen.getByLabelText("步骤 2"), "写正文");
+    await user.click(screen.getByRole("button", { name: "保存任务" }));
+
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+      steps: [
+        expect.objectContaining({ title: "查资料", completed: false }),
+        expect.objectContaining({ title: "写正文", completed: false })
+      ]
+    }));
+  });
+
   it.each([
     { kind: "fixed" as const, title: "晨间拉伸", checkedName: "固定任务" },
     { kind: "scheduled" as const, title: "整理书桌", checkedName: "临时任务" }

@@ -5,7 +5,8 @@ import { maximumEstimatedMinutes, normalizeEstimatedMinutes, normalizePlannedSta
 import { normalizeFixedRepeatRule } from "../../domain/repeat";
 import { normalizeReminderMinutesBefore, reminderMinuteOptions } from "../../domain/reminders";
 import { taskPriorityOptions } from "../../domain/priorities";
-import type { Category, DateKey, FixedRepeatRule, ReminderMinutesBefore, TaskPriority, TimeKey } from "../../domain/types";
+import { maximumTaskSteps } from "../../domain/steps";
+import type { Category, DateKey, FixedRepeatRule, ReminderMinutesBefore, TaskPriority, TaskStep, TimeKey } from "../../domain/types";
 
 export type TaskFormValues = {
   title: string;
@@ -16,13 +17,15 @@ export type TaskFormValues = {
   reminderMinutesBefore?: ReminderMinutesBefore;
   estimatedMinutes?: number;
   priority: TaskPriority;
+  steps?: TaskStep[];
   repeatRule?: FixedRepeatRule;
 };
 
-type TaskFormDraft = Omit<TaskFormValues, "plannedStartTime" | "reminderMinutesBefore" | "estimatedMinutes"> & {
+type TaskFormDraft = Omit<TaskFormValues, "plannedStartTime" | "reminderMinutesBefore" | "estimatedMinutes" | "steps"> & {
   plannedStartTime: string;
   reminderMinutesBefore: string;
   estimatedMinutes: string;
+  steps: TaskStep[];
   repeatRule: FixedRepeatRule;
 };
 
@@ -82,6 +85,7 @@ export function TaskForm({ categories, today, defaultDate, initialValues, error,
     reminderMinutesBefore: initialValues?.reminderMinutesBefore?.toString() ?? "",
     estimatedMinutes: initialValues?.estimatedMinutes?.toString() ?? "",
     priority: initialValues?.priority ?? "medium",
+    steps: initialValues?.steps?.map((step) => ({ ...step })) ?? [],
     repeatRule: initialValues?.repeatRule ?? { type: "daily" }
   }));
   const [formError, setFormError] = useState<string>();
@@ -124,6 +128,7 @@ export function TaskForm({ categories, today, defaultDate, initialValues, error,
           : undefined,
         estimatedMinutes: normalizeEstimatedMinutes(estimatedValue === "" ? undefined : Number(estimatedValue)),
         priority: values.priority,
+        steps: values.steps,
         repeatRule: values.kind === "fixed" ? normalizeFixedRepeatRule(values.repeatRule) : undefined
       });
     } catch (caught) {
@@ -180,6 +185,43 @@ export function TaskForm({ categories, today, defaultDate, initialValues, error,
             ))}
           </div>
         </fieldset>
+        <section className="task-step-editor" aria-labelledby="task-step-editor-title">
+          <div className="task-step-editor__heading">
+            <div><strong id="task-step-editor-title">任务步骤（选填）</strong><small>把大任务拆成容易完成的小步骤</small></div>
+            <span>{values.steps.length}/{maximumTaskSteps}</span>
+          </div>
+          {values.steps.length > 0 && <ol className="task-step-editor__list">
+            {values.steps.map((step, index) => (
+              <li key={step.id}>
+                <span aria-hidden="true">{index + 1}</span>
+                <input
+                  className="field-control"
+                  value={step.title}
+                  placeholder={`第 ${index + 1} 步`}
+                  aria-label={`步骤 ${index + 1}`}
+                  onChange={(event) => setValues((current) => ({
+                    ...current,
+                    steps: current.steps.map((item) => item.id === step.id ? { ...item, title: event.target.value } : item)
+                  }))}
+                />
+                <button
+                  type="button"
+                  aria-label={`删除步骤 ${index + 1}`}
+                  onClick={() => setValues((current) => ({ ...current, steps: current.steps.filter((item) => item.id !== step.id) }))}
+                >删除</button>
+              </li>
+            ))}
+          </ol>}
+          <button
+            type="button"
+            className="task-step-editor__add"
+            disabled={values.steps.length >= maximumTaskSteps}
+            onClick={() => setValues((current) => ({
+              ...current,
+              steps: [...current.steps, { id: crypto.randomUUID(), title: "", completed: false }]
+            }))}
+          >＋ 添加步骤</button>
+        </section>
         {values.kind === "scheduled" && (isEditingScheduled ? (
           <div className="task-form__move-date">
             <div className="task-form__move-date-heading">

@@ -58,6 +58,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
           plannedStartTime: record.plannedStartTime ?? template.plannedStartTime,
           reminderMinutesBefore: record.reminderMinutesBefore ?? template.reminderMinutesBefore,
           priority: record.priority ?? template.priority,
+          steps: record.steps ?? template.steps,
           estimatedMinutes: record.estimatedMinutes ?? template.estimatedMinutes,
           actualMinutes: record.actualMinutes,
           repeatRule: template.repeatRule,
@@ -71,6 +72,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
         categoryName: liveCategoryName(task.categoryId), completed: task.status === "completed", editable: task.status === "pending",
         plannedStartTime: task.plannedStartTime, reminderMinutesBefore: task.reminderMinutesBefore, estimatedMinutes: task.estimatedMinutes,
         priority: task.priority,
+        steps: task.steps,
         actualMinutes: task.actualMinutes
       }))
     };
@@ -101,13 +103,15 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
           title: values.title, categoryId: values.categoryId,
           plannedStartTime: values.plannedStartTime, reminderMinutesBefore: values.reminderMinutesBefore, estimatedMinutes: values.estimatedMinutes,
           priority: values.priority,
+          steps: values.steps,
           repeatRule: values.repeatRule
         } });
       } else {
         saved = dispatch({ type: "scheduled/update", id: editing.taskId, input: {
           title: values.title, categoryId: values.categoryId, scheduledDate: values.date,
           plannedStartTime: values.plannedStartTime, reminderMinutesBefore: values.reminderMinutesBefore, estimatedMinutes: values.estimatedMinutes,
-          priority: values.priority
+          priority: values.priority,
+          steps: values.steps
         } });
       }
     } else if (values.kind === "fixed") {
@@ -115,13 +119,15 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
         title: values.title, categoryId: values.categoryId, activeFrom: today,
         plannedStartTime: values.plannedStartTime, reminderMinutesBefore: values.reminderMinutesBefore, estimatedMinutes: values.estimatedMinutes,
         priority: values.priority,
+        steps: values.steps,
         repeatRule: values.repeatRule
       } });
     } else {
       saved = dispatch({ type: "scheduled/add", input: {
         title: values.title, categoryId: values.categoryId, scheduledDate: values.date,
         plannedStartTime: values.plannedStartTime, reminderMinutesBefore: values.reminderMinutesBefore, estimatedMinutes: values.estimatedMinutes,
-        priority: values.priority
+        priority: values.priority,
+        steps: values.steps
       } });
     }
     if (saved) {
@@ -138,6 +144,12 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
   function toggle(task: TodayTask) {
     const saved = dispatch(task.kind === "fixed" ? { type: "fixed/toggle", recordId: task.id } : { type: "scheduled/toggle", id: task.id });
     if (!task.completed && saved) setCelebrationKey((current) => current + 1);
+  }
+
+  function toggleStep(task: TodayTask, stepId: string) {
+    dispatch(task.kind === "fixed"
+      ? { type: "fixed/step-toggle", recordId: task.id, stepId }
+      : { type: "scheduled/step-toggle", id: task.id, stepId });
   }
 
   function confirmDelete() {
@@ -163,6 +175,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
     reminderMinutesBefore: editing.reminderMinutesBefore,
     estimatedMinutes: editing.estimatedMinutes,
     priority: editing.priority ?? "medium",
+    steps: editing.steps,
     repeatRule: editing.repeatRule
   } : undefined;
 
@@ -277,8 +290,8 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
         <button type="button" aria-pressed={filter === "all"} onClick={() => setFilter("all")}>全部</button>
         {state.categories.map((category) => <button key={category.id} type="button" aria-label={`只看${category.name}`} aria-pressed={filter === category.id} onClick={() => setFilter(category.id)}>{category.name}</button>)}
       </section>
-      <TaskList title="固定任务" tasks={fixedTasks} onToggle={toggle} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
-      <TaskList title="今日安排" tasks={scheduledTasks} onToggle={toggle} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
+      <TaskList title="固定任务" tasks={fixedTasks} onToggle={toggle} onStepToggle={toggleStep} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
+      <TaskList title="今日安排" tasks={scheduledTasks} onToggle={toggle} onStepToggle={toggleStep} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
       <Backlog now={now} />
       <button type="button" className="add-task-button" aria-label="添加任务" onClick={openNewTask}>＋<span>添加任务</span></button>
       {formOpen && <TaskForm categories={state.categories} today={today} initialValues={formValues} error={error} onSubmit={saveTask} onCancel={closeForm} />}

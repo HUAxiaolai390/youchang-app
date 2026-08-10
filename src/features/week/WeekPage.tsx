@@ -4,6 +4,7 @@ import { fromDateKey, toDateKey } from "../../domain/date";
 import { formatPlanComparison } from "../../domain/planning";
 import { formatReminderMinutes } from "../../domain/reminders";
 import { formatTaskPriority } from "../../domain/priorities";
+import { getTaskStepProgress } from "../../domain/steps";
 import { formatTrackedTime } from "../../domain/time";
 import type { DateKey } from "../../domain/types";
 import { getWeekPlan, type WeekPlanTask } from "../../domain/week";
@@ -35,6 +36,7 @@ function WeekTaskCard({ task, canToggle, onMove, onToggle }: {
   onToggle(task: WeekPlanTask): void;
 }) {
   const canMove = task.kind === "scheduled" && task.status !== "completed";
+  const stepProgress = getTaskStepProgress(task.steps);
   return (
     <li className={`week-task${task.status === "completed" ? " week-task--completed" : ""}`}>
       <div className="week-task__time">
@@ -48,7 +50,7 @@ function WeekTaskCard({ task, canToggle, onMove, onToggle }: {
           <span>{task.categoryName}</span>
         </div>
         <p>{task.title}</p>
-        <small>{formatPlanComparison(task.estimatedMinutes, task.actualMinutes)}{task.reminderMinutesBefore !== undefined ? ` · ${formatReminderMinutes(task.reminderMinutesBefore)}` : ""}</small>
+        <small>{formatPlanComparison(task.estimatedMinutes, task.actualMinutes)}{task.reminderMinutesBefore !== undefined ? ` · ${formatReminderMinutes(task.reminderMinutesBefore)}` : ""}{stepProgress.total ? ` · 步骤 ${stepProgress.completed}/${stepProgress.total}` : ""}</small>
       </div>
       {(canToggle || canMove) && <div className="week-task__actions">
         {canToggle && <button
@@ -99,6 +101,7 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
           reminderMinutesBefore: values.reminderMinutesBefore,
           estimatedMinutes: values.estimatedMinutes,
           priority: values.priority,
+          steps: values.steps,
           repeatRule: values.repeatRule
         } })
       : dispatch({ type: "scheduled/add", input: {
@@ -108,7 +111,8 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
           plannedStartTime: values.plannedStartTime,
           reminderMinutesBefore: values.reminderMinutesBefore,
           estimatedMinutes: values.estimatedMinutes,
-          priority: values.priority
+          priority: values.priority,
+          steps: values.steps
         } });
 
     if (saved) {

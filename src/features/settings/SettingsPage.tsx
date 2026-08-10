@@ -7,7 +7,7 @@ import { maximumEstimatedMinutes } from "../../domain/planning";
 import { formatFixedRepeatRule, getFixedRepeatRule } from "../../domain/repeat";
 import { formatReminderMinutes, normalizeReminderMinutesBefore, reminderMinuteOptions } from "../../domain/reminders";
 import { formatTaskPriority, taskPriorityOptions } from "../../domain/priorities";
-import type { AppState, Category, DateKey, FixedRepeatRule, FixedTaskTemplate, TaskPriority, TimeKey } from "../../domain/types";
+import type { AppState, Category, DateKey, FixedRepeatRule, FixedTaskTemplate, TaskPriority, TaskStep, TimeKey } from "../../domain/types";
 import { downloadBackup, parseBackup } from "../../storage/backup";
 
 function backupErrorMessage(error: unknown): string {
@@ -23,6 +23,14 @@ function categoryName(categories: Category[], categoryId: string): string {
   return categories.find((category) => category.id === categoryId)?.name ?? "其他";
 }
 
+function stepsFromLines(value: string, current: TaskStep[] = []) {
+  return value.split(/\r?\n/).map((title, index) => ({
+    id: current[index]?.id,
+    title,
+    completed: current[index]?.completed
+  }));
+}
+
 function fallbackCategoryId(categories: Category[]): string {
   return categories.find((category) => category.id === "other")?.id ?? categories[0]?.id ?? "";
 }
@@ -35,6 +43,7 @@ export function SettingsPage() {
   const [fixedTitle, setFixedTitle] = useState("");
   const [fixedCategoryId, setFixedCategoryId] = useState("study");
   const [fixedPriority, setFixedPriority] = useState<TaskPriority>("medium");
+  const [fixedSteps, setFixedSteps] = useState("");
   const [fixedStartTime, setFixedStartTime] = useState("");
   const [fixedReminderMinutes, setFixedReminderMinutes] = useState("");
   const [fixedEstimatedMinutes, setFixedEstimatedMinutes] = useState("");
@@ -44,6 +53,7 @@ export function SettingsPage() {
   const [editingFixedTitle, setEditingFixedTitle] = useState("");
   const [editingFixedCategoryId, setEditingFixedCategoryId] = useState("study");
   const [editingFixedPriority, setEditingFixedPriority] = useState<TaskPriority>("medium");
+  const [editingFixedSteps, setEditingFixedSteps] = useState("");
   const [editingFixedStartTime, setEditingFixedStartTime] = useState("");
   const [editingFixedReminderMinutes, setEditingFixedReminderMinutes] = useState("");
   const [editingFixedEstimatedMinutes, setEditingFixedEstimatedMinutes] = useState("");
@@ -114,6 +124,7 @@ export function SettingsPage() {
         title: fixedTitle,
         categoryId: fixedCategoryId,
         priority: fixedPriority,
+        steps: stepsFromLines(fixedSteps),
         activeFrom: toDateKey(new Date()),
         plannedStartTime: fixedStartTime ? fixedStartTime as TimeKey : undefined,
         reminderMinutesBefore: fixedStartTime ? normalizeReminderMinutesBefore(fixedReminderMinutes) : undefined,
@@ -123,6 +134,7 @@ export function SettingsPage() {
     })) {
       setFixedTitle("");
       setFixedPriority("medium");
+      setFixedSteps("");
       setFixedStartTime("");
       setFixedReminderMinutes("");
       setFixedEstimatedMinutes("");
@@ -135,6 +147,7 @@ export function SettingsPage() {
     setEditingFixedTitle(task.title);
     setEditingFixedCategoryId(task.categoryId);
     setEditingFixedPriority(task.priority ?? "medium");
+    setEditingFixedSteps(task.steps?.map((step) => step.title).join("\n") ?? "");
     setEditingFixedStartTime(task.plannedStartTime ?? "");
     setEditingFixedReminderMinutes(task.reminderMinutesBefore?.toString() ?? "");
     setEditingFixedEstimatedMinutes(task.estimatedMinutes?.toString() ?? "");
@@ -157,6 +170,7 @@ export function SettingsPage() {
       title: editingFixedTitle,
       categoryId: editingFixedCategoryId,
       priority: editingFixedPriority,
+      steps: stepsFromLines(editingFixedSteps, state.fixedTasks.find((task) => task.id === editingFixedId)?.steps),
       plannedStartTime: editingFixedStartTime ? editingFixedStartTime as TimeKey : undefined,
       reminderMinutesBefore: editingFixedStartTime ? normalizeReminderMinutesBefore(editingFixedReminderMinutes) : undefined,
       estimatedMinutes: editingFixedEstimatedMinutes ? Number(editingFixedEstimatedMinutes) : undefined,
@@ -259,6 +273,8 @@ export function SettingsPage() {
           <select id="fixed-priority" className="field-control" value={fixedPriority} onChange={(event) => setFixedPriority(event.target.value as TaskPriority)}>
             {taskPriorityOptions.map((option) => <option key={option.value} value={option.value}>{option.label} · {option.description}</option>)}
           </select>
+          <label className="field-label" htmlFor="fixed-steps">任务步骤（选填，每行一个）</label>
+          <textarea id="fixed-steps" className="field-control settings-step-lines" value={fixedSteps} onChange={(event) => setFixedSteps(event.target.value)} placeholder={"例如：\n热身\n正式训练\n拉伸"} />
           <RepeatRuleFields idPrefix="fixed" value={fixedRepeatRule} onChange={setFixedRepeatRule} />
           <div className="task-form__planning">
             <label htmlFor="fixed-start-time"><span>开始时间（选填）</span><input id="fixed-start-time" className="field-control" type="time" value={fixedStartTime} onChange={(event) => setFixedStartTime(event.target.value)} /></label>
@@ -316,6 +332,8 @@ export function SettingsPage() {
           <select id="editing-fixed-priority" className="field-control" value={editingFixedPriority} onChange={(event) => setEditingFixedPriority(event.target.value as TaskPriority)}>
             {taskPriorityOptions.map((option) => <option key={option.value} value={option.value}>{option.label} · {option.description}</option>)}
           </select>
+          <label className="field-label" htmlFor="editing-fixed-steps">编辑任务步骤（选填，每行一个）</label>
+          <textarea id="editing-fixed-steps" className="field-control settings-step-lines" value={editingFixedSteps} onChange={(event) => setEditingFixedSteps(event.target.value)} />
           <RepeatRuleFields idPrefix="editing-fixed" value={editingFixedRepeatRule} onChange={setEditingFixedRepeatRule} />
           <div className="task-form__planning">
             <label htmlFor="editing-fixed-start-time"><span>编辑开始时间（选填）</span><input id="editing-fixed-start-time" className="field-control" type="time" value={editingFixedStartTime} onChange={(event) => setEditingFixedStartTime(event.target.value)} /></label>

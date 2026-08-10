@@ -10,12 +10,14 @@ export type AppAction =
   | { type: "scheduled/add"; input: AddScheduledTaskInput }
   | { type: "scheduled/update"; id: string; input: UpdateScheduledTaskInput }
   | { type: "scheduled/toggle"; id: string }
+  | { type: "scheduled/step-toggle"; id: string; stepId: string }
   | { type: "scheduled/delete"; id: string }
   | { type: "scheduled/reschedule"; id: string; targetDate: DateKey }
   | { type: "scheduled/move-archived"; id: string; targetDate: DateKey }
   | { type: "fixed/add"; input: AddFixedTaskInput }
   | { type: "fixed/update"; id: string; input: UpdateFixedTaskInput }
   | { type: "fixed/toggle"; recordId: string }
+  | { type: "fixed/step-toggle"; recordId: string; stepId: string }
   | { type: "fixed/toggle-date"; templateId: string; date: DateKey }
   | { type: "fixed/set-active"; id: string; active: boolean }
   | { type: "fixed/toggle-skip-date"; id: string; date: DateKey }

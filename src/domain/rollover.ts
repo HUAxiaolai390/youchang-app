@@ -7,6 +7,7 @@ import type {
   ScheduledTask
 } from "./types";
 import { shouldShowFixedTaskOnDate } from "./repeat";
+import { resetTaskSteps } from "./steps";
 
 function eachDateAfter(lastOpenedDate: DateKey, today: DateKey): DateKey[] {
   const date = fromDateKey(lastOpenedDate);
@@ -35,6 +36,7 @@ function createFixedRecord(
     plannedStartTime: task.plannedStartTime,
     reminderMinutesBefore: task.reminderMinutesBefore,
     priority: task.priority,
+    steps: resetTaskSteps(task.steps),
     estimatedMinutes: task.estimatedMinutes
   };
 }
@@ -105,6 +107,7 @@ export function rescheduleTask(
     plannedStartTime: source.plannedStartTime,
     reminderMinutesBefore: source.reminderMinutesBefore,
     priority: source.priority,
+    steps: source.steps?.map((step) => ({ ...step })),
     estimatedMinutes: source.estimatedMinutes,
     createdAt: now.toISOString()
   };

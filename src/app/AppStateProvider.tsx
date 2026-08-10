@@ -30,6 +30,7 @@ import {
 import type { AppRepository } from "../storage/repository";
 import type { AppAction } from "./app-actions";
 import { markTaskReminderSent } from "../domain/reminders";
+import { toggleFixedTaskStep, toggleScheduledTaskStep } from "../domain/steps";
 
 export type AppStateContextValue = {
   state: AppState;
@@ -48,6 +49,7 @@ const knownErrorMessages = new Set([
   "请输入有效开始时间",
   "请输入有效预计用时",
   "请选择有效提醒时间",
+  "任务步骤最多添加 20 项",
   "请至少选择一个星期",
   "每周次数应为 1 到 7 次",
   "间隔天数应为 2 到 30 天",
@@ -75,6 +77,8 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
       return updateScheduledTask(state, action.id, action.input);
     case "scheduled/toggle":
       return toggleScheduledTask(state, action.id, now);
+    case "scheduled/step-toggle":
+      return toggleScheduledTaskStep(state, action.id, action.stepId);
     case "scheduled/delete":
       return deleteTask(state, "scheduled", action.id);
     case "scheduled/reschedule":
@@ -87,6 +91,8 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
       return updateFixedTask(state, action.id, action.input, toDateKey(now));
     case "fixed/toggle":
       return toggleFixedRecord(state, action.recordId, now);
+    case "fixed/step-toggle":
+      return toggleFixedTaskStep(state, action.recordId, action.stepId);
     case "fixed/toggle-date":
       return toggleFixedTaskForDate(state, action.templateId, action.date, now);
     case "fixed/set-active":

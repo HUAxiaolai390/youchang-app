@@ -228,6 +228,24 @@ describe("TodayPage", () => {
     expect(screen.getByText("准备考试", { exact: true })).toBeVisible();
   });
 
+  it("expands task steps, toggles one, and updates progress", async () => {
+    const state = createInitialState(new Date());
+    addTask(state, "paper", "完成论文", "study");
+    state.scheduledTasks[0]!.steps = [
+      { id: "research", title: "查资料", completed: true },
+      { id: "draft", title: "写正文", completed: false },
+      { id: "edit", title: "修改", completed: false }
+    ];
+    const { user, repository } = renderToday(state);
+
+    expect(screen.getByLabelText("完成论文步骤进度：1/3")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "展开步骤：完成论文" }));
+    await user.click(screen.getByRole("checkbox", { name: "完成步骤：完成论文 - 写正文" }));
+
+    expect(screen.getByLabelText("完成论文步骤进度：2/3")).toBeVisible();
+    expect(repository.load().scheduledTasks[0]?.steps?.[1]?.completed).toBe(true);
+  });
+
   it("moves a pending task to another date from the edit form", async () => {
     const state = createInitialState(new Date());
     addTask(state, "study-1", "整理课堂笔记", "study");
