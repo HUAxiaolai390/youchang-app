@@ -198,7 +198,7 @@ describe("task and category rules", () => {
     expect(stats.find((day) => day.date === "2026-08-03")).toMatchObject({ total: 1, hasData: true });
   });
 
-  it("updates only pending and backlog scheduled tasks", () => {
+  it("edits a completed task without changing its date or completion record", () => {
     const withPending = addScheduledTask(state(), {
       title: "原任务",
       categoryId: "study",
@@ -208,12 +208,18 @@ describe("task and category rules", () => {
     const completed = toggleScheduledTask(withPending, pendingId, now);
 
     const result = updateScheduledTask(completed, pendingId, {
-      title: "不应改名",
+      title: "修改后的任务",
       categoryId: "work",
       scheduledDate: "2026-08-01"
     });
 
-    expect(result).toBe(completed);
+    expect(result.scheduledTasks[0]).toMatchObject({
+      title: "修改后的任务",
+      categoryId: "work",
+      scheduledDate: "2026-07-31",
+      status: "completed",
+      completedAt: now.toISOString()
+    });
   });
 
   it("toggling scheduled completion never duplicates the task", () => {

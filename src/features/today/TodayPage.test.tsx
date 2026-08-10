@@ -216,6 +216,26 @@ describe("TodayPage", () => {
     expect(repository.load().scheduledTasks[0].title).toBe("背 30 个英语单词");
   });
 
+  it("edits a completed scheduled task while keeping its completion date locked", async () => {
+    const state = createInitialState(new Date());
+    addTask(state, "completed-study", "考研高数", "study", "completed");
+    const originalCompletedAt = state.scheduledTasks[0]!.completedAt;
+    const { user, repository } = renderToday(state);
+
+    await user.click(screen.getByRole("button", { name: "编辑：考研高数" }));
+    expect(screen.getByLabelText("完成日期")).toBeDisabled();
+    expect(screen.getByText(/不能改期/)).toBeVisible();
+    await user.clear(screen.getByLabelText("任务名称"));
+    await user.type(screen.getByLabelText("任务名称"), "考研高数复盘");
+    await user.click(screen.getByRole("button", { name: "保存修改" }));
+
+    expect(repository.load().scheduledTasks[0]).toMatchObject({
+      title: "考研高数复盘",
+      status: "completed",
+      completedAt: originalCompletedAt
+    });
+  });
+
   it("recommends a high-priority task before lower-priority tasks", () => {
     const state = createInitialState(new Date());
     addTask(state, "task-1", "收拾书桌", "life");

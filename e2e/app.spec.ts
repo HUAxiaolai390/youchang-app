@@ -327,6 +327,26 @@ test("breaks a large task into steps and tracks its progress", async ({ page }) 
   await expect(page.getByRole("button", { name: "展开步骤：完成论文" })).toContainText("步骤 2/3");
 });
 
+test("keeps edit available after a scheduled task is completed", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  await page.getByRole("button", { name: "添加任务", exact: true }).click();
+  await page.getByLabel("任务名称").fill("考研高数");
+  await page.getByRole("button", { name: "保存任务" }).click();
+  await page.getByRole("checkbox", { name: "完成：考研高数" }).check();
+
+  await page.getByRole("button", { name: "编辑：考研高数" }).click();
+  await expect(page.getByLabel("完成日期")).toBeDisabled();
+  await page.getByLabel("任务名称").fill("考研高数复盘");
+  await page.getByRole("button", { name: "保存修改" }).click();
+
+  await expect(page.getByRole("checkbox", { name: "完成：考研高数复盘" })).toBeChecked();
+  await expect(page.getByRole("button", { name: "编辑：考研高数复盘" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
 test("completes the core task, growth, and backup flow", async ({ page }, testInfo) => {
   const runtimeErrors: string[] = [];
   page.on("console", (message) => {

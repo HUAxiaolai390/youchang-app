@@ -348,7 +348,7 @@ export function updateScheduledTask(
   input: UpdateScheduledTaskInput
 ): AppState {
   const task = state.scheduledTasks.find((item) => item.id === id);
-  if (!task || (task.status !== "pending" && task.status !== "backlog")) return state;
+  if (!task || !["pending", "backlog", "completed"].includes(task.status)) return state;
 
   const title = requireTitle(input.title);
   const category = requireCategory(state, input.categoryId);
@@ -366,7 +366,7 @@ export function updateScheduledTask(
           ...item,
           title,
           ...categorySnapshot(category),
-          scheduledDate: input.scheduledDate,
+          scheduledDate: item.status === "completed" ? item.scheduledDate : input.scheduledDate,
           plannedStartTime,
           reminderMinutesBefore,
           reminderSentAt: undefined,

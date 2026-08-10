@@ -18,6 +18,7 @@ export type TaskFormValues = {
   estimatedMinutes?: number;
   priority: TaskPriority;
   steps?: TaskStep[];
+  completed?: boolean;
   repeatRule?: FixedRepeatRule;
 };
 
@@ -86,11 +87,13 @@ export function TaskForm({ categories, today, defaultDate, initialValues, error,
     estimatedMinutes: initialValues?.estimatedMinutes?.toString() ?? "",
     priority: initialValues?.priority ?? "medium",
     steps: initialValues?.steps?.map((step) => ({ ...step })) ?? [],
+    completed: initialValues?.completed ?? false,
     repeatRule: initialValues?.repeatRule ?? { type: "daily" }
   }));
   const [formError, setFormError] = useState<string>();
   const isEditing = Boolean(initialValues);
   const isEditingScheduled = isEditing && values.kind === "scheduled";
+  const isEditingCompletedScheduled = isEditingScheduled && values.completed;
   const originalDate = initialValues?.date;
   const quickMoveDates = [
     { label: "今天", date: today },
@@ -222,7 +225,16 @@ export function TaskForm({ categories, today, defaultDate, initialValues, error,
             }))}
           >＋ 添加步骤</button>
         </section>
-        {values.kind === "scheduled" && (isEditingScheduled ? (
+        {values.kind === "scheduled" && (isEditingCompletedScheduled ? (
+          <div className="task-form__move-date task-form__move-date--locked">
+            <div className="task-form__move-date-heading">
+              <label className="field-label" htmlFor="task-date">完成日期</label>
+              <span>{formatDateLabel(values.date)}</span>
+            </div>
+            <input id="task-date" className="field-control" type="date" value={values.date} disabled />
+            <p>已完成任务可以编辑内容，但不能改期，以免影响原来的完成记录和统计。</p>
+          </div>
+        ) : isEditingScheduled ? (
           <div className="task-form__move-date">
             <div className="task-form__move-date-heading">
               <label id="task-move-date-label" className="field-label" htmlFor="task-date">改到哪一天</label>

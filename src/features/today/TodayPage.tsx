@@ -69,7 +69,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
         task.scheduledDate === today && !["rescheduled", "archived"].includes(task.status)
       )).map((task): TodayTask => ({
         id: task.id, taskId: task.id, kind: "scheduled", title: task.title, categoryId: task.categoryId,
-        categoryName: liveCategoryName(task.categoryId), completed: task.status === "completed", editable: task.status === "pending",
+        categoryName: liveCategoryName(task.categoryId), completed: task.status === "completed", editable: ["pending", "completed"].includes(task.status),
         plannedStartTime: task.plannedStartTime, reminderMinutesBefore: task.reminderMinutesBefore, estimatedMinutes: task.estimatedMinutes,
         priority: task.priority,
         steps: task.steps,
@@ -176,6 +176,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
     estimatedMinutes: editing.estimatedMinutes,
     priority: editing.priority ?? "medium",
     steps: editing.steps,
+    completed: editing.completed,
     repeatRule: editing.repeatRule
   } : undefined;
 
