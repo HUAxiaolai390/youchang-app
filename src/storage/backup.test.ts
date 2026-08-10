@@ -118,17 +118,15 @@ describe("versioned backups", () => {
     expect(() => parseBackup(JSON.stringify(invalid))).toThrow("备份文件格式无效");
   });
 
-  it("round trips task priority and today's focus flag", () => {
+  it("round trips task priority", () => {
     const prioritized = createInitialState(new Date(2026, 7, 10, 8));
     prioritized.scheduledTasks.push({
       id: "priority-task", title: "准备考试", categoryId: "study", categoryNameSnapshot: "学习",
       scheduledDate: "2026-08-10", status: "pending", createdAt: "2026-08-10T00:00:00.000Z",
-      priority: "high", isTodayFocus: true
+      priority: "high"
     });
 
-    expect(parseBackup(JSON.stringify(prioritized)).scheduledTasks[0]).toMatchObject({
-      priority: "high", isTodayFocus: true
-    });
+    expect(parseBackup(JSON.stringify(prioritized)).scheduledTasks[0]).toMatchObject({ priority: "high" });
     const invalid = JSON.parse(JSON.stringify(prioritized));
     invalid.scheduledTasks[0].priority = "urgent";
     expect(() => parseBackup(JSON.stringify(invalid))).toThrow("备份文件格式无效");

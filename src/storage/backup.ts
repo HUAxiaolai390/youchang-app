@@ -85,7 +85,6 @@ function isFixedRecord(value: unknown): boolean {
     && (value.completedAt === undefined || isString(value.completedAt))
     && (value.reminderSentAt === undefined || isString(value.reminderSentAt))
     && (value.priority === undefined || isTaskPriority(value.priority))
-    && (value.isTodayFocus === undefined || typeof value.isTodayFocus === "boolean")
     && isOptionalPlanning(value)
     && isOptionalActualMinutes(value.actualMinutes);
 }
@@ -99,7 +98,6 @@ function isScheduledTask(value: unknown): boolean {
     && (value.completedAt === undefined || isString(value.completedAt))
     && (value.reminderSentAt === undefined || isString(value.reminderSentAt))
     && (value.priority === undefined || isTaskPriority(value.priority))
-    && (value.isTodayFocus === undefined || typeof value.isTodayFocus === "boolean")
     && isOptionalPlanning(value)
     && isOptionalActualMinutes(value.actualMinutes);
 }

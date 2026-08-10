@@ -216,25 +216,16 @@ describe("TodayPage", () => {
     expect(repository.load().scheduledTasks[0].title).toBe("背 30 个英语单词");
   });
 
-  it("selects at most three focus tasks and shows them in today's top three", async () => {
+  it("recommends a high-priority task before lower-priority tasks", () => {
     const state = createInitialState(new Date());
-    addTask(state, "task-1", "准备考试", "study");
-    addTask(state, "task-2", "整理错题", "study");
-    addTask(state, "task-3", "晚间跑步", "exercise");
-    addTask(state, "task-4", "收拾书桌", "life");
-    state.scheduledTasks[0]!.priority = "high";
-    const { user, repository } = renderToday(state);
+    addTask(state, "task-1", "收拾书桌", "life");
+    addTask(state, "task-2", "准备考试", "study");
+    state.scheduledTasks[0]!.priority = "low";
+    state.scheduledTasks[1]!.priority = "high";
+    renderToday(state);
 
-    await user.click(screen.getByRole("button", { name: "设为今日重点：准备考试" }));
-    await user.click(screen.getByRole("button", { name: "设为今日重点：整理错题" }));
-    await user.click(screen.getByRole("button", { name: "设为今日重点：晚间跑步" }));
-
-    const focusRegion = screen.getByRole("region", { name: "今日三件事" });
-    expect(focusRegion).toHaveTextContent("3 / 3");
-    expect(focusRegion).toHaveTextContent("准备考试");
-    expect(focusRegion).toHaveTextContent("高");
-    expect(screen.getByRole("button", { name: "设为今日重点：收拾书桌" })).toBeDisabled();
-    expect(repository.load().scheduledTasks.filter((task) => task.isTodayFocus)).toHaveLength(3);
+    expect(screen.getByRole("region", { name: "下一项任务" })).toHaveTextContent("准备考试");
+    expect(screen.getByText("准备考试", { exact: true })).toBeVisible();
   });
 
   it("moves a pending task to another date from the edit form", async () => {

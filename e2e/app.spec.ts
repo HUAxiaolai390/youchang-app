@@ -276,7 +276,7 @@ test("unlocks a medal and pins it into one of three equal home slots", async ({ 
   await expectNoHorizontalOverflow(page);
 });
 
-test("sets task priorities and limits today's top tasks to three", async ({ page }) => {
+test("sets task priorities and recommends the high-priority task first", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => window.localStorage.clear());
   await page.reload();
@@ -284,8 +284,7 @@ test("sets task priorities and limits today's top tasks to three", async ({ page
   const tasks = [
     ["完成数学作业", /高 重要且紧急/],
     ["复习英语单词", /中 重要或紧急/],
-    ["整理书桌", /低 日常且可灵活安排/],
-    ["准备明天书包", /中 重要或紧急/]
+    ["整理书桌", /低 日常且可灵活安排/]
   ] as const;
 
   for (const [title, priority] of tasks) {
@@ -295,14 +294,10 @@ test("sets task priorities and limits today's top tasks to three", async ({ page
     await page.getByRole("button", { name: "保存任务" }).click();
   }
 
-  for (const [title] of tasks.slice(0, 3)) {
-    await page.getByRole("button", { name: `设为今日重点：${title}` }).click();
-  }
-
-  const topThree = page.getByRole("region", { name: "今日三件事" });
-  await expect(topThree).toContainText("3 / 3");
-  await expect(topThree.getByText("完成数学作业", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "设为今日重点：准备明天书包" })).toBeDisabled();
+  const highTask = page.getByRole("checkbox", { name: "完成：完成数学作业" }).locator("xpath=ancestor::li[1]");
+  const lowTask = page.getByRole("checkbox", { name: "完成：整理书桌" }).locator("xpath=ancestor::li[1]");
+  await expect(highTask).toContainText("高");
+  await expect(lowTask).toContainText("低");
   await expect(page.getByRole("region", { name: "下一项任务" })).toContainText("完成数学作业");
   await expectNoHorizontalOverflow(page);
 });

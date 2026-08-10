@@ -355,8 +355,7 @@ export function updateScheduledTask(
           reminderMinutesBefore,
           reminderSentAt: undefined,
           estimatedMinutes,
-          priority,
-          isTodayFocus: item.scheduledDate === input.scheduledDate ? item.isTodayFocus : undefined
+          priority
         }
       : item)
   };

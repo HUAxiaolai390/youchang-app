@@ -8,8 +8,7 @@ import { achievementTierLabels, getFeaturedAchievements } from "../../domain/ach
 import { toDateKey } from "../../domain/date";
 import { getCatMessage, getTodayProgress } from "../../domain/stats";
 import { formatFixedRepeatRule } from "../../domain/repeat";
-import { formatTaskPriority, taskPriorityRank } from "../../domain/priorities";
-import { maximumTodayFocusTasks } from "../../domain/today-focus";
+import { taskPriorityRank } from "../../domain/priorities";
 import { formatTrackedTime, getTimeAllocation } from "../../domain/time";
 import type { DateKey } from "../../domain/types";
 import { TaskForm, type TaskFormValues } from "./TaskForm";
@@ -59,7 +58,6 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
           plannedStartTime: record.plannedStartTime ?? template.plannedStartTime,
           reminderMinutesBefore: record.reminderMinutesBefore ?? template.reminderMinutesBefore,
           priority: record.priority ?? template.priority,
-          isTodayFocus: record.isTodayFocus,
           estimatedMinutes: record.estimatedMinutes ?? template.estimatedMinutes,
           actualMinutes: record.actualMinutes,
           repeatRule: template.repeatRule,
@@ -72,7 +70,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
         id: task.id, taskId: task.id, kind: "scheduled", title: task.title, categoryId: task.categoryId,
         categoryName: liveCategoryName(task.categoryId), completed: task.status === "completed", editable: task.status === "pending",
         plannedStartTime: task.plannedStartTime, reminderMinutesBefore: task.reminderMinutesBefore, estimatedMinutes: task.estimatedMinutes,
-        priority: task.priority, isTodayFocus: task.isTodayFocus,
+        priority: task.priority,
         actualMinutes: task.actualMinutes
       }))
     };
@@ -80,17 +78,9 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
 
   const fixedTasks = allFixedTasks.filter((task) => filter === "all" || filter === task.categoryId);
   const scheduledTasks = allScheduledTasks.filter((task) => filter === "all" || filter === task.categoryId);
-  const todayFocusTasks = useMemo(() => [...allFixedTasks, ...allScheduledTasks]
-    .filter((task) => task.isTodayFocus)
-    .sort((first, second) => Number(first.completed) - Number(second.completed)
-      || taskPriorityRank(first.priority) - taskPriorityRank(second.priority)
-      || first.title.localeCompare(second.title, "zh-CN")), [allFixedTasks, allScheduledTasks]);
-  const focusLimitReached = todayFocusTasks.length >= maximumTodayFocusTasks;
   const nextTask = useMemo(() => [...allFixedTasks, ...allScheduledTasks]
     .filter((task) => !task.completed)
     .sort((first, second) => {
-      const focusOrder = Number(Boolean(second.isTodayFocus)) - Number(Boolean(first.isTodayFocus));
-      if (focusOrder !== 0) return focusOrder;
       const priorityOrder = taskPriorityRank(first.priority) - taskPriorityRank(second.priority);
       if (priorityOrder !== 0) return priorityOrder;
       const firstTime = first.plannedStartTime ?? "99:99";
@@ -148,10 +138,6 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
   function toggle(task: TodayTask) {
     const saved = dispatch(task.kind === "fixed" ? { type: "fixed/toggle", recordId: task.id } : { type: "scheduled/toggle", id: task.id });
     if (!task.completed && saved) setCelebrationKey((current) => current + 1);
-  }
-
-  function toggleFocus(task: TodayTask) {
-    dispatch({ type: "today-focus/toggle", kind: task.kind, id: task.id });
   }
 
   function confirmDelete() {
@@ -246,29 +232,6 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
               : null}
         </section>
       </header>
-      <section className="surface-card today-priorities" aria-labelledby="today-priorities-title">
-        <div className="today-priorities__heading">
-          <div><span>DAILY TOP 3</span><h2 id="today-priorities-title">今日三件事</h2></div>
-          <strong>{todayFocusTasks.length}<small> / {maximumTodayFocusTasks}</small></strong>
-        </div>
-        {todayFocusTasks.length === 0 ? (
-          <p className="today-priorities__empty">从下方任务中点“重点”，选出今天最值得完成的三件事。</p>
-        ) : (
-          <ol className="today-priorities__list">
-            {todayFocusTasks.map((task) => (
-              <li key={`${task.kind}-${task.id}`} className={task.completed ? "today-priority-item--completed" : undefined}>
-                <label>
-                  <input type="checkbox" checked={task.completed} onChange={() => toggle(task)} aria-label={`完成今日重点：${task.title}`} />
-                  <span aria-hidden="true" />
-                </label>
-                <span className={`task-priority-tag task-priority-tag--${task.priority ?? "medium"}`}>{formatTaskPriority(task.priority)}</span>
-                <div><strong>{task.title}</strong><small>{task.categoryName}{task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}</small></div>
-                <button type="button" onClick={() => toggleFocus(task)} aria-label={`移出今日重点：${task.title}`}>移出</button>
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
       <section className="surface-card today-achievements" aria-labelledby="today-achievements-title">
         <div className="today-achievements__heading">
           <span>MY MEDALS</span>
@@ -314,8 +277,8 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
         <button type="button" aria-pressed={filter === "all"} onClick={() => setFilter("all")}>全部</button>
         {state.categories.map((category) => <button key={category.id} type="button" aria-label={`只看${category.name}`} aria-pressed={filter === category.id} onClick={() => setFilter(category.id)}>{category.name}</button>)}
       </section>
-      <TaskList title="固定任务" tasks={fixedTasks} onToggle={toggle} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} onFocus={toggleFocus} focusLimitReached={focusLimitReached} />
-      <TaskList title="今日安排" tasks={scheduledTasks} onToggle={toggle} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} onFocus={toggleFocus} focusLimitReached={focusLimitReached} />
+      <TaskList title="固定任务" tasks={fixedTasks} onToggle={toggle} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
+      <TaskList title="今日安排" tasks={scheduledTasks} onToggle={toggle} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
       <Backlog now={now} />
       <button type="button" className="add-task-button" aria-label="添加任务" onClick={openNewTask}>＋<span>添加任务</span></button>
       {formOpen && <TaskForm categories={state.categories} today={today} initialValues={formValues} error={error} onSubmit={saveTask} onCancel={closeForm} />}

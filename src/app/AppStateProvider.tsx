@@ -30,7 +30,6 @@ import {
 import type { AppRepository } from "../storage/repository";
 import type { AppAction } from "./app-actions";
 import { markTaskReminderSent } from "../domain/reminders";
-import { toggleTodayFocus } from "../domain/today-focus";
 
 export type AppStateContextValue = {
   state: AppState;
@@ -49,7 +48,6 @@ const knownErrorMessages = new Set([
   "请输入有效开始时间",
   "请输入有效预计用时",
   "请选择有效提醒时间",
-  "今日重点最多设置 3 项",
   "请至少选择一个星期",
   "每周次数应为 1 到 7 次",
   "间隔天数应为 2 到 30 天",
@@ -124,8 +122,6 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
       };
     case "reminder/mark-sent":
       return markTaskReminderSent(state, action.kind, action.id, action.sentAt);
-    case "today-focus/toggle":
-      return toggleTodayFocus(state, action.kind, action.id, now);
     case "focus/configure":
       return configureFocus(state, action.focusMinutes, action.breakMinutes);
     case "focus/session-complete":

@@ -57,7 +57,6 @@ export interface FixedTaskRecord {
   reminderMinutesBefore?: ReminderMinutesBefore;
   reminderSentAt?: string;
   priority?: TaskPriority;
-  isTodayFocus?: boolean;
   estimatedMinutes?: number;
   actualMinutes?: number;
 }
@@ -76,7 +75,6 @@ export interface ScheduledTask {
   reminderMinutesBefore?: ReminderMinutesBefore;
   reminderSentAt?: string;
   priority?: TaskPriority;
-  isTodayFocus?: boolean;
   estimatedMinutes?: number;
   actualMinutes?: number;
 }
