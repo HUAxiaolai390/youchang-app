@@ -4,7 +4,7 @@ import type {
   UpdateFixedTaskInput,
   UpdateScheduledTaskInput
 } from "../domain/tasks";
-import type { AppState, DateKey } from "../domain/types";
+import type { AppState, DateKey, FocusTimerRuntime } from "../domain/types";
 
 export type AppAction =
   | { type: "scheduled/add"; input: AddScheduledTaskInput }
@@ -29,8 +29,9 @@ export type AppAction =
   | { type: "settings/featured-achievements"; ids: string[] }
   | { type: "settings/system-notifications"; enabled: boolean }
   | { type: "reminder/mark-sent"; kind: "fixed" | "scheduled"; id: string; sentAt: string }
-  | { type: "focus/configure"; focusMinutes: number; breakMinutes: number }
-  | { type: "focus/session-complete"; minutes: number }
+  | { type: "focus/configure"; focusMinutes: number; breakMinutes: number; timer?: FocusTimerRuntime }
+  | { type: "focus/session-complete"; minutes: number; timer?: FocusTimerRuntime }
+  | { type: "focus/timer-save"; timer: FocusTimerRuntime }
   | { type: "fixed/time-set"; recordId: string; minutes: number }
   | { type: "fixed/time-add"; recordId: string; minutes: number }
   | { type: "scheduled/time-set"; id: string; minutes: number }

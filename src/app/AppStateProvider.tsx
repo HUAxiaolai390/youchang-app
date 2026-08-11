@@ -19,7 +19,7 @@ import {
 } from "../domain/tasks";
 import { moveArchivedTaskToCurrentWeek, rescheduleTask, rollover } from "../domain/rollover";
 import type { AppState } from "../domain/types";
-import { completeFocusSession, configureFocus } from "../domain/focus";
+import { completeFocusSession, configureFocus, saveFocusTimerRuntime } from "../domain/focus";
 import {
   addFixedActualMinutes,
   addScheduledActualMinutes,
@@ -129,9 +129,11 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
     case "reminder/mark-sent":
       return markTaskReminderSent(state, action.kind, action.id, action.sentAt);
     case "focus/configure":
-      return configureFocus(state, action.focusMinutes, action.breakMinutes);
+      return configureFocus(state, action.focusMinutes, action.breakMinutes, action.timer);
     case "focus/session-complete":
-      return completeFocusSession(state, action.minutes);
+      return completeFocusSession(state, action.minutes, action.timer);
+    case "focus/timer-save":
+      return saveFocusTimerRuntime(state, action.timer);
     case "fixed/time-set":
       return setFixedActualMinutes(state, action.recordId, action.minutes);
     case "fixed/time-add":

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { useAppState } from "../../app/AppStateProvider";
 import { toDateKey } from "../../domain/date";
 import {
+  getFocusTimerRuntime,
   experiencePerLevel,
   getFocusExperience,
   getFocusLevel,
@@ -9,9 +10,7 @@ import {
   getLevelExperience
 } from "../../domain/focus";
 import { stopwatchSecondsToMinutes } from "../../domain/time";
-
-type TimerPhase = "focus" | "break";
-type TimerMode = "countdown" | "stopwatch";
+import type { FocusTimerMode, FocusTimerPhase, FocusTimerRuntime } from "../../domain/types";
 
 type FocusTimerProps = {
   onFocusComplete(): void;
@@ -29,25 +28,47 @@ function formatTime(seconds: number): string {
   return `${minutes}:${remainder}`;
 }
 
+function readTimestamp(value?: string): number | null {
+  if (!value) return null;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
+type TimerRuntimeOverrides = {
+  mode?: FocusTimerMode;
+  countdown?: Partial<FocusTimerRuntime["countdown"]>;
+  stopwatch?: Partial<FocusTimerRuntime["stopwatch"]>;
+};
+
 export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps) {
   const { state, dispatch } = useAppState();
   const focus = getFocusProgress(state);
   const today = toDateKey(new Date());
-  const [mode, setMode] = useState<TimerMode>("countdown");
-  const [phase, setPhase] = useState<TimerPhase>("focus");
-  const [remainingSeconds, setRemainingSeconds] = useState(focus.focusMinutes * 60);
-  const [isRunning, setIsRunning] = useState(false);
+  const [initialRuntime] = useState(() => getFocusTimerRuntime(state));
+  const initialDeadline = readTimestamp(initialRuntime.countdown.deadlineAt);
+  const initialStopwatchStartedAt = readTimestamp(initialRuntime.stopwatch.startedAt);
+  const [mode, setMode] = useState<FocusTimerMode>(initialRuntime.mode);
+  const [phase, setPhase] = useState<FocusTimerPhase>(initialRuntime.countdown.phase);
+  const [remainingSeconds, setRemainingSeconds] = useState(() => initialDeadline === null
+    ? initialRuntime.countdown.remainingSeconds
+    : Math.max(0, Math.ceil((initialDeadline - Date.now()) / 1000)));
+  const [isRunning, setIsRunning] = useState(initialDeadline !== null);
   const [draftFocusMinutes, setDraftFocusMinutes] = useState(focus.focusMinutes);
   const [draftBreakMinutes, setDraftBreakMinutes] = useState(focus.breakMinutes);
-  const [announcement, setAnnouncement] = useState("准备好就开始一小段专注吧");
-  const deadline = useRef<number | null>(null);
-  const [stopwatchSeconds, setStopwatchSeconds] = useState(0);
-  const [stopwatchAccumulatedSeconds, setStopwatchAccumulatedSeconds] = useState(0);
-  const [stopwatchRunning, setStopwatchRunning] = useState(false);
-  const stopwatchStartedAt = useRef<number | null>(null);
-  const [stopwatchTarget, setStopwatchTarget] = useState("");
-  const [stopwatchCategoryId, setStopwatchCategoryId] = useState(state.categories[0]?.id ?? "other");
-  const [stopwatchTitle, setStopwatchTitle] = useState("自由记录");
+  const [announcement, setAnnouncement] = useState(() => initialDeadline !== null || initialStopwatchStartedAt !== null
+    ? "已恢复上次未结束的计时"
+    : "准备好就开始一小段专注吧");
+  const deadline = useRef<number | null>(initialDeadline);
+  const [stopwatchSeconds, setStopwatchSeconds] = useState(() => initialRuntime.stopwatch.elapsedSeconds
+    + (initialStopwatchStartedAt === null
+      ? 0
+      : Math.max(0, Math.floor((Date.now() - initialStopwatchStartedAt) / 1000))));
+  const [stopwatchAccumulatedSeconds, setStopwatchAccumulatedSeconds] = useState(initialRuntime.stopwatch.elapsedSeconds);
+  const [stopwatchRunning, setStopwatchRunning] = useState(initialStopwatchStartedAt !== null);
+  const stopwatchStartedAt = useRef<number | null>(initialStopwatchStartedAt);
+  const [stopwatchTarget, setStopwatchTarget] = useState(initialRuntime.stopwatch.target);
+  const [stopwatchCategoryId, setStopwatchCategoryId] = useState(initialRuntime.stopwatch.categoryId);
+  const [stopwatchTitle, setStopwatchTitle] = useState(initialRuntime.stopwatch.title);
 
   const stopwatchTargets = useMemo(() => {
     const fixed = state.fixedRecords
@@ -58,6 +79,42 @@ export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps
       .map((task) => ({ value: `scheduled:${task.id}`, label: `今日安排 · ${task.title}` }));
     return [...fixed, ...scheduled];
   }, [state.fixedRecords, state.scheduledTasks, today]);
+
+  function readStopwatchSeconds(): number {
+    if (!stopwatchRunning || stopwatchStartedAt.current === null) return stopwatchSeconds;
+    return stopwatchAccumulatedSeconds + Math.floor((Date.now() - stopwatchStartedAt.current) / 1000);
+  }
+
+  function createRuntimeSnapshot(overrides: TimerRuntimeOverrides = {}): FocusTimerRuntime {
+    const liveRemainingSeconds = deadline.current === null
+      ? remainingSeconds
+      : Math.max(0, Math.ceil((deadline.current - Date.now()) / 1000));
+    const liveStopwatchSeconds = stopwatchStartedAt.current === null
+      ? stopwatchAccumulatedSeconds
+      : stopwatchAccumulatedSeconds + Math.max(0, Math.floor((Date.now() - stopwatchStartedAt.current) / 1000));
+
+    return {
+      mode: overrides.mode ?? mode,
+      countdown: {
+        phase,
+        remainingSeconds: liveRemainingSeconds,
+        ...(deadline.current === null ? {} : { deadlineAt: new Date(deadline.current).toISOString() }),
+        ...overrides.countdown
+      },
+      stopwatch: {
+        elapsedSeconds: liveStopwatchSeconds,
+        target: stopwatchTarget,
+        categoryId: stopwatchCategoryId,
+        title: stopwatchTitle,
+        ...(stopwatchStartedAt.current === null ? {} : { startedAt: new Date(stopwatchStartedAt.current).toISOString() }),
+        ...overrides.stopwatch
+      }
+    };
+  }
+
+  function persistRuntime(overrides: TimerRuntimeOverrides = {}): boolean {
+    return dispatch({ type: "focus/timer-save", timer: createRuntimeSnapshot(overrides) });
+  }
 
   useEffect(() => {
     onRunningChange?.(isRunning || stopwatchRunning);
@@ -89,11 +146,21 @@ export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps
 
       if (next > 0) return;
 
-      deadline.current = null;
-      setIsRunning(false);
-
       if (phase === "focus") {
-        const saved = dispatch({ type: "focus/session-complete", minutes: focus.focusMinutes });
+        const nextTimer = createRuntimeSnapshot({
+          countdown: {
+            phase: "break",
+            remainingSeconds: focus.breakMinutes * 60,
+            deadlineAt: undefined
+          }
+        });
+        const saved = dispatch({
+          type: "focus/session-complete",
+          minutes: focus.focusMinutes,
+          timer: nextTimer
+        });
+        deadline.current = null;
+        setIsRunning(false);
         setPhase("break");
         setRemainingSeconds(focus.breakMinutes * 60);
         setAnnouncement(saved
@@ -101,9 +168,18 @@ export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps
           : "专注完成，但成长记录保存失败了");
         if (saved) onFocusComplete();
       } else {
+        const saved = persistRuntime({
+          countdown: {
+            phase: "focus",
+            remainingSeconds: focus.focusMinutes * 60,
+            deadlineAt: undefined
+          }
+        });
+        deadline.current = null;
+        setIsRunning(false);
         setPhase("focus");
         setRemainingSeconds(focus.focusMinutes * 60);
-        setAnnouncement("休息结束，可以开始下一轮专注了");
+        setAnnouncement(saved ? "休息结束，可以开始下一轮专注了" : "休息结束，但状态保存失败了");
       }
     };
 
@@ -126,21 +202,26 @@ export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps
   }, [stopwatchAccumulatedSeconds, stopwatchRunning]);
 
   function startTimer() {
-    deadline.current = Date.now() + remainingSeconds * 1000;
+    const nextDeadline = Date.now() + remainingSeconds * 1000;
+    if (!persistRuntime({ countdown: { deadlineAt: new Date(nextDeadline).toISOString() } })) return;
+    deadline.current = nextDeadline;
     setIsRunning(true);
     setAnnouncement(phase === "focus" ? "小猫正在陪你专注" : "安心休息，等会再继续");
   }
 
   function pauseTimer() {
-    if (deadline.current !== null) {
-      setRemainingSeconds(Math.max(0, Math.ceil((deadline.current - Date.now()) / 1000)));
-    }
+    const nextRemaining = deadline.current === null
+      ? remainingSeconds
+      : Math.max(0, Math.ceil((deadline.current - Date.now()) / 1000));
+    if (!persistRuntime({ countdown: { remainingSeconds: nextRemaining, deadlineAt: undefined } })) return;
+    setRemainingSeconds(nextRemaining);
     deadline.current = null;
     setIsRunning(false);
     setAnnouncement("已经暂停，准备好再继续");
   }
 
   function resetTimer() {
+    if (!persistRuntime({ countdown: { remainingSeconds: phaseMinutes * 60, deadlineAt: undefined } })) return;
     deadline.current = null;
     setIsRunning(false);
     setRemainingSeconds(phaseMinutes * 60);
@@ -148,18 +229,30 @@ export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps
   }
 
   function switchPhase() {
-    const nextPhase: TimerPhase = phase === "focus" ? "break" : "focus";
+    const nextPhase: FocusTimerPhase = phase === "focus" ? "break" : "focus";
+    const nextRemaining = (nextPhase === "focus" ? focus.focusMinutes : focus.breakMinutes) * 60;
+    if (!persistRuntime({
+      countdown: { phase: nextPhase, remainingSeconds: nextRemaining, deadlineAt: undefined }
+    })) return;
     deadline.current = null;
     setIsRunning(false);
     setPhase(nextPhase);
-    setRemainingSeconds((nextPhase === "focus" ? focus.focusMinutes : focus.breakMinutes) * 60);
+    setRemainingSeconds(nextRemaining);
     setAnnouncement(nextPhase === "focus" ? "回到专注时间" : "先休息一下吧");
   }
 
   function applyDurations(focusMinutes: number, breakMinutes: number) {
     const nextFocus = Math.min(180, Math.max(1, Math.round(focusMinutes || 1)));
     const nextBreak = Math.min(60, Math.max(1, Math.round(breakMinutes || 1)));
-    if (!dispatch({ type: "focus/configure", focusMinutes: nextFocus, breakMinutes: nextBreak })) return;
+    const nextTimer = createRuntimeSnapshot({
+      countdown: { phase: "focus", remainingSeconds: nextFocus * 60, deadlineAt: undefined }
+    });
+    if (!dispatch({
+      type: "focus/configure",
+      focusMinutes: nextFocus,
+      breakMinutes: nextBreak,
+      timer: nextTimer
+    })) return;
 
     deadline.current = null;
     setIsRunning(false);
@@ -170,25 +263,24 @@ export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps
     setAnnouncement(`已设为专注 ${nextFocus} 分钟，休息 ${nextBreak} 分钟`);
   }
 
-  function changeMode(nextMode: TimerMode) {
+  function changeMode(nextMode: FocusTimerMode) {
     if (isRunning || stopwatchRunning) return;
+    if (!persistRuntime({ mode: nextMode })) return;
     setMode(nextMode);
     setAnnouncement(nextMode === "countdown" ? "准备好就开始一小段专注吧" : "选择任务或分类，然后开始记录时间");
   }
 
-  function readStopwatchSeconds(): number {
-    if (!stopwatchRunning || stopwatchStartedAt.current === null) return stopwatchSeconds;
-    return stopwatchAccumulatedSeconds + Math.floor((Date.now() - stopwatchStartedAt.current) / 1000);
-  }
-
   function startStopwatch() {
-    stopwatchStartedAt.current = Date.now();
+    const startedAt = Date.now();
+    if (!persistRuntime({ stopwatch: { elapsedSeconds: stopwatchAccumulatedSeconds, startedAt: new Date(startedAt).toISOString() } })) return;
+    stopwatchStartedAt.current = startedAt;
     setStopwatchRunning(true);
     setAnnouncement("正在记录时间，小猫会一直陪着你");
   }
 
   function pauseStopwatch() {
     const seconds = readStopwatchSeconds();
+    if (!persistRuntime({ stopwatch: { elapsedSeconds: seconds, startedAt: undefined } })) return;
     stopwatchStartedAt.current = null;
     setStopwatchSeconds(seconds);
     setStopwatchAccumulatedSeconds(seconds);
@@ -196,12 +288,14 @@ export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps
     setAnnouncement("正计时已暂停");
   }
 
-  function resetStopwatch() {
+  function resetStopwatch(): boolean {
+    if (!persistRuntime({ stopwatch: { elapsedSeconds: 0, startedAt: undefined } })) return false;
     stopwatchStartedAt.current = null;
     setStopwatchSeconds(0);
     setStopwatchAccumulatedSeconds(0);
     setStopwatchRunning(false);
     setAnnouncement("正计时已重置");
+    return true;
   }
 
   function finishStopwatch() {
@@ -228,7 +322,10 @@ export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps
     }
 
     if (!saved) return;
-    resetStopwatch();
+    if (!resetStopwatch()) {
+      setAnnouncement(`本次 ${minutes} 分钟已经记入时间分配，但计时状态清空失败`);
+      return;
+    }
     setAnnouncement(`本次 ${minutes} 分钟已经记入时间分配`);
     onFocusComplete();
   }
@@ -297,7 +394,14 @@ export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps
       {mode === "stopwatch" && <div className="stopwatch-target" aria-label="正计时记录位置">
         <label>
           <span>记录到</span>
-          <select value={stopwatchTarget} disabled={stopwatchRunning} onChange={(event) => setStopwatchTarget(event.target.value)}>
+          <select
+            value={stopwatchTarget}
+            disabled={stopwatchRunning}
+            onChange={(event) => {
+              const target = event.target.value;
+              if (persistRuntime({ stopwatch: { target } })) setStopwatchTarget(target);
+            }}
+          >
             <option value="">仅记录到分类</option>
             {stopwatchTargets.map((target) => <option key={target.value} value={target.value}>{target.label}</option>)}
           </select>
@@ -305,11 +409,25 @@ export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps
         {!stopwatchTarget && <>
           <label>
             <span>记录名称</span>
-            <input value={stopwatchTitle} disabled={stopwatchRunning} onChange={(event) => setStopwatchTitle(event.target.value)} />
+            <input
+              value={stopwatchTitle}
+              disabled={stopwatchRunning}
+              onChange={(event) => {
+                const title = event.target.value;
+                if (persistRuntime({ stopwatch: { title } })) setStopwatchTitle(title);
+              }}
+            />
           </label>
           <label>
             <span>分类</span>
-            <select value={stopwatchCategoryId} disabled={stopwatchRunning} onChange={(event) => setStopwatchCategoryId(event.target.value)}>
+            <select
+              value={stopwatchCategoryId}
+              disabled={stopwatchRunning}
+              onChange={(event) => {
+                const categoryId = event.target.value;
+                if (persistRuntime({ stopwatch: { categoryId } })) setStopwatchCategoryId(categoryId);
+              }}
+            >
               {state.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
             </select>
           </label>

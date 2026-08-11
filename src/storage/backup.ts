@@ -177,7 +177,32 @@ function hasValidFocus(value: unknown): boolean {
     && typeof breakMinutes === "number" && Number.isInteger(breakMinutes) && breakMinutes >= 1 && breakMinutes <= 60
     && typeof completedSessions === "number" && Number.isInteger(completedSessions) && completedSessions >= 0
     && typeof totalFocusMinutes === "number" && Number.isInteger(totalFocusMinutes) && totalFocusMinutes >= 0
-    && typeof experience === "number" && Number.isInteger(experience) && experience >= 0;
+    && typeof experience === "number" && Number.isInteger(experience) && experience >= 0
+    && hasValidFocusTimer(value.timer);
+}
+
+function isValidTimestamp(value: unknown): boolean {
+  return isString(value) && Number.isFinite(Date.parse(value));
+}
+
+function hasValidFocusTimer(value: unknown): boolean {
+  if (value === undefined) return true;
+  if (!isRecord(value) || (value.mode !== "countdown" && value.mode !== "stopwatch")) return false;
+  if (!isRecord(value.countdown) || !isRecord(value.stopwatch)) return false;
+
+  const countdown = value.countdown;
+  const stopwatch = value.stopwatch;
+  return (countdown.phase === "focus" || countdown.phase === "break")
+    && typeof countdown.remainingSeconds === "number"
+    && Number.isSafeInteger(countdown.remainingSeconds)
+    && countdown.remainingSeconds >= 0
+    && countdown.remainingSeconds <= 10_800
+    && (countdown.deadlineAt === undefined || isValidTimestamp(countdown.deadlineAt))
+    && typeof stopwatch.elapsedSeconds === "number"
+    && Number.isSafeInteger(stopwatch.elapsedSeconds)
+    && stopwatch.elapsedSeconds >= 0
+    && (stopwatch.startedAt === undefined || isValidTimestamp(stopwatch.startedAt))
+    && hasStrings(stopwatch, ["target", "categoryId", "title"]);
 }
 
 function assertValidBackup(value: unknown): asserts value is AppState {

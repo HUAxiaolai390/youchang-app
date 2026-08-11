@@ -166,6 +166,39 @@ describe("versioned backups", () => {
     }))).toThrow("备份文件格式无效");
   });
 
+  it("round trips a running timer and rejects malformed timer state", () => {
+    const timed = {
+      ...state,
+      focus: {
+        ...state.focus!,
+        timer: {
+          mode: "stopwatch" as const,
+          countdown: {
+            phase: "focus" as const,
+            remainingSeconds: 900,
+            deadlineAt: "2026-08-05T01:15:00.000Z"
+          },
+          stopwatch: {
+            elapsedSeconds: 75,
+            startedAt: "2026-08-05T01:00:00.000Z",
+            target: "",
+            categoryId: "study",
+            title: "整理笔记"
+          }
+        }
+      }
+    };
+
+    expect(parseBackup(JSON.stringify(timed)).focus?.timer).toEqual(timed.focus.timer);
+    expect(() => parseBackup(JSON.stringify({
+      ...timed,
+      focus: {
+        ...timed.focus,
+        timer: { ...timed.focus.timer, countdown: { ...timed.focus.timer.countdown, deadlineAt: "not-a-date" } }
+      }
+    }))).toThrow("备份文件格式无效");
+  });
+
   it("rejects an out-of-range music volume", () => {
     expect(() => parseBackup(JSON.stringify({
       ...state,

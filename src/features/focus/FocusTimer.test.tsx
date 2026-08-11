@@ -21,12 +21,12 @@ function renderTimer(state = createInitialState(new Date())) {
   const repository = new MemoryRepository(state);
   const onFocusComplete = vi.fn();
   const onRunningChange = vi.fn();
-  render(
+  const view = render(
     <AppStateProvider repository={repository}>
       <FocusTimer onFocusComplete={onFocusComplete} onRunningChange={onRunningChange} />
     </AppStateProvider>
   );
-  return { repository, onFocusComplete, onRunningChange };
+  return { repository, onFocusComplete, onRunningChange, view };
 }
 
 afterEach(() => {
@@ -132,5 +132,83 @@ describe("FocusTimer", () => {
     expect(repository.value.timeEntries).toEqual([
       expect.objectContaining({ title: "查资料", categoryId: "work", date: "2026-08-05", minutes: 1 })
     ]);
+  });
+
+  it("continues a countdown after the app is closed and reopened", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 5, 9));
+    const first = renderTimer(createInitialState(new Date()));
+
+    fireEvent.click(screen.getByText("自定义时长"));
+    fireEvent.change(screen.getByLabelText("专注分钟"), { target: { value: "2" } });
+    fireEvent.click(screen.getByRole("button", { name: "应用设置" }));
+    fireEvent.click(screen.getByRole("button", { name: "开始专注" }));
+    act(() => vi.advanceTimersByTime(30_000));
+    first.view.unmount();
+
+    act(() => vi.advanceTimersByTime(45_000));
+    render(
+      <AppStateProvider repository={first.repository}>
+        <FocusTimer onFocusComplete={vi.fn()} />
+      </AppStateProvider>
+    );
+
+    expect(screen.getByLabelText("剩余 00:45")).toBeInTheDocument();
+    expect(screen.getByText("进行中")).toBeInTheDocument();
+  });
+
+  it("settles an elapsed focus countdown only once after reopening", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 5, 9));
+    const first = renderTimer(createInitialState(new Date()));
+
+    fireEvent.click(screen.getByText("自定义时长"));
+    fireEvent.change(screen.getByLabelText("专注分钟"), { target: { value: "1" } });
+    fireEvent.click(screen.getByRole("button", { name: "应用设置" }));
+    fireEvent.click(screen.getByRole("button", { name: "开始专注" }));
+    first.view.unmount();
+    act(() => vi.advanceTimersByTime(70_000));
+
+    const reopened = render(
+      <AppStateProvider repository={first.repository}>
+        <FocusTimer onFocusComplete={vi.fn()} />
+      </AppStateProvider>
+    );
+    expect(screen.getByRole("heading", { name: "休息时间" })).toBeInTheDocument();
+    expect(first.repository.value.focus?.completedSessions).toBe(1);
+
+    reopened.unmount();
+    render(
+      <AppStateProvider repository={first.repository}>
+        <FocusTimer onFocusComplete={vi.fn()} />
+      </AppStateProvider>
+    );
+    expect(first.repository.value.focus?.completedSessions).toBe(1);
+  });
+
+  it("continues a stopwatch after the app is closed and reopened", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 5, 9));
+    const first = renderTimer(createInitialState(new Date()));
+
+    fireEvent.click(screen.getByRole("button", { name: "正计时" }));
+    fireEvent.change(screen.getByLabelText("记录名称"), { target: { value: "整理笔记" } });
+    fireEvent.click(screen.getByRole("button", { name: "开始计时" }));
+    act(() => vi.advanceTimersByTime(30_000));
+    first.view.unmount();
+    act(() => vi.advanceTimersByTime(45_000));
+
+    render(
+      <AppStateProvider repository={first.repository}>
+        <FocusTimer onFocusComplete={vi.fn()} />
+      </AppStateProvider>
+    );
+    expect(screen.getByRole("heading", { name: "正计时" })).toBeInTheDocument();
+    expect(screen.getByLabelText("已计时 01:15")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("整理笔记")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "暂停计时" }));
+    expect(first.repository.value.focus?.timer?.stopwatch).toMatchObject({ elapsedSeconds: 75 });
+    expect(first.repository.value.focus?.timer?.stopwatch.startedAt).toBeUndefined();
   });
 });

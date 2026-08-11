@@ -103,6 +103,26 @@ export interface FocusProgress {
   completedSessions: number;
   totalFocusMinutes: number;
   experience: number;
+  timer?: FocusTimerRuntime;
+}
+
+export type FocusTimerMode = "countdown" | "stopwatch";
+export type FocusTimerPhase = "focus" | "break";
+
+export interface FocusTimerRuntime {
+  mode: FocusTimerMode;
+  countdown: {
+    phase: FocusTimerPhase;
+    remainingSeconds: number;
+    deadlineAt?: string;
+  };
+  stopwatch: {
+    elapsedSeconds: number;
+    startedAt?: string;
+    target: string;
+    categoryId: string;
+    title: string;
+  };
 }
 
 export interface TimeEntry {
