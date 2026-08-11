@@ -25,7 +25,17 @@ test("exposes an installable manifest", async ({ page }) => {
     async (href) => fetch(href!).then((response) => response.json()),
     manifestHref
   );
-  expect(manifest).toMatchObject({ name: "有常", display: "standalone" });
+  expect(manifest).toMatchObject({
+    name: "有常",
+    short_name: "有常",
+    display: "standalone",
+    scope: "/",
+    orientation: "portrait-primary"
+  });
+  expect(manifest.icons).toEqual(expect.arrayContaining([
+    expect.objectContaining({ src: "/maskable-icon-512x512.png", purpose: "maskable" })
+  ]));
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute("href", "/apple-touch-icon-180x180.png");
 });
 
 test("opens after the network is disabled", async ({ page, context }) => {

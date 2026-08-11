@@ -175,6 +175,45 @@ test("plans, reviews, and edits work from the monthly calendar", async ({ page }
   await expectNoHorizontalOverflow(page);
 });
 
+test("shows progress details for an individual fixed habit", async ({ page }) => {
+  await page.clock.setFixedTime(new Date(2026, 7, 11, 9, 0, 0));
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  await page.getByRole("button", { name: "添加任务", exact: true }).click();
+  await page.getByLabel("任务名称").fill("每日英语单词");
+  await page.getByRole("radio", { name: "固定任务" }).check();
+  await page.getByRole("button", { name: "保存任务" }).click();
+  await page.getByRole("button", { name: "记录用时：每日英语单词" }).click();
+  await page.getByLabel("实际用时（分钟）").fill("30");
+  await page.getByRole("button", { name: "保存用时" }).click();
+  await page.getByRole("checkbox", { name: "完成：每日英语单词" }).check();
+
+  await page.getByRole("button", { name: "习惯详情：每日英语单词" }).click();
+  const dialog = page.getByRole("dialog", { name: "每日英语单词" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByLabel("每日英语单词习惯统计")).toContainText("当前连续1 次");
+  await expect(dialog.getByLabel("每日英语单词习惯统计")).toContainText("最长连续1 次");
+  await expect(dialog.getByLabel("每日英语单词习惯统计")).toContainText("30 天完成率100%");
+  await expect(dialog.getByLabel("每日英语单词习惯统计")).toContainText("累计投入30 分钟");
+  await expect(dialog.getByLabel("8月11日，已完成，实际 30 分钟")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
+test("shows phone installation guidance in settings", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  await page.getByRole("button", { name: "设置", exact: true }).click();
+  const installPanel = page.getByRole("region", { name: "安装到手机" });
+  await expect(installPanel).toBeVisible();
+  await expect(installPanel).toContainText("安装后会像普通 App 一样出现在手机桌面");
+  await expect(installPanel).toContainText("电脑和手机暂时不会自动同步");
+  await expectNoHorizontalOverflow(page);
+});
+
 test("acts on a due task directly from the reminder", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => window.localStorage.clear());

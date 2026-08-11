@@ -9,7 +9,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["icon.svg", "pwa-192x192.png", "pwa-512x512.png"],
+      includeAssets: ["icon.svg", "pwa-192x192.png", "pwa-512x512.png", "maskable-icon-512x512.png", "apple-touch-icon-180x180.png"],
       manifest: {
         name: "有常",
         short_name: "有常",
@@ -18,10 +18,13 @@ export default defineConfig({
         background_color: "#f4f0e8",
         display: "standalone",
         start_url: "/",
+        scope: "/",
+        orientation: "portrait-primary",
+        categories: ["productivity", "lifestyle"],
         icons: [
           { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
           { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png" },
-          { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png", purpose: "maskable" }
+          { src: "/maskable-icon-512x512.png", sizes: "512x512", type: "image/png", purpose: "maskable" }
         ]
       },
       workbox: {

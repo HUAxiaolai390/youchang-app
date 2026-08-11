@@ -9,6 +9,7 @@ import { formatReminderMinutes, normalizeReminderMinutesBefore, reminderMinuteOp
 import { formatTaskPriority, taskPriorityOptions } from "../../domain/priorities";
 import type { AppState, Category, DateKey, FixedRepeatRule, FixedTaskTemplate, TaskPriority, TaskStep, TimeKey } from "../../domain/types";
 import { downloadBackup, parseBackup } from "../../storage/backup";
+import { InstallAppPanel } from "../../components/InstallAppPanel";
 
 function backupErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message === "备份文件版本不受支持") return "备份版本不受支持";
@@ -238,6 +239,7 @@ export function SettingsPage() {
 
   return (
     <section className="settings-page" aria-label="设置内容">
+      <InstallAppPanel />
       <section className="surface-card settings-section" aria-labelledby="profile-settings-title">
         <h2 id="profile-settings-title">个人设置</h2>
         <form className="settings-form" onSubmit={saveDisplayName}>

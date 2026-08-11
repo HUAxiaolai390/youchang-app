@@ -34,9 +34,10 @@ type TaskListProps = {
   onEdit(task: TodayTask): void;
   onDelete(task: TodayTask): void;
   onTime(task: TodayTask): void;
+  onHabit?(task: TodayTask): void;
 };
 
-export function TaskList({ title, tasks, onToggle, onStepToggle, onEdit, onDelete, onTime }: TaskListProps) {
+export function TaskList({ title, tasks, onToggle, onStepToggle, onEdit, onDelete, onTime, onHabit }: TaskListProps) {
   const [expandedTaskIds, setExpandedTaskIds] = useState<Set<string>>(() => new Set());
 
   function toggleExpanded(taskId: string) {
@@ -73,6 +74,7 @@ export function TaskList({ title, tasks, onToggle, onStepToggle, onEdit, onDelet
                 </span>
               </div>
               <div className="task-item__actions">
+                {task.kind === "fixed" && onHabit && <button type="button" className="task-item__habit" onClick={() => onHabit(task)} aria-label={`习惯详情：${task.title}`}>趋势</button>}
                 {stepProgress.total > 0 && <button
                   type="button"
                   className="task-item__step-toggle"

@@ -16,6 +16,7 @@ import { TaskForm, type TaskFormValues } from "./TaskForm";
 import { TaskList, type TodayTask } from "./TaskList";
 import { Backlog } from "../backlog/Backlog";
 import { FocusTimer } from "../focus/FocusTimer";
+import { HabitDetailDialog } from "./HabitDetailDialog";
 
 type EditingTask = TodayTask & { date: DateKey };
 
@@ -32,6 +33,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
   const [editing, setEditing] = useState<EditingTask>();
   const [deleting, setDeleting] = useState<TodayTask>();
   const [timing, setTiming] = useState<TodayTask>();
+  const [habitTask, setHabitTask] = useState<TodayTask>();
   const [celebrationKey, setCelebrationKey] = useState(0);
   const [focusOpen, setFocusOpen] = useState(false);
   const [focusRunning, setFocusRunning] = useState(false);
@@ -303,13 +305,14 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
         {state.categories.map((category) => <button key={category.id} type="button" aria-label={`只看${category.name}`} aria-pressed={filter === category.id} onClick={() => setFilter(category.id)}>{category.name}</button>)}
       </section>
       <TaskReminderOverview />
-      <TaskList title="固定任务" tasks={fixedTasks} onToggle={toggle} onStepToggle={toggleStep} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
+      <TaskList title="固定任务" tasks={fixedTasks} onToggle={toggle} onStepToggle={toggleStep} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} onHabit={setHabitTask} />
       <TaskList title="今日安排" tasks={scheduledTasks} onToggle={toggle} onStepToggle={toggleStep} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
       <Backlog now={now} />
       <button type="button" className="add-task-button" aria-label="添加任务" onClick={openNewTask}>＋<span>添加任务</span></button>
       {formOpen && <TaskForm categories={state.categories} goals={state.goals ?? []} today={today} initialValues={formValues} error={error} onSubmit={saveTask} onCancel={closeForm} />}
       {deleting && <ConfirmDialog title="删除任务？" message={`确定删除“${deleting.title}”吗？`} confirmLabel="删除" onConfirm={confirmDelete} onCancel={() => setDeleting(undefined)} />}
       {timing && <TimeEntryDialog taskTitle={timing.title} currentMinutes={timing.actualMinutes} onSave={saveActualTime} onCancel={() => setTiming(undefined)} />}
+      {habitTask && <HabitDetailDialog templateId={habitTask.taskId} onClose={() => setHabitTask(undefined)} />}
     </div>
   );
 }

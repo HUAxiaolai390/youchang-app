@@ -145,6 +145,18 @@ describe("TodayPage", () => {
     expect(repository.load().fixedRecords[0]?.completedAt).toBeTruthy();
   });
 
+  it("opens habit details from a fixed task without showing the action on temporary tasks", async () => {
+    const state = createInitialState(new Date());
+    addFixedRecord(state, "晨间拉伸", "exercise");
+    addTask(state, "temporary", "临时复习", "study");
+    const { user } = renderToday(state);
+
+    expect(screen.queryByRole("button", { name: "习惯详情：临时复习" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "习惯详情：晨间拉伸" }));
+    expect(screen.getByRole("dialog", { name: "晨间拉伸" })).toBeVisible();
+    expect(screen.getByText("近 30 天记录")).toBeVisible();
+  });
+
   it("lets the user fill and revise a task's actual time", async () => {
     const state = createInitialState(new Date());
     addTask(state, "study-1", "背单词", "study");
