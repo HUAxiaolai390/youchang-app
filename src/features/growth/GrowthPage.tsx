@@ -295,7 +295,7 @@ export function GrowthPage() {
         <div className="achievement-wall__heading">
           <div>
             <p>ACHIEVEMENTS</p>
-            <h2 id="achievement-wall-title">成就勋章</h2>
+            <h2 id="achievement-wall-title" tabIndex={-1}>成就勋章</h2>
           </div>
           <div className="achievement-wall__summary">
             <strong>{unlockedCount} / {achievements.length}</strong>

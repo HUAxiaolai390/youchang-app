@@ -436,6 +436,7 @@ test("unlocks a medal and pins it into one of three equal home slots", async ({ 
   await page.getByRole("checkbox", { name: "完成：勋章测试任务" }).check();
 
   await page.getByRole("button", { name: "管理" }).click();
+  await expect(page.getByRole("heading", { name: "成就勋章" })).toBeInViewport();
   const firstMedal = page.locator(".achievement-card").filter({ hasText: "初见有常" });
   await expect(firstMedal).toHaveCount(1);
   await expect(firstMedal.getByRole("button", { name: "展示到首页" })).toBeEnabled();

@@ -31,6 +31,7 @@ export function App({ repository }: { repository?: AppRepository }) {
 function AppContents() {
   const { dispatch, error } = useAppState();
   const [activePage, setActivePage] = useState<PageKey>("today");
+  const [growthDestination, setGrowthDestination] = useState<"achievements" | null>(null);
   const [dailyQuote, setDailyQuote] = useState(() => getDailyQuote(new Date()));
 
   useEffect(() => {
@@ -56,6 +57,24 @@ function AppContents() {
       document.removeEventListener("visibilitychange", refreshAfterSleep);
     };
   }, []);
+
+  useEffect(() => {
+    if (activePage !== "growth" || growthDestination !== "achievements") return;
+
+    const frame = window.requestAnimationFrame(() => {
+      const heading = document.getElementById("achievement-wall-title");
+      heading?.focus({ preventScroll: true });
+      heading?.scrollIntoView?.({ behavior: "auto", block: "start" });
+      setGrowthDestination(null);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [activePage, growthDestination]);
+
+  function openAchievementManagement() {
+    setGrowthDestination("achievements");
+    setActivePage("growth");
+  }
 
   const pageContent: Record<PageKey, { title: string; description: string }> = {
     today: { title: "今天", description: "日日有常，步步有长。" },
@@ -90,7 +109,7 @@ function AppContents() {
           </section>
         ) : null}
         <BackgroundMusic compact={activePage === "today"} />
-        {activePage === "today" && <TodayPage onOpenAchievements={() => setActivePage("growth")} />}
+        {activePage === "today" && <TodayPage onOpenAchievements={openAchievementManagement} />}
         {activePage === "week" && <WeekPage />}
         {activePage === "growth" && <GrowthPage />}
         {activePage === "settings" && <SettingsPage />}
