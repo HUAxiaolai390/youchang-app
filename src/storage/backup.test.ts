@@ -100,6 +100,34 @@ describe("versioned backups", () => {
     }))).toThrow("备份文件格式无效");
   });
 
+  it("accepts older backups without weekly reviews", () => {
+    const legacy = createInitialState(new Date(2026, 6, 31, 9));
+    delete legacy.weeklyReviews;
+
+    expect(parseBackup(JSON.stringify(legacy)).weeklyReviews).toEqual([]);
+  });
+
+  it("round trips weekly reviews and rejects malformed review content", () => {
+    const reviewed = {
+      ...state,
+      weeklyReviews: [{
+        weekStart: "2026-07-27" as const,
+        summary: "按计划完成了复习",
+        adjustment: "下周减少一项任务",
+        updatedAt: "2026-07-31T01:00:00.000Z"
+      }]
+    };
+    expect(parseBackup(JSON.stringify(reviewed)).weeklyReviews).toEqual(reviewed.weeklyReviews);
+    expect(() => parseBackup(JSON.stringify({
+      ...reviewed,
+      weeklyReviews: [{ ...reviewed.weeklyReviews[0], weekStart: "2026-02-30" }]
+    }))).toThrow("备份文件格式无效");
+    expect(() => parseBackup(JSON.stringify({
+      ...reviewed,
+      weeklyReviews: [{ ...reviewed.weeklyReviews[0], summary: "复".repeat(501) }]
+    }))).toThrow("备份文件格式无效");
+  });
+
   it("round trips reminder settings and rejects unsupported lead times", () => {
     const reminded = createInitialState(new Date(2026, 7, 9, 8));
     reminded.settings.systemNotificationsEnabled = true;

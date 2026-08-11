@@ -40,6 +40,7 @@ export function createInitialState(now: Date): AppState {
       totalFocusMinutes: 0,
       experience: 0
     },
-    timeEntries: []
+    timeEntries: [],
+    weeklyReviews: []
   };
 }

@@ -689,6 +689,30 @@ button:focus-visible {
 .growth-mini-card > span { color: #c48541; font-size: 20px; }
 .growth-mini-card p { margin: 0; color: var(--muted); font-size: 12px; }
 .growth-mini-card strong { overflow-wrap: anywhere; font-size: 17px; letter-spacing: -.03em; }
+.weekly-review-card { display: grid; gap: 20px; padding: 22px; }
+.weekly-review-card__heading { display: flex; align-items: end; justify-content: space-between; gap: 14px; }
+.weekly-review-card__heading p { margin: 0 0 3px; color: #ad7740; font-size: 10px; font-weight: 900; letter-spacing: .15em; }
+.weekly-review-card__heading h2 { margin: 0; font-size: 21px; letter-spacing: -.04em; }
+.weekly-review-card__heading > span { color: var(--muted); font-size: 12px; }
+.weekly-review-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.weekly-review-metrics article { display: grid; min-width: 0; gap: 5px; padding: 15px 16px; border: 1px solid #e6e0d6; border-radius: 16px; background: #faf7f1; }
+.weekly-review-metrics span { color: #9a6c3d; font-size: 10px; font-weight: 800; letter-spacing: .06em; }
+.weekly-review-metrics strong { overflow-wrap: anywhere; font-size: 20px; letter-spacing: -.04em; }
+.weekly-review-metrics small { color: var(--muted); font-size: 11px; line-height: 1.45; }
+.weekly-review-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.weekly-review-form label { position: relative; display: grid; min-width: 0; gap: 7px; }
+.weekly-review-form label > span { font-size: 13px; font-weight: 800; }
+.weekly-review-form textarea { width: 100%; min-height: 112px; resize: vertical; padding: 13px 14px 26px; border: 1px solid #ded8ce; border-radius: 15px; background: #fffdfa; color: var(--ink); font: inherit; font-size: 13px; line-height: 1.65; }
+.weekly-review-form label > small { position: absolute; right: 11px; bottom: 8px; color: var(--muted); font-size: 10px; }
+.weekly-review-form__actions { grid-column: 1 / -1; display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
+.weekly-review-form__actions > span { color: #6a7b5f; font-size: 12px; }
+.weekly-review-history { border-top: 1px solid #e5dfd5; padding-top: 14px; }
+.weekly-review-history summary { cursor: pointer; font-size: 13px; font-weight: 800; }
+.weekly-review-history > div { display: grid; gap: 9px; margin-top: 12px; }
+.weekly-review-history article { display: grid; gap: 6px; padding: 13px 15px; border-radius: 14px; background: #f5f0e8; }
+.weekly-review-history article > strong { font-size: 12px; }
+.weekly-review-history article p { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 8px; margin: 0; color: var(--ink); font-size: 12px; line-height: 1.55; }
+.weekly-review-history article p span { color: #9a6c3d; font-weight: 800; }
 .achievement-wall { display: grid; gap: 18px; padding: 22px; }
 .achievement-wall__heading { display: flex; align-items: end; justify-content: space-between; gap: 14px; }
 .achievement-wall__heading p { margin: 0 0 3px; color: #ad7740; font-size: 10px; font-weight: 900; letter-spacing: .15em; }
@@ -898,6 +922,11 @@ button:focus-visible {
   .activity-heatmap-scroll { margin-right: -18px; padding-right: 18px; }
   .growth-level-card { grid-template-columns: 72px minmax(0, 1fr); gap: 14px; padding: 18px; }
   .growth-level-card__badge { width: 70px; border-radius: 21px; font-size: 19px; }
+  .weekly-review-card { padding: 18px; }
+  .weekly-review-card__heading { align-items: start; }
+  .weekly-review-metrics, .weekly-review-form { grid-template-columns: minmax(0, 1fr); }
+  .weekly-review-form__actions { grid-column: 1; align-items: stretch; flex-direction: column; }
+  .weekly-review-form__actions .button { width: 100%; }
   .achievement-wall { padding: 18px; }
   .achievement-wall__heading { align-items: start; }
   .achievement-wall__summary span { max-width: 116px; text-align: right; }

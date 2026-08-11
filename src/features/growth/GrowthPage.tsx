@@ -6,10 +6,16 @@ import { toDateKey } from "../../domain/date";
 import { experiencePerLevel, getFocusLevel, getFocusProgress, getLevelExperience } from "../../domain/focus";
 import { getActivityHeatmap, getCurrentStreak, getPeriodStat, getSevenDayStats, getTotalCompleted } from "../../domain/stats";
 import { formatTrackedTime, getTimeAllocation } from "../../domain/time";
+import { getReviewWeekEnd, getWeeklyReview, getWeeklyReviewSnapshot, maximumWeeklyReviewLength } from "../../domain/weekly-review";
+import type { DateKey } from "../../domain/types";
 
 function formatDay(date: string): string {
   const [, month, day] = date.split("-");
   return `${Number(month)}月${Number(day)}日`;
+}
+
+function formatReviewRange(weekStart: DateKey): string {
+  return `${formatDay(weekStart)}—${formatDay(getReviewWeekEnd(weekStart))}`;
 }
 
 const allocationColors = ["#e6a45c", "#8eaa7d", "#829db8", "#a787b5", "#bd8585", "#979084"];
@@ -30,16 +36,25 @@ export function GrowthPage() {
   const [timePeriod, setTimePeriod] = useState<"today" | "week">("today");
   const today = new Date();
   const todayKey = toDateKey(today);
-  const weekStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6);
+  const rollingWeekStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6);
   const streak = getCurrentStreak(state, today);
   const days = getSevenDayStats(state, today);
   const totalCompleted = getTotalCompleted(state);
   const focus = getFocusProgress(state);
   const level = getFocusLevel(focus.experience);
   const levelExperience = getLevelExperience(focus.experience);
-  const timeAllocation = getTimeAllocation(state, timePeriod === "today" ? todayKey : toDateKey(weekStart), todayKey);
+  const timeAllocation = getTimeAllocation(state, timePeriod === "today" ? todayKey : toDateKey(rollingWeekStart), todayKey);
   const todayStat = getPeriodStat(state, todayKey, todayKey);
-  const weekStat = getPeriodStat(state, toDateKey(weekStart), todayKey);
+  const weekStat = getPeriodStat(state, toDateKey(rollingWeekStart), todayKey);
+  const reviewSnapshot = getWeeklyReviewSnapshot(state, today);
+  const currentReview = getWeeklyReview(state, reviewSnapshot.weekStart);
+  const [reviewSummary, setReviewSummary] = useState(() => currentReview?.summary ?? "");
+  const [reviewAdjustment, setReviewAdjustment] = useState(() => currentReview?.adjustment ?? "");
+  const [reviewSaveMessage, setReviewSaveMessage] = useState("");
+  const recentReviews = [...(state.weeklyReviews ?? [])]
+    .filter((review) => review.weekStart !== reviewSnapshot.weekStart)
+    .sort((left, right) => right.weekStart.localeCompare(left.weekStart))
+    .slice(0, 3);
   const heatmap = getActivityHeatmap(state, today);
   const achievements = getAchievements(state, today);
   const unlockedCount = achievements.filter((achievement) => achievement.unlocked).length;
@@ -53,6 +68,16 @@ export function GrowthPage() {
       type: "settings/featured-achievements",
       ids: isFeatured ? featuredIds.filter((featuredId) => featuredId !== id) : [...featuredIds, id]
     });
+  }
+
+  function saveReview() {
+    const saved = dispatch({
+      type: "weekly-review/save",
+      weekStart: reviewSnapshot.weekStart,
+      summary: reviewSummary,
+      adjustment: reviewAdjustment
+    });
+    if (saved) setReviewSaveMessage(reviewSummary.trim() || reviewAdjustment.trim() ? "本周复盘已保存" : "本周复盘已清空");
   }
 
   return (
@@ -80,6 +105,74 @@ export function GrowthPage() {
           <strong>{weekStat.completed}/{weekStat.total} 项</strong>
           <small>活跃 {weekStat.activeDays} 天 · 记录 {formatTrackedTime(weekStat.trackedMinutes)}</small>
         </article>
+      </section>
+
+      <section className="surface-card weekly-review-card" aria-labelledby="weekly-review-title">
+        <div className="weekly-review-card__heading">
+          <div>
+            <p>WEEKLY REVIEW</p>
+            <h2 id="weekly-review-title">本周复盘</h2>
+          </div>
+          <span>{formatReviewRange(reviewSnapshot.weekStart)}</span>
+        </div>
+
+        <div className="weekly-review-metrics" aria-label="本周复盘摘要">
+          <article>
+            <span>完成进度</span>
+            <strong>{reviewSnapshot.completed}/{reviewSnapshot.total}</strong>
+            <small>{reviewSnapshot.total ? `${Math.round(reviewSnapshot.ratio * 100)}% 已完成` : "还没有任务记录"}</small>
+          </article>
+          <article>
+            <span>预计 / 实际</span>
+            <strong>{formatTrackedTime(reviewSnapshot.estimatedMinutes)}</strong>
+            <small>实际 {formatTrackedTime(reviewSnapshot.actualMinutes)}</small>
+          </article>
+          <article>
+            <span>主要投入</span>
+            <strong>{reviewSnapshot.topCategoryName ?? "暂无"}</strong>
+            <small>本周记录 {formatTrackedTime(reviewSnapshot.trackedMinutes)}</small>
+          </article>
+        </div>
+
+        <div className="weekly-review-form">
+          <label>
+            <span>本周总结</span>
+            <textarea
+              aria-label="本周总结"
+              value={reviewSummary}
+              maxLength={maximumWeeklyReviewLength}
+              placeholder="例如：按计划完成了复习，运动也坚持得不错。"
+              onChange={(event) => { setReviewSummary(event.target.value); setReviewSaveMessage(""); }}
+            />
+            <small>{reviewSummary.length}/{maximumWeeklyReviewLength}</small>
+          </label>
+          <label>
+            <span>下周调整</span>
+            <textarea
+              aria-label="下周调整"
+              value={reviewAdjustment}
+              maxLength={maximumWeeklyReviewLength}
+              placeholder="例如：少安排一项，把数学复习拆成更小的步骤。"
+              onChange={(event) => { setReviewAdjustment(event.target.value); setReviewSaveMessage(""); }}
+            />
+            <small>{reviewAdjustment.length}/{maximumWeeklyReviewLength}</small>
+          </label>
+          <div className="weekly-review-form__actions">
+            <span role="status">{reviewSaveMessage}</span>
+            <button type="button" className="button button--primary" onClick={saveReview}>保存本周复盘</button>
+          </div>
+        </div>
+
+        {recentReviews.length > 0 && <details className="weekly-review-history">
+          <summary>查看最近的复盘（{recentReviews.length}）</summary>
+          <div>
+            {recentReviews.map((review) => <article key={review.weekStart}>
+              <strong>{formatReviewRange(review.weekStart)}</strong>
+              {review.summary && <p><span>总结</span>{review.summary}</p>}
+              {review.adjustment && <p><span>调整</span>{review.adjustment}</p>}
+            </article>)}
+          </div>
+        </details>}
       </section>
 
       <section className="surface-card activity-heatmap-card" aria-labelledby="activity-heatmap-title">

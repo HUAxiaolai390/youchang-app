@@ -39,6 +39,7 @@ export type AppAction =
   | { type: "scheduled/time-set"; id: string; minutes: number }
   | { type: "scheduled/time-add"; id: string; minutes: number }
   | { type: "time-entry/add"; title: string; categoryId: string; date: DateKey; minutes: number }
+  | { type: "weekly-review/save"; weekStart: DateKey; summary: string; adjustment: string }
   | { type: "backup/import"; state: AppState }
   | { type: "data/clear" }
   | { type: "system/rollover"; now: Date }

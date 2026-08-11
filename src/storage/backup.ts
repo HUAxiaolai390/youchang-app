@@ -1,4 +1,4 @@
-import { toDateKey } from "../domain/date";
+import { fromDateKey, toDateKey } from "../domain/date";
 import type { AppState, DateKey } from "../domain/types";
 import { maximumActualMinutes } from "../domain/time";
 import { isTimeKey, maximumEstimatedMinutes } from "../domain/planning";
@@ -165,6 +165,14 @@ function hasValidSettings(value: unknown): boolean {
     && (value.systemNotificationsEnabled === undefined || typeof value.systemNotificationsEnabled === "boolean");
 }
 
+function isWeeklyReview(value: unknown): boolean {
+  if (!hasStrings(value, ["summary", "adjustment", "updatedAt"]) || !isDateKey(value.weekStart)) return false;
+  return fromDateKey(value.weekStart).getDay() === 1
+    && value.summary.length <= 500
+    && value.adjustment.length <= 500
+    && isValidTimestamp(value.updatedAt);
+}
+
 function hasValidFocus(value: unknown): boolean {
   if (value === undefined) return true;
   if (!isRecord(value)) return false;
@@ -223,6 +231,10 @@ function assertValidBackup(value: unknown): asserts value is AppState {
     || !Array.isArray(value.reschedules)
     || (value.timeEntries !== undefined
       && (!Array.isArray(value.timeEntries) || !value.timeEntries.every(isTimeEntry)))
+    || (value.weeklyReviews !== undefined
+      && (!Array.isArray(value.weeklyReviews)
+        || !value.weeklyReviews.every(isWeeklyReview)
+        || new Set(value.weeklyReviews.map((review) => isRecord(review) ? review.weekStart : undefined)).size !== value.weeklyReviews.length))
     || !value.categories.every(isCategory)
     || !value.fixedTasks.every(isFixedTask)
     || !value.fixedRecords.every(isFixedRecord)
@@ -254,7 +266,8 @@ function normalizeCategoryReferences(state: AppState): AppState {
     fixedTasks: state.fixedTasks.map(normalize),
     fixedRecords: state.fixedRecords.map(normalize),
     scheduledTasks: state.scheduledTasks.map(normalize),
-    timeEntries: (state.timeEntries ?? []).map(normalize)
+    timeEntries: (state.timeEntries ?? []).map(normalize),
+    weeklyReviews: state.weeklyReviews ?? []
   };
 }
 

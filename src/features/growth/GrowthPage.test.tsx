@@ -7,7 +7,7 @@ import type { AppRepository } from "../../storage/repository";
 import { GrowthPage } from "./GrowthPage";
 
 class MemoryRepository implements AppRepository {
-  private value: AppState;
+  value: AppState;
 
   constructor(value: AppState) {
     this.value = value;
@@ -43,11 +43,13 @@ function stateWithHistory(): AppState {
 }
 
 function renderGrowth(state: AppState) {
+  const repository = new MemoryRepository(state);
   render(
-    <AppStateProvider repository={new MemoryRepository(state)}>
+    <AppStateProvider repository={repository}>
       <GrowthPage />
     </AppStateProvider>
   );
+  return repository;
 }
 
 describe("GrowthPage", () => {
@@ -137,6 +139,42 @@ describe("GrowthPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "近 7 天" }));
     expect(screen.getByLabelText("运动 1 小时，占 57%")).toBeVisible();
     expect(screen.getByLabelText("分类时间饼图，共 1 小时 45 分")).toBeVisible();
+    vi.useRealTimers();
+  });
+
+  it("summarizes and saves the current weekly review", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 12, 9));
+    const state = createInitialState(new Date());
+    state.scheduledTasks.push({
+      id: "done", title: "复习数学", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-11", status: "completed", createdAt: new Date().toISOString(),
+      estimatedMinutes: 60, actualMinutes: 80
+    }, {
+      id: "pending", title: "跑步", categoryId: "exercise", categoryNameSnapshot: "运动",
+      scheduledDate: "2026-08-12", status: "pending", createdAt: new Date().toISOString(),
+      estimatedMinutes: 30
+    });
+    const repository = renderGrowth(state);
+
+    const metrics = screen.getByLabelText("本周复盘摘要");
+    expect(metrics).toHaveTextContent("1/2");
+    expect(metrics).toHaveTextContent("50% 已完成");
+    expect(metrics).toHaveTextContent("1 小时 30 分");
+    expect(metrics).toHaveTextContent("学习");
+
+    fireEvent.change(screen.getByLabelText("本周总结"), { target: { value: "数学复习完成得不错" } });
+    fireEvent.change(screen.getByLabelText("下周调整"), { target: { value: "减少任务数量" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存本周复盘" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent("本周复盘已保存");
+    expect(repository.value.weeklyReviews).toEqual([
+      expect.objectContaining({
+        weekStart: "2026-08-10",
+        summary: "数学复习完成得不错",
+        adjustment: "减少任务数量"
+      })
+    ]);
     vi.useRealTimers();
   });
 });

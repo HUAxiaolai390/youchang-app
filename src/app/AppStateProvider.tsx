@@ -31,6 +31,7 @@ import type { AppRepository } from "../storage/repository";
 import type { AppAction } from "./app-actions";
 import { markTaskReminderSent, snoozeTaskReminder } from "../domain/reminders";
 import { toggleFixedTaskStep, toggleScheduledTaskStep } from "../domain/steps";
+import { saveWeeklyReview } from "../domain/weekly-review";
 
 export type AppStateContextValue = {
   state: AppState;
@@ -56,6 +57,7 @@ const knownErrorMessages = new Set([
   "暂停日期不能早于今天",
   "这个任务现在不能改期",
   "请选择本周内的日期",
+  "每项复盘内容最多 500 字",
   "备份文件格式无效",
   "备份文件版本不受支持",
   "保存失败，请立即导出备份"
@@ -153,6 +155,8 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
         date: action.date,
         minutes: action.minutes
       }, now);
+    case "weekly-review/save":
+      return saveWeeklyReview(state, action.weekStart, action.summary, action.adjustment, now);
     case "backup/import":
       return rollover(action.state, now);
     case "system/rollover":

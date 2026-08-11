@@ -137,6 +137,13 @@ export interface TimeEntry {
   createdAt: string;
 }
 
+export interface WeeklyReview {
+  weekStart: DateKey;
+  summary: string;
+  adjustment: string;
+  updatedAt: string;
+}
+
 export interface AppState {
   schemaVersion: 1;
   settings: {
@@ -154,4 +161,5 @@ export interface AppState {
   reschedules: RescheduleRecord[];
   focus?: FocusProgress;
   timeEntries?: TimeEntry[];
+  weeklyReviews?: WeeklyReview[];
 }
