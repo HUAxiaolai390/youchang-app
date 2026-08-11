@@ -74,6 +74,19 @@ export function TaskReminderCenter({
     if (state.settings.systemNotificationsEnabled) void showSystemNotification(reminder);
   }, [activeReminder, currentTime, dispatch, pendingReminders, state.settings.systemNotificationsEnabled]);
 
+  useEffect(() => {
+    if (!activeReminder) return;
+    if (activeReminder.kind === "fixed") {
+      const record = state.fixedRecords.find((item) => item.id === activeReminder.id);
+      if (!record || record.completedAt || record.reminderSnoozedUntil) setActiveReminder(undefined);
+      return;
+    }
+    const task = state.scheduledTasks.find((item) => item.id === activeReminder.id);
+    if (!task || ["completed", "rescheduled"].includes(task.status) || task.reminderSnoozedUntil) {
+      setActiveReminder(undefined);
+    }
+  }, [activeReminder, state.fixedRecords, state.scheduledTasks]);
+
   if (!activeReminder) return null;
 
   function finishReminder() {

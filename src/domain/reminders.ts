@@ -22,6 +22,12 @@ export type TaskReminder = {
   snoozed: boolean;
 };
 
+export type ReminderOverviewStatus = "upcoming" | "missed" | "snoozed";
+
+export type TaskReminderOverviewItem = TaskReminder & {
+  status: ReminderOverviewStatus;
+};
+
 export function isReminderMinutesBefore(value: unknown): value is ReminderMinutesBefore {
   return typeof value === "number" && validReminderMinutes.has(value as ReminderMinutesBefore);
 }
@@ -89,6 +95,69 @@ export function getPendingTaskReminders(state: AppState, now: Date): TaskReminde
   return candidates
     .filter((reminder) => reminder.remindAt <= now)
     .sort((left, right) => left.startAt.getTime() - right.startAt.getTime());
+}
+
+export function getTaskReminderOverview(state: AppState, now: Date): TaskReminderOverviewItem[] {
+  const today = toDateKey(now);
+  const candidates: TaskReminder[] = [];
+
+  for (const record of state.fixedRecords) {
+    const snoozedUntil = record.reminderSnoozedUntil ? new Date(record.reminderSnoozedUntil) : undefined;
+    if ((!snoozedUntil && record.date !== today) || record.completedAt
+      || !record.plannedStartTime || record.reminderMinutesBefore === undefined) continue;
+    const startAt = dateAtTime(record.date, record.plannedStartTime);
+    candidates.push({
+      kind: "fixed",
+      id: record.id,
+      title: record.titleSnapshot,
+      date: record.date,
+      plannedStartTime: record.plannedStartTime,
+      reminderMinutesBefore: record.reminderMinutesBefore,
+      startAt,
+      remindAt: snoozedUntil ?? new Date(startAt.getTime() - record.reminderMinutesBefore * 60_000),
+      snoozed: Boolean(snoozedUntil)
+    });
+  }
+
+  for (const task of state.scheduledTasks) {
+    const snoozedUntil = task.reminderSnoozedUntil ? new Date(task.reminderSnoozedUntil) : undefined;
+    const canShowSnoozed = Boolean(snoozedUntil) && ["pending", "backlog", "archived"].includes(task.status);
+    if ((!snoozedUntil && task.scheduledDate !== today) || (!canShowSnoozed && task.status !== "pending")
+      || !task.plannedStartTime || task.reminderMinutesBefore === undefined) continue;
+    const startAt = dateAtTime(task.scheduledDate, task.plannedStartTime);
+    candidates.push({
+      kind: "scheduled",
+      id: task.id,
+      title: task.title,
+      date: task.scheduledDate,
+      plannedStartTime: task.plannedStartTime,
+      reminderMinutesBefore: task.reminderMinutesBefore,
+      startAt,
+      remindAt: snoozedUntil ?? new Date(startAt.getTime() - task.reminderMinutesBefore * 60_000),
+      snoozed: Boolean(snoozedUntil)
+    });
+  }
+
+  return candidates.map((reminder): TaskReminderOverviewItem => ({
+    ...reminder,
+    status: reminder.snoozed && reminder.remindAt > now
+      ? "snoozed"
+      : reminder.startAt < now
+        ? "missed"
+        : "upcoming"
+  })).sort((left, right) => left.startAt.getTime() - right.startAt.getTime());
+}
+
+export function describeReminderOverviewItem(item: TaskReminderOverviewItem, now: Date): string {
+  if (item.status === "snoozed") {
+    return `${item.remindAt.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false })} 再提醒`;
+  }
+  const differenceMinutes = Math.max(1, Math.ceil(Math.abs(item.startAt.getTime() - now.getTime()) / 60_000));
+  if (item.status === "missed") {
+    return differenceMinutes < 60 ? `已错过 ${differenceMinutes} 分钟` : `计划 ${item.plannedStartTime} 开始`;
+  }
+  if (item.startAt.getTime() === now.getTime()) return "现在开始";
+  return differenceMinutes < 60 ? `还有 ${differenceMinutes} 分钟` : `计划 ${item.plannedStartTime} 开始`;
 }
 
 export function markTaskReminderSent(

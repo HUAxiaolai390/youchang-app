@@ -175,6 +175,37 @@ test("acts on a due task directly from the reminder", async ({ page }) => {
   await expect(page.getByRole("checkbox", { name: "完成：提醒交互测试" })).toBeChecked();
 });
 
+test("summarizes upcoming and missed tasks in the reminder center", async ({ page }) => {
+  await page.clock.setFixedTime(new Date(2026, 7, 11, 9, 0, 0));
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  await page.getByRole("button", { name: "添加任务" }).click();
+  await page.getByLabel("任务名称").fill("错过的晨读");
+  await page.getByLabel("开始时间（选填）").fill("08:00");
+  await page.getByRole("combobox", { name: "任务提醒" }).selectOption("0");
+  await page.getByRole("button", { name: "保存任务" }).click();
+  await page.getByRole("alert", { name: "任务提醒" }).getByRole("button", { name: "关闭提醒" }).click();
+
+  await page.getByRole("button", { name: "添加任务" }).click();
+  await page.getByLabel("任务名称").fill("稍后的英语听力");
+  await page.getByLabel("开始时间（选填）").fill("10:00");
+  await page.getByRole("combobox", { name: "任务提醒" }).selectOption("0");
+  await page.getByRole("button", { name: "保存任务" }).click();
+
+  const center = page.getByRole("region", { name: "提醒中心" });
+  await expect(center).toContainText("2 项需要留意");
+  await expect(center).toContainText("1 即将");
+  await expect(center).toContainText("1 错过");
+  await center.getByRole("button", { name: /提醒中心/ }).click();
+  await expect(center.getByRole("heading", { name: "已错过" })).toBeVisible();
+  await expect(center.getByRole("heading", { name: "即将开始" })).toBeVisible();
+  await center.getByRole("button", { name: "完成提醒任务：错过的晨读" }).click();
+  await expect(center).not.toContainText("错过的晨读");
+  await expectNoHorizontalOverflow(page);
+});
+
 test("writes and remembers a weekly review", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => window.localStorage.clear());

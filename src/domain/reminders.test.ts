@@ -3,6 +3,7 @@ import { createInitialState } from "./defaults";
 import {
   describeTaskReminder,
   getPendingTaskReminders,
+  getTaskReminderOverview,
   markTaskReminderSent,
   normalizeReminderMinutesBefore,
   snoozeTaskReminder
@@ -80,6 +81,34 @@ describe("task reminders", () => {
     expect(getPendingTaskReminders(snoozed, new Date(2026, 7, 9, 9, 9))).toEqual([]);
     expect(getPendingTaskReminders(snoozed, new Date(2026, 7, 9, 9, 10))).toEqual([
       expect.objectContaining({ id: "task-1", snoozed: true })
+    ]);
+  });
+
+  it("groups today's reminders into upcoming, missed, and snoozed items", () => {
+    const state = createInitialState(new Date(2026, 7, 9, 9));
+    state.scheduledTasks.push({
+      id: "upcoming", title: "稍后复习", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-09", status: "pending", createdAt: "2026-08-09T00:00:00.000Z",
+      plannedStartTime: "10:00", reminderMinutesBefore: 10
+    }, {
+      id: "missed", title: "晨间阅读", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-09", status: "pending", createdAt: "2026-08-09T00:00:00.000Z",
+      plannedStartTime: "08:00", reminderMinutesBefore: 0, reminderSentAt: "sent"
+    }, {
+      id: "snoozed", title: "背单词", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-09", status: "pending", createdAt: "2026-08-09T00:00:00.000Z",
+      plannedStartTime: "08:30", reminderMinutesBefore: 0,
+      reminderSnoozedUntil: "2026-08-09T01:30:00.000Z"
+    }, {
+      id: "done", title: "已经完成", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-09", status: "completed", createdAt: "2026-08-09T00:00:00.000Z",
+      plannedStartTime: "08:00", reminderMinutesBefore: 0
+    });
+
+    expect(getTaskReminderOverview(state, new Date(2026, 7, 9, 9))).toEqual([
+      expect.objectContaining({ id: "missed", status: "missed" }),
+      expect.objectContaining({ id: "snoozed", status: "snoozed" }),
+      expect.objectContaining({ id: "upcoming", status: "upcoming" })
     ]);
   });
 });

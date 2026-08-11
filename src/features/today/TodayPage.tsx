@@ -4,6 +4,7 @@ import { CatMascot } from "../../components/CatMascot";
 import { AchievementMedal } from "../../components/AchievementMedal";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { TimeEntryDialog } from "../../components/TimeEntryDialog";
+import { TaskReminderOverview } from "../../components/TaskReminderOverview";
 import { achievementTierLabels, getFeaturedAchievements } from "../../domain/achievements";
 import { toDateKey } from "../../domain/date";
 import { getCatMessage, getTodayProgress } from "../../domain/stats";
@@ -291,6 +292,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
         <button type="button" aria-pressed={filter === "all"} onClick={() => setFilter("all")}>全部</button>
         {state.categories.map((category) => <button key={category.id} type="button" aria-label={`只看${category.name}`} aria-pressed={filter === category.id} onClick={() => setFilter(category.id)}>{category.name}</button>)}
       </section>
+      <TaskReminderOverview />
       <TaskList title="固定任务" tasks={fixedTasks} onToggle={toggle} onStepToggle={toggleStep} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
       <TaskList title="今日安排" tasks={scheduledTasks} onToggle={toggle} onStepToggle={toggleStep} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
       <Backlog now={now} />
