@@ -7,6 +7,9 @@
     "postinstall": "playwright install chromium",
     "dev": "vite",
     "build": "tsc -b && vite build && node scripts/prepare-sites-build.mjs",
+    "android:assets": "node scripts/generate-android-assets.mjs",
+    "android:sync": "pnpm build && node node_modules/@capacitor/cli/bin/capacitor sync android && pnpm android:assets",
+    "android:apk": "pnpm android:sync && powershell -ExecutionPolicy Bypass -File scripts/build-android-apk.ps1",
     "test": "vitest",
     "test:run": "vitest run",
     "typecheck": "tsc -b --pretty false",
@@ -16,11 +19,14 @@
     "check": "pnpm assets:check && playwright install chromium && pnpm typecheck && pnpm test:run && pnpm build && pnpm e2e"
   },
   "dependencies": {
+    "@capacitor/android": "8.5.0",
+    "@capacitor/core": "8.5.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "workbox-window": "^7.4.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.5.0",
     "@playwright/test": "^1.62.1",
     "@testing-library/dom": "latest",
     "@testing-library/jest-dom": "latest",

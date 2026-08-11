@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { useInstallPrompt } from "./InstallPromptProvider";
 
 function isAppleMobile(): boolean {
@@ -8,6 +9,8 @@ function isAppleMobile(): boolean {
 export function InstallAppPanel() {
   const { available, installed, requestInstall } = useInstallPrompt();
   const [message, setMessage] = useState<string>();
+  const nativeApp = Capacitor.isNativePlatform();
+  const isInstalled = installed || nativeApp;
   const appleMobile = isAppleMobile();
   const secureContext = window.isSecureContext || ["localhost", "127.0.0.1"].includes(window.location.hostname);
 
@@ -25,15 +28,15 @@ export function InstallAppPanel() {
           <h2 id="install-app-title">安装到手机</h2>
           <p className="settings-muted">安装后会像普通 App 一样出现在手机桌面，并可在断网时打开。</p>
         </div>
-        <span className={`notification-status notification-status--${installed ? "on" : "off"}`}>
-          {installed ? "已安装" : "未安装"}
+        <span className={`notification-status notification-status--${isInstalled ? "on" : "off"}`}>
+          {isInstalled ? "已安装" : "未安装"}
         </span>
       </div>
 
-      {installed ? (
+      {isInstalled ? (
         <div className="install-app-panel__ready">
           <span aria-hidden="true">✓</span>
-          <div><strong>有常已经在这台设备上安装</strong><small>以后可以直接从桌面图标打开。</small></div>
+          <div><strong>有常已经在这台设备上安装</strong><small>{nativeApp ? "这是独立安卓版本，不需要浏览器或 ChatGPT 账号。" : "以后可以直接从桌面图标打开。"}</small></div>
         </div>
       ) : available ? (
         <button type="button" className="button button--primary" onClick={install}>安装有常</button>

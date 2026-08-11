@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { Capacitor } from "@capacitor/core";
 import { InstallAppPanel } from "./InstallAppPanel";
 import { InstallPromptProvider } from "./InstallPromptProvider";
 
@@ -8,6 +9,7 @@ const originalMatchMedia = window.matchMedia;
 
 afterEach(() => {
   Object.defineProperty(window, "matchMedia", { configurable: true, value: originalMatchMedia });
+  vi.restoreAllMocks();
 });
 
 describe("InstallAppPanel", () => {
@@ -43,5 +45,18 @@ describe("InstallAppPanel", () => {
 
     expect(screen.getByText("有常已经在这台设备上安装")).toBeVisible();
     expect(screen.getByText("已安装")).toBeVisible();
+  });
+
+  it("recognizes the independent Android app without offering browser installation", () => {
+    vi.spyOn(Capacitor, "isNativePlatform").mockReturnValue(true);
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      value: vi.fn().mockReturnValue({ matches: false })
+    });
+
+    render(<InstallPromptProvider><InstallAppPanel /></InstallPromptProvider>);
+
+    expect(screen.getByText("这是独立安卓版本，不需要浏览器或 ChatGPT 账号。")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "安装有常" })).not.toBeInTheDocument();
   });
 });
