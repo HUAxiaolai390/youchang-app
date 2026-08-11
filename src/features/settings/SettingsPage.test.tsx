@@ -80,7 +80,7 @@ describe("SettingsPage", () => {
 
     await user.upload(screen.getByLabelText("导入备份"), backupFile(JSON.stringify(imported)));
 
-    expect(await screen.findByText("将导入 1 个临时任务、0 个固定任务和 6 个分类")).toBeVisible();
+    expect(await screen.findByText("将导入 1 个临时任务、0 个固定任务、0 个目标和 6 个分类")).toBeVisible();
     expect(repository.load().settings.displayName).toBe("");
     await user.click(screen.getByRole("button", { name: "确认导入" }));
     expect(repository.load().settings.displayName).toBe("备份里的我");
@@ -172,6 +172,26 @@ describe("SettingsPage", () => {
 
       expect(repository.load().fixedTasks).toHaveLength(1);
       expect(repository.load().fixedTasks[0].inactiveFrom).toBe("2026-08-01");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("associates a managed fixed task with a long-term goal", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date(2026, 7, 1, 12));
+    const state = createInitialState(new Date(2026, 7, 1, 12));
+    state.goals = [{ id: "health", title: "完成三个月体能训练", deadline: "2026-11-01", createdAt: "2026-08-01T04:00:00.000Z" }];
+    const repository = renderSettings(state);
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    try {
+      await user.type(screen.getByLabelText("固定任务名称"), "晨跑");
+      await user.selectOptions(screen.getByLabelText("关联长期目标（选填）"), "health");
+      await user.click(screen.getByRole("button", { name: "新增固定任务" }));
+
+      expect(repository.load().fixedTasks[0]).toMatchObject({ goalId: "health" });
+      expect(screen.getByText(/目标：完成三个月体能训练/)).toBeVisible();
     } finally {
       vi.useRealTimers();
     }

@@ -51,6 +51,20 @@ describe("TaskForm", () => {
     }));
   });
 
+  it("associates a task with an optional long-term goal", async () => {
+    const state = createInitialState(new Date(2026, 6, 31, 9));
+    state.goals = [{ id: "exam", title: "通过英语六级", deadline: "2026-12-20", createdAt: "2026-07-31T01:00:00.000Z" }];
+    const onSubmit = vi.fn();
+    const user = userEvent.setup();
+    render(<TaskForm categories={state.categories} goals={state.goals} today="2026-07-31" onCancel={() => {}} onSubmit={onSubmit} />);
+
+    await user.type(screen.getByLabelText("任务名称"), "英语听力训练");
+    await user.selectOptions(screen.getByLabelText("关联长期目标（选填）"), "exam");
+    await user.click(screen.getByRole("button", { name: "保存任务" }));
+
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ goalId: "exam" }));
+  });
+
   it("submits a reminder after a start time is entered", async () => {
     const state = createInitialState(new Date(2026, 6, 31, 9));
     const onSubmit = vi.fn();

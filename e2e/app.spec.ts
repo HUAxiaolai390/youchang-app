@@ -226,6 +226,38 @@ test("writes and remembers a weekly review", async ({ page }) => {
   await expect(page.getByLabel("下周调整")).toHaveValue("减少安排，给重要任务留出余量");
 });
 
+test("creates a long-term goal and tracks a linked task", async ({ page }) => {
+  await page.clock.setFixedTime(new Date(2026, 7, 11, 9, 0, 0));
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  await page.getByRole("button", { name: "成长", exact: true }).click();
+  await page.getByRole("button", { name: "新增目标" }).click();
+  await page.getByLabel("目标名称").fill("通过英语六级");
+  await page.getByLabel("目标截止日期").fill("2026-12-20");
+  await page.getByRole("button", { name: "创建目标" }).click();
+  await expect(page.getByRole("heading", { name: "通过英语六级" })).toBeVisible();
+
+  await page.getByRole("button", { name: "今日", exact: true }).click();
+  await page.getByRole("button", { name: "添加任务", exact: true }).click();
+  await page.getByLabel("任务名称").fill("英语听力训练");
+  await page.getByLabel("关联长期目标（选填）").selectOption({ label: "通过英语六级" });
+  await page.getByRole("button", { name: "保存任务" }).click();
+  await expect(page.getByText(/目标：通过英语六级/)).toBeVisible();
+  await page.getByRole("button", { name: "记录用时：英语听力训练" }).click();
+  await page.getByLabel("实际用时（分钟）").fill("40");
+  await page.getByRole("button", { name: "保存用时" }).click();
+  await page.getByRole("checkbox", { name: "完成：英语听力训练" }).check();
+
+  await page.getByRole("button", { name: "成长", exact: true }).click();
+  await expect(page.getByLabel("通过英语六级进度：1/1")).toBeVisible();
+  const goalCard = page.getByRole("heading", { name: "通过英语六级" }).locator("xpath=ancestor::article[1]");
+  await expect(goalCard).toContainText("40 分钟");
+  await expect(goalCard).toContainText("当前任务已完成");
+  await expectNoHorizontalOverflow(page);
+});
+
 test("reminds a scheduled task once at its planned time", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => window.localStorage.clear());

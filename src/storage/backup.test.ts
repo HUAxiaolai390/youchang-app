@@ -128,6 +128,32 @@ describe("versioned backups", () => {
     }))).toThrow("备份文件格式无效");
   });
 
+  it("loads old backups without goals and round trips linked goals", () => {
+    const legacy = createInitialState(new Date(2026, 6, 31, 9));
+    delete legacy.goals;
+    expect(parseBackup(JSON.stringify(legacy)).goals).toEqual([]);
+
+    const goalState = createInitialState(new Date(2026, 6, 31, 9));
+    goalState.goals = [{
+      id: "exam", title: "通过英语六级", deadline: "2026-12-20", createdAt: "2026-07-31T01:00:00.000Z"
+    }];
+    goalState.scheduledTasks.push({
+      id: "words", title: "背单词", categoryId: "study", categoryNameSnapshot: "学习", goalId: "exam",
+      scheduledDate: "2026-07-31", status: "pending", createdAt: "2026-07-31T01:00:00.000Z"
+    });
+    expect(parseBackup(JSON.stringify(goalState))).toMatchObject({
+      goals: [{ id: "exam", title: "通过英语六级" }],
+      scheduledTasks: [{ goalId: "exam" }]
+    });
+
+    const missingGoal = { ...goalState, goals: [] };
+    expect(parseBackup(JSON.stringify(missingGoal)).scheduledTasks[0].goalId).toBeUndefined();
+    expect(() => parseBackup(JSON.stringify({
+      ...goalState,
+      goals: [{ ...goalState.goals![0], deadline: "2026-02-30" }]
+    }))).toThrow("备份文件格式无效");
+  });
+
   it("round trips reminder settings and rejects unsupported lead times", () => {
     const reminded = createInitialState(new Date(2026, 7, 9, 8));
     reminded.settings.systemNotificationsEnabled = true;

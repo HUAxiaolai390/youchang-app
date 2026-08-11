@@ -6,6 +6,7 @@ import { isAchievementId } from "../domain/achievements";
 import { isReminderMinutesBefore } from "../domain/reminders";
 import { isTaskPriority } from "../domain/priorities";
 import { maximumTaskSteps } from "../domain/steps";
+import { maximumGoals } from "../domain/goals";
 
 const INVALID_BACKUP = "备份文件格式无效";
 const UNSUPPORTED_VERSION = "备份文件版本不受支持";
@@ -80,6 +81,7 @@ function isFixedTask(value: unknown): boolean {
     && isDateKey(value.activeFrom)
     && (value.inactiveFrom === undefined || isDateKey(value.inactiveFrom))
     && (value.successorId === undefined || isString(value.successorId))
+    && (value.goalId === undefined || isString(value.goalId))
     && isFixedRepeatRule(value.repeatRule)
     && isTaskSteps(value.steps)
     && (value.pausedUntil === undefined || isDateKey(value.pausedUntil))
@@ -95,6 +97,7 @@ function isFixedRecord(value: unknown): boolean {
   return hasStrings(value, ["id", "templateId", "titleSnapshot", "categoryId", "categoryNameSnapshot"])
     && isDateKey(value.date)
     && (value.completedAt === undefined || isString(value.completedAt))
+    && (value.goalId === undefined || isString(value.goalId))
     && (value.reminderSentAt === undefined || isString(value.reminderSentAt))
     && (value.reminderSnoozedUntil === undefined || isValidTimestamp(value.reminderSnoozedUntil))
     && (value.priority === undefined || isTaskPriority(value.priority))
@@ -110,6 +113,7 @@ function isScheduledTask(value: unknown): boolean {
     && taskStatuses.has(value.status)
     && (value.sourceTaskId === undefined || isString(value.sourceTaskId))
     && (value.completedAt === undefined || isString(value.completedAt))
+    && (value.goalId === undefined || isString(value.goalId))
     && (value.reminderSentAt === undefined || isString(value.reminderSentAt))
     && (value.reminderSnoozedUntil === undefined || isValidTimestamp(value.reminderSnoozedUntil))
     && (value.priority === undefined || isTaskPriority(value.priority))
@@ -171,6 +175,14 @@ function isWeeklyReview(value: unknown): boolean {
     && value.summary.length <= 500
     && value.adjustment.length <= 500
     && isValidTimestamp(value.updatedAt);
+}
+
+function isGoal(value: unknown): boolean {
+  return hasStrings(value, ["id", "title", "createdAt"])
+    && value.title.trim().length > 0
+    && value.title.length <= 60
+    && isDateKey(value.deadline)
+    && isValidTimestamp(value.createdAt);
 }
 
 function hasValidFocus(value: unknown): boolean {
@@ -235,6 +247,11 @@ function assertValidBackup(value: unknown): asserts value is AppState {
       && (!Array.isArray(value.weeklyReviews)
         || !value.weeklyReviews.every(isWeeklyReview)
         || new Set(value.weeklyReviews.map((review) => isRecord(review) ? review.weekStart : undefined)).size !== value.weeklyReviews.length))
+    || (value.goals !== undefined
+      && (!Array.isArray(value.goals)
+        || value.goals.length > maximumGoals
+        || !value.goals.every(isGoal)
+        || new Set(value.goals.map((goal) => isRecord(goal) ? goal.id : undefined)).size !== value.goals.length))
     || !value.categories.every(isCategory)
     || !value.fixedTasks.every(isFixedTask)
     || !value.fixedRecords.every(isFixedRecord)
@@ -247,6 +264,8 @@ function assertValidBackup(value: unknown): asserts value is AppState {
 function normalizeCategoryReferences(state: AppState): AppState {
   const categories = new Map(state.categories.map((category) => [category.id, category]));
   const fallback = categories.get("other");
+  const goals = state.goals ?? [];
+  const goalIds = new Set(goals.map((goal) => goal.id));
 
   const normalize = <T extends { categoryId: string; categoryNameSnapshot: string }>(task: T): T => {
     if (categories.has(task.categoryId)) {
@@ -261,13 +280,18 @@ function normalizeCategoryReferences(state: AppState): AppState {
     };
   };
 
+  const normalizeGoal = <T extends { goalId?: string }>(task: T): T => task.goalId && !goalIds.has(task.goalId)
+    ? { ...task, goalId: undefined }
+    : task;
+
   return {
     ...state,
-    fixedTasks: state.fixedTasks.map(normalize),
-    fixedRecords: state.fixedRecords.map(normalize),
-    scheduledTasks: state.scheduledTasks.map(normalize),
+    fixedTasks: state.fixedTasks.map((task) => normalizeGoal(normalize(task))),
+    fixedRecords: state.fixedRecords.map((record) => normalizeGoal(normalize(record))),
+    scheduledTasks: state.scheduledTasks.map((task) => normalizeGoal(normalize(task))),
     timeEntries: (state.timeEntries ?? []).map(normalize),
-    weeklyReviews: state.weeklyReviews ?? []
+    weeklyReviews: state.weeklyReviews ?? [],
+    goals
   };
 }
 

@@ -43,6 +43,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
   const { allFixedTasks, allScheduledTasks } = useMemo(() => {
     const templatesById = new Map(state.fixedTasks.map((task) => [task.id, task]));
     const categoriesById = new Map(state.categories.map((category) => [category.id, category.name]));
+    const goalsById = new Map((state.goals ?? []).map((goal) => [goal.id, goal.title]));
     const liveCategoryName = (categoryId: string) => categoriesById.get(categoryId) ?? categoriesById.get("other") ?? "其他";
     return {
       allFixedTasks: state.fixedRecords.filter((record) => {
@@ -56,6 +57,8 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
         return {
           id: record.id, taskId: record.templateId, kind: "fixed", title: record.titleSnapshot, categoryId: record.categoryId,
           categoryName: liveCategoryName(record.categoryId), completed: Boolean(record.completedAt), editable: true,
+          goalId: record.goalId ?? template.goalId,
+          goalTitle: goalsById.get(record.goalId ?? template.goalId ?? ""),
           plannedStartTime: record.plannedStartTime ?? template.plannedStartTime,
           reminderMinutesBefore: record.reminderMinutesBefore ?? template.reminderMinutesBefore,
           priority: record.priority ?? template.priority,
@@ -71,13 +74,15 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
       )).map((task): TodayTask => ({
         id: task.id, taskId: task.id, kind: "scheduled", title: task.title, categoryId: task.categoryId,
         categoryName: liveCategoryName(task.categoryId), completed: task.status === "completed", editable: ["pending", "completed"].includes(task.status),
+        goalId: task.goalId,
+        goalTitle: goalsById.get(task.goalId ?? ""),
         plannedStartTime: task.plannedStartTime, reminderMinutesBefore: task.reminderMinutesBefore, estimatedMinutes: task.estimatedMinutes,
         priority: task.priority,
         steps: task.steps,
         actualMinutes: task.actualMinutes
       }))
     };
-  }, [state.categories, state.fixedRecords, state.fixedTasks, state.scheduledTasks, today]);
+  }, [state.categories, state.fixedRecords, state.fixedTasks, state.goals, state.scheduledTasks, today]);
 
   const fixedTasks = allFixedTasks.filter((task) => filter === "all" || filter === task.categoryId);
   const scheduledTasks = allScheduledTasks.filter((task) => filter === "all" || filter === task.categoryId);
@@ -102,6 +107,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
       if (editing.kind === "fixed") {
         saved = dispatch({ type: "fixed/update", id: editing.taskId, input: {
           title: values.title, categoryId: values.categoryId,
+          goalId: values.goalId,
           plannedStartTime: values.plannedStartTime, reminderMinutesBefore: values.reminderMinutesBefore, estimatedMinutes: values.estimatedMinutes,
           priority: values.priority,
           steps: values.steps,
@@ -110,6 +116,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
       } else {
         saved = dispatch({ type: "scheduled/update", id: editing.taskId, input: {
           title: values.title, categoryId: values.categoryId, scheduledDate: values.date,
+          goalId: values.goalId,
           plannedStartTime: values.plannedStartTime, reminderMinutesBefore: values.reminderMinutesBefore, estimatedMinutes: values.estimatedMinutes,
           priority: values.priority,
           steps: values.steps
@@ -118,6 +125,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
     } else if (values.kind === "fixed") {
       saved = dispatch({ type: "fixed/add", input: {
         title: values.title, categoryId: values.categoryId, activeFrom: today,
+        goalId: values.goalId,
         plannedStartTime: values.plannedStartTime, reminderMinutesBefore: values.reminderMinutesBefore, estimatedMinutes: values.estimatedMinutes,
         priority: values.priority,
         steps: values.steps,
@@ -126,6 +134,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
     } else {
       saved = dispatch({ type: "scheduled/add", input: {
         title: values.title, categoryId: values.categoryId, scheduledDate: values.date,
+        goalId: values.goalId,
         plannedStartTime: values.plannedStartTime, reminderMinutesBefore: values.reminderMinutesBefore, estimatedMinutes: values.estimatedMinutes,
         priority: values.priority,
         steps: values.steps
@@ -171,6 +180,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
     title: editing.title,
     kind: editing.kind,
     categoryId: editing.categoryId,
+    goalId: editing.goalId,
     date: editing.date,
     plannedStartTime: editing.plannedStartTime,
     reminderMinutesBefore: editing.reminderMinutesBefore,
@@ -297,7 +307,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
       <TaskList title="今日安排" tasks={scheduledTasks} onToggle={toggle} onStepToggle={toggleStep} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
       <Backlog now={now} />
       <button type="button" className="add-task-button" aria-label="添加任务" onClick={openNewTask}>＋<span>添加任务</span></button>
-      {formOpen && <TaskForm categories={state.categories} today={today} initialValues={formValues} error={error} onSubmit={saveTask} onCancel={closeForm} />}
+      {formOpen && <TaskForm categories={state.categories} goals={state.goals ?? []} today={today} initialValues={formValues} error={error} onSubmit={saveTask} onCancel={closeForm} />}
       {deleting && <ConfirmDialog title="删除任务？" message={`确定删除“${deleting.title}”吗？`} confirmLabel="删除" onConfirm={confirmDelete} onCancel={() => setDeleting(undefined)} />}
       {timing && <TimeEntryDialog taskTitle={timing.title} currentMinutes={timing.actualMinutes} onSave={saveActualTime} onCancel={() => setTiming(undefined)} />}
     </div>

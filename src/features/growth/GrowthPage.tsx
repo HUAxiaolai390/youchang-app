@@ -8,6 +8,7 @@ import { getActivityHeatmap, getCurrentStreak, getPeriodStat, getSevenDayStats, 
 import { formatTrackedTime, getTimeAllocation } from "../../domain/time";
 import { getReviewWeekEnd, getWeeklyReview, getWeeklyReviewSnapshot, maximumWeeklyReviewLength } from "../../domain/weekly-review";
 import type { DateKey } from "../../domain/types";
+import { GoalSection } from "./GoalSection";
 
 function formatDay(date: string): string {
   const [, month, day] = date.split("-");
@@ -106,6 +107,8 @@ export function GrowthPage() {
           <small>活跃 {weekStat.activeDays} 天 · 记录 {formatTrackedTime(weekStat.trackedMinutes)}</small>
         </article>
       </section>
+
+      <GoalSection now={today} />
 
       <section className="surface-card weekly-review-card" aria-labelledby="weekly-review-title">
         <div className="weekly-review-card__heading">

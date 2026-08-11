@@ -12,6 +12,8 @@ export type TodayTask = {
   title: string;
   categoryId: string;
   categoryName: string;
+  goalId?: string;
+  goalTitle?: string;
   completed: boolean;
   editable: boolean;
   plannedStartTime?: TimeKey;
@@ -63,6 +65,7 @@ export function TaskList({ title, tasks, onToggle, onStepToggle, onEdit, onDelet
                 <p><span className={`task-priority-tag task-priority-tag--${task.priority ?? "medium"}`}>{formatTaskPriority(task.priority)}</span>{task.title}</p>
                 <span>
                   {task.categoryName}
+                  {task.goalTitle ? ` · 目标：${task.goalTitle}` : ""}
                   {task.repeatLabel ? ` · ${task.repeatLabel}` : ""}
                   {task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}
                   {task.reminderMinutesBefore !== undefined ? ` · ${formatReminderMinutes(task.reminderMinutesBefore)}` : ""}

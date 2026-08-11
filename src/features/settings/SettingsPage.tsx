@@ -16,7 +16,7 @@ function backupErrorMessage(error: unknown): string {
 }
 
 function backupSummary(state: AppState): string {
-  return `将导入 ${state.scheduledTasks.length} 个临时任务、${state.fixedTasks.length} 个固定任务和 ${state.categories.length} 个分类`;
+  return `将导入 ${state.scheduledTasks.length} 个临时任务、${state.fixedTasks.length} 个固定任务、${state.goals?.length ?? 0} 个目标和 ${state.categories.length} 个分类`;
 }
 
 function categoryName(categories: Category[], categoryId: string): string {
@@ -42,6 +42,7 @@ export function SettingsPage() {
   const [categoryIconInput, setCategoryIconInput] = useState("分");
   const [fixedTitle, setFixedTitle] = useState("");
   const [fixedCategoryId, setFixedCategoryId] = useState("study");
+  const [fixedGoalId, setFixedGoalId] = useState("");
   const [fixedPriority, setFixedPriority] = useState<TaskPriority>("medium");
   const [fixedSteps, setFixedSteps] = useState("");
   const [fixedStartTime, setFixedStartTime] = useState("");
@@ -52,6 +53,7 @@ export function SettingsPage() {
   const [editingFixedId, setEditingFixedId] = useState<string>();
   const [editingFixedTitle, setEditingFixedTitle] = useState("");
   const [editingFixedCategoryId, setEditingFixedCategoryId] = useState("study");
+  const [editingFixedGoalId, setEditingFixedGoalId] = useState("");
   const [editingFixedPriority, setEditingFixedPriority] = useState<TaskPriority>("medium");
   const [editingFixedSteps, setEditingFixedSteps] = useState("");
   const [editingFixedStartTime, setEditingFixedStartTime] = useState("");
@@ -82,6 +84,12 @@ export function SettingsPage() {
     setFixedCategoryId((current) => state.categories.some((category) => category.id === current) ? current : fallback);
     setEditingFixedCategoryId((current) => state.categories.some((category) => category.id === current) ? current : fallback);
   }, [state.categories]);
+
+  useEffect(() => {
+    const goals = state.goals ?? [];
+    setFixedGoalId((current) => current && !goals.some((goal) => goal.id === current) ? "" : current);
+    setEditingFixedGoalId((current) => current && !goals.some((goal) => goal.id === current) ? "" : current);
+  }, [state.goals]);
 
   useEffect(() => {
     if (editingFixedId && !state.fixedTasks.some((task) => task.id === editingFixedId)) setEditingFixedId(undefined);
@@ -123,6 +131,7 @@ export function SettingsPage() {
       input: {
         title: fixedTitle,
         categoryId: fixedCategoryId,
+        goalId: fixedGoalId || undefined,
         priority: fixedPriority,
         steps: stepsFromLines(fixedSteps),
         activeFrom: toDateKey(new Date()),
@@ -134,6 +143,7 @@ export function SettingsPage() {
     })) {
       setFixedTitle("");
       setFixedPriority("medium");
+      setFixedGoalId("");
       setFixedSteps("");
       setFixedStartTime("");
       setFixedReminderMinutes("");
@@ -146,6 +156,7 @@ export function SettingsPage() {
     setEditingFixedId(task.id);
     setEditingFixedTitle(task.title);
     setEditingFixedCategoryId(task.categoryId);
+    setEditingFixedGoalId(task.goalId ?? "");
     setEditingFixedPriority(task.priority ?? "medium");
     setEditingFixedSteps(task.steps?.map((step) => step.title).join("\n") ?? "");
     setEditingFixedStartTime(task.plannedStartTime ?? "");
@@ -169,6 +180,7 @@ export function SettingsPage() {
     if (dispatch({ type: "fixed/update", id: editingFixedId, input: {
       title: editingFixedTitle,
       categoryId: editingFixedCategoryId,
+      goalId: editingFixedGoalId || undefined,
       priority: editingFixedPriority,
       steps: stepsFromLines(editingFixedSteps, state.fixedTasks.find((task) => task.id === editingFixedId)?.steps),
       plannedStartTime: editingFixedStartTime ? editingFixedStartTime as TimeKey : undefined,
@@ -269,6 +281,11 @@ export function SettingsPage() {
             {state.categories.length === 0 && <option value="">暂无可用分类</option>}
             {state.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
           </select>
+          <label className="field-label" htmlFor="fixed-goal">关联长期目标（选填）</label>
+          <select id="fixed-goal" className="field-control" value={fixedGoalId} onChange={(event) => setFixedGoalId(event.target.value)}>
+            <option value="">不关联目标</option>
+            {(state.goals ?? []).map((goal) => <option key={goal.id} value={goal.id}>{goal.title}</option>)}
+          </select>
           <label className="field-label" htmlFor="fixed-priority">固定任务优先级</label>
           <select id="fixed-priority" className="field-control" value={fixedPriority} onChange={(event) => setFixedPriority(event.target.value as TaskPriority)}>
             {taskPriorityOptions.map((option) => <option key={option.value} value={option.value}>{option.label} · {option.description}</option>)}
@@ -288,7 +305,7 @@ export function SettingsPage() {
           {managedFixedTasks.length === 0 && <li className="settings-muted">还没有固定任务</li>}
           {managedFixedTasks.map((task) => (
             <li key={task.id} className="settings-list__item">
-              <span><strong>{task.title}</strong><small>{formatTaskPriority(task.priority)}优先级 · {categoryName(state.categories, task.categoryId)} · {formatFixedRepeatRule(task.repeatRule)}{task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}{task.reminderMinutesBefore !== undefined ? ` · ${formatReminderMinutes(task.reminderMinutesBefore)}` : ""}{task.estimatedMinutes ? ` · 预计 ${task.estimatedMinutes} 分钟` : ""}{task.pausedUntil && task.pausedUntil >= todayKey ? ` · 暂停至 ${task.pausedUntil}` : ""}{(task.skippedDates ?? []).some((date) => date >= todayKey) ? ` · 已请假 ${(task.skippedDates ?? []).filter((date) => date >= todayKey).length} 天` : ""} · {task.inactiveFrom ? "已停用" : "进行中"}</small></span>
+              <span><strong>{task.title}</strong><small>{formatTaskPriority(task.priority)}优先级 · {categoryName(state.categories, task.categoryId)}{task.goalId ? ` · 目标：${(state.goals ?? []).find((goal) => goal.id === task.goalId)?.title ?? "已删除"}` : ""} · {formatFixedRepeatRule(task.repeatRule)}{task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}{task.reminderMinutesBefore !== undefined ? ` · ${formatReminderMinutes(task.reminderMinutesBefore)}` : ""}{task.estimatedMinutes ? ` · 预计 ${task.estimatedMinutes} 分钟` : ""}{task.pausedUntil && task.pausedUntil >= todayKey ? ` · 暂停至 ${task.pausedUntil}` : ""}{(task.skippedDates ?? []).some((date) => date >= todayKey) ? ` · 已请假 ${(task.skippedDates ?? []).filter((date) => date >= todayKey).length} 天` : ""} · {task.inactiveFrom ? "已停用" : "进行中"}</small></span>
               <span className="settings-inline-actions">
                 <button type="button" onClick={() => beginEditFixedTask(task)} aria-label={`编辑固定任务：${task.title}`}>编辑</button>
                 {!task.inactiveFrom && <button type="button" onClick={() => { setExceptionFixedId(task.id); setExceptionDate(todayKey); }} aria-label={`请假或暂停：${task.title}`}>请假/暂停</button>}
@@ -327,6 +344,11 @@ export function SettingsPage() {
           <select id="editing-fixed-category" className="field-control" value={editingFixedCategoryId} onChange={(event) => setEditingFixedCategoryId(event.target.value)}>
             {state.categories.length === 0 && <option value="">暂无可用分类</option>}
             {state.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+          </select>
+          <label className="field-label" htmlFor="editing-fixed-goal">编辑关联长期目标（选填）</label>
+          <select id="editing-fixed-goal" className="field-control" value={editingFixedGoalId} onChange={(event) => setEditingFixedGoalId(event.target.value)}>
+            <option value="">不关联目标</option>
+            {(state.goals ?? []).map((goal) => <option key={goal.id} value={goal.id}>{goal.title}</option>)}
           </select>
           <label className="field-label" htmlFor="editing-fixed-priority">编辑固定任务优先级</label>
           <select id="editing-fixed-priority" className="field-control" value={editingFixedPriority} onChange={(event) => setEditingFixedPriority(event.target.value as TaskPriority)}>

@@ -37,6 +37,7 @@ export interface FixedTaskTemplate {
   title: string;
   categoryId: string;
   categoryNameSnapshot: string;
+  goalId?: string;
   activeFrom: DateKey;
   inactiveFrom?: DateKey;
   successorId?: string;
@@ -59,6 +60,7 @@ export interface FixedTaskRecord {
   titleSnapshot: string;
   categoryId: string;
   categoryNameSnapshot: string;
+  goalId?: string;
   completedAt?: string;
   plannedStartTime?: TimeKey;
   reminderMinutesBefore?: ReminderMinutesBefore;
@@ -75,6 +77,7 @@ export interface ScheduledTask {
   title: string;
   categoryId: string;
   categoryNameSnapshot: string;
+  goalId?: string;
   scheduledDate: DateKey;
   status: TaskStatus;
   sourceTaskId?: string;
@@ -144,6 +147,13 @@ export interface WeeklyReview {
   updatedAt: string;
 }
 
+export interface Goal {
+  id: string;
+  title: string;
+  deadline: DateKey;
+  createdAt: string;
+}
+
 export interface AppState {
   schemaVersion: 1;
   settings: {
@@ -162,4 +172,5 @@ export interface AppState {
   focus?: FocusProgress;
   timeEntries?: TimeEntry[];
   weeklyReviews?: WeeklyReview[];
+  goals?: Goal[];
 }

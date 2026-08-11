@@ -50,6 +50,7 @@ function WeekTaskCard({ task, canToggle, onMove, onToggle }: {
           <span className={`task-priority-tag task-priority-tag--${task.priority ?? "medium"}`}>{formatTaskPriority(task.priority)}</span>
           <span className={`week-task__status week-task__status--${task.status}`}>{statusLabel(task)}</span>
           <span>{task.categoryName}</span>
+          {task.goalTitle && <span>目标：{task.goalTitle}</span>}
         </div>
         <p>{task.title}</p>
         <small>{formatPlanComparison(task.estimatedMinutes, task.actualMinutes)}{task.reminderMinutesBefore !== undefined ? ` · ${formatReminderMinutes(task.reminderMinutesBefore)}` : ""}{stepProgress.total ? ` · 步骤 ${stepProgress.completed}/${stepProgress.total}` : ""}</small>
@@ -124,6 +125,7 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
       ? dispatch({ type: "fixed/add", input: {
           title: values.title,
           categoryId: values.categoryId,
+          goalId: values.goalId,
           activeFrom: today,
           plannedStartTime: values.plannedStartTime,
           reminderMinutesBefore: values.reminderMinutesBefore,
@@ -135,6 +137,7 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
       : dispatch({ type: "scheduled/add", input: {
           title: values.title,
           categoryId: values.categoryId,
+          goalId: values.goalId,
           scheduledDate: values.date,
           plannedStartTime: values.plannedStartTime,
           reminderMinutesBefore: values.reminderMinutesBefore,
@@ -288,6 +291,7 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
       {formOpen && (
         <TaskForm
           categories={state.categories}
+          goals={state.goals ?? []}
           today={today}
           defaultDate={selectedDay.date}
           error={error}

@@ -41,6 +41,7 @@ export function createInitialState(now: Date): AppState {
       experience: 0
     },
     timeEntries: [],
-    weeklyReviews: []
+    weeklyReviews: [],
+    goals: []
   };
 }

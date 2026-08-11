@@ -41,9 +41,10 @@ function getWeekDates(now: Date): DateKey[] {
   return dates;
 }
 
-function TaskCard({ task, categoryName, actionLabel, onComplete, onReschedule, onDelete, onTime }: {
+function TaskCard({ task, categoryName, goalName, actionLabel, onComplete, onReschedule, onDelete, onTime }: {
   task: ScheduledTask;
   categoryName: string;
+  goalName?: string;
   actionLabel: string;
   onComplete(): void;
   onReschedule(): void;
@@ -57,6 +58,7 @@ function TaskCard({ task, categoryName, actionLabel, onComplete, onReschedule, o
         <p><span className={`task-priority-tag task-priority-tag--${task.priority ?? "medium"}`}>{formatTaskPriority(task.priority)}</span>{task.title}</p>
         <span>
           原定：{formatDate(task.scheduledDate)} · {categoryName}
+          {goalName ? ` · 目标：${goalName}` : ""}
           {task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}
           {task.estimatedMinutes ? ` · 预计 ${task.estimatedMinutes} 分钟` : ""}
           {task.actualMinutes ? ` · 实际 ${task.actualMinutes} 分钟` : ""}
@@ -84,6 +86,7 @@ export function Backlog({ now = new Date() }: BacklogProps) {
   const backlogTasks = state.scheduledTasks.filter((task) => task.status === "backlog" && isWithinWeek(task.scheduledDate, now));
   const archivedTasks = state.scheduledTasks.filter((task) => task.status === "archived");
   const categoriesById = new Map(state.categories.map((category) => [category.id, category.name]));
+  const goalsById = new Map((state.goals ?? []).map((goal) => [goal.id, goal.title]));
   const liveCategoryName = (categoryId: string) => categoriesById.get(categoryId) ?? categoriesById.get("other") ?? "其他";
 
   function openReschedule(task: ScheduledTask, archived: boolean) {
@@ -129,7 +132,7 @@ export function Backlog({ now = new Date() }: BacklogProps) {
       </div>}
       {backlogTasks.length === 0 ? <p className="backlog-panel__empty">本周没有待安排任务</p> : (
         <ul className="backlog-list">
-          {backlogTasks.map((task) => <TaskCard key={task.id} task={task} categoryName={liveCategoryName(task.categoryId)} actionLabel="改期" onComplete={() => completeTask(task)} onReschedule={() => openReschedule(task, false)} onDelete={() => setPendingDelete({ task, archived: false })} onTime={() => setTiming(task)} />)}
+          {backlogTasks.map((task) => <TaskCard key={task.id} task={task} categoryName={liveCategoryName(task.categoryId)} goalName={goalsById.get(task.goalId ?? "")} actionLabel="改期" onComplete={() => completeTask(task)} onReschedule={() => openReschedule(task, false)} onDelete={() => setPendingDelete({ task, archived: false })} onTime={() => setTiming(task)} />)}
         </ul>
       )}
       {rescheduling && (
@@ -145,7 +148,7 @@ export function Backlog({ now = new Date() }: BacklogProps) {
         <summary>上周未处理{archivedTasks.length > 0 ? `（${archivedTasks.length}）` : ""}</summary>
         {archivedTasks.length === 0 ? <p className="backlog-panel__empty">没有历史未处理任务</p> : (
           <ul className="backlog-list">
-            {archivedTasks.map((task) => <TaskCard key={task.id} task={task} categoryName={liveCategoryName(task.categoryId)} actionLabel="移入本周" onComplete={() => completeTask(task)} onReschedule={() => openReschedule(task, true)} onDelete={() => setPendingDelete({ task, archived: true })} onTime={() => setTiming(task)} />)}
+            {archivedTasks.map((task) => <TaskCard key={task.id} task={task} categoryName={liveCategoryName(task.categoryId)} goalName={goalsById.get(task.goalId ?? "")} actionLabel="移入本周" onComplete={() => completeTask(task)} onReschedule={() => openReschedule(task, true)} onDelete={() => setPendingDelete({ task, archived: true })} onTime={() => setTiming(task)} />)}
           </ul>
         )}
       </details>

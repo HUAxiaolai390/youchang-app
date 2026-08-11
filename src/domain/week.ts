@@ -10,6 +10,8 @@ export type WeekPlanTask = {
   title: string;
   categoryId: string;
   categoryName: string;
+  goalId?: string;
+  goalTitle?: string;
   date: DateKey;
   status: "pending" | "completed" | "backlog";
   plannedStartTime?: TimeKey;
@@ -54,6 +56,7 @@ export function getWeekPlan(state: AppState, anchor: Date): WeekPlanDay[] {
   const liveCategoryName = (categoryId: string) => categoryNames.get(categoryId)
     ?? categoryNames.get("other")
     ?? "其他";
+  const goalNames = new Map((state.goals ?? []).map((goal) => [goal.id, goal.title]));
 
   const today = toDateKey(anchor);
   return getWeekDates(anchor).map((date) => {
@@ -69,6 +72,8 @@ export function getWeekPlan(state: AppState, anchor: Date): WeekPlanDay[] {
         title: record?.titleSnapshot ?? template.title,
         categoryId: record?.categoryId ?? template.categoryId,
         categoryName: liveCategoryName(record?.categoryId ?? template.categoryId),
+        goalId: record?.goalId ?? template.goalId,
+        goalTitle: goalNames.get(record?.goalId ?? template.goalId ?? ""),
         date,
         status: record?.completedAt ? "completed" : "pending",
         plannedStartTime: record?.plannedStartTime ?? template.plannedStartTime,
@@ -90,6 +95,8 @@ export function getWeekPlan(state: AppState, anchor: Date): WeekPlanDay[] {
         title: task.title,
         categoryId: task.categoryId,
         categoryName: liveCategoryName(task.categoryId),
+        goalId: task.goalId,
+        goalTitle: goalNames.get(task.goalId ?? ""),
         date,
         status: task.status as WeekPlanTask["status"],
         plannedStartTime: task.plannedStartTime,

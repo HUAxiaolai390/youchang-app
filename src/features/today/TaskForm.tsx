@@ -6,12 +6,13 @@ import { normalizeFixedRepeatRule } from "../../domain/repeat";
 import { normalizeReminderMinutesBefore, reminderMinuteOptions } from "../../domain/reminders";
 import { taskPriorityOptions } from "../../domain/priorities";
 import { maximumTaskSteps } from "../../domain/steps";
-import type { Category, DateKey, FixedRepeatRule, ReminderMinutesBefore, TaskPriority, TaskStep, TimeKey } from "../../domain/types";
+import type { Category, DateKey, FixedRepeatRule, Goal, ReminderMinutesBefore, TaskPriority, TaskStep, TimeKey } from "../../domain/types";
 
 export type TaskFormValues = {
   title: string;
   kind: "fixed" | "scheduled";
   categoryId: string;
+  goalId?: string;
   date: DateKey;
   plannedStartTime?: TimeKey;
   reminderMinutesBefore?: ReminderMinutesBefore;
@@ -32,6 +33,7 @@ type TaskFormDraft = Omit<TaskFormValues, "plannedStartTime" | "reminderMinutesB
 
 type TaskFormProps = {
   categories: Category[];
+  goals?: Goal[];
   today: DateKey;
   defaultDate?: DateKey;
   initialValues?: TaskFormValues;
@@ -76,11 +78,12 @@ function formatDateLabel(dateKey: DateKey) {
     .format(fromDateKey(dateKey));
 }
 
-export function TaskForm({ categories, today, defaultDate, initialValues, error, onSubmit, onCancel }: TaskFormProps) {
+export function TaskForm({ categories, goals = [], today, defaultDate, initialValues, error, onSubmit, onCancel }: TaskFormProps) {
   const [values, setValues] = useState<TaskFormDraft>(() => ({
     title: initialValues?.title ?? "",
     kind: initialValues?.kind ?? "scheduled",
     categoryId: initialValues?.categoryId ?? "study",
+    goalId: initialValues?.goalId,
     date: initialValues?.date ?? defaultDate ?? today,
     plannedStartTime: initialValues?.plannedStartTime ?? "",
     reminderMinutesBefore: initialValues?.reminderMinutesBefore?.toString() ?? "",
@@ -124,6 +127,7 @@ export function TaskForm({ categories, today, defaultDate, initialValues, error,
         title: values.title.trim(),
         kind: values.kind,
         categoryId: values.categoryId,
+        goalId: values.goalId,
         date: values.date,
         plannedStartTime,
         reminderMinutesBefore: plannedStartTime
@@ -172,6 +176,17 @@ export function TaskForm({ categories, today, defaultDate, initialValues, error,
             ))}
           </div>
         </fieldset>
+        <label className="field-label" htmlFor="task-goal">关联长期目标（选填）</label>
+        <select
+          id="task-goal"
+          className="field-control"
+          value={values.goalId ?? ""}
+          onChange={(event) => setValues((current) => ({ ...current, goalId: event.target.value || undefined }))}
+        >
+          <option value="">不关联目标</option>
+          {goals.map((goal) => <option key={goal.id} value={goal.id}>{goal.title}</option>)}
+        </select>
+        {goals.length === 0 && <p className="task-form__kind-note">可以先到“成长”页创建长期目标。</p>}
         <fieldset className="choice-group priority-choice-group">
           <legend>任务优先级</legend>
           <div className="priority-options">

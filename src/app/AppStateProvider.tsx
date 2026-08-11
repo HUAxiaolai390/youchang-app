@@ -32,6 +32,7 @@ import type { AppAction } from "./app-actions";
 import { markTaskReminderSent, snoozeTaskReminder } from "../domain/reminders";
 import { toggleFixedTaskStep, toggleScheduledTaskStep } from "../domain/steps";
 import { saveWeeklyReview } from "../domain/weekly-review";
+import { addGoal, deleteGoal, updateGoal } from "../domain/goals";
 
 export type AppStateContextValue = {
   state: AppState;
@@ -58,6 +59,12 @@ const knownErrorMessages = new Set([
   "这个任务现在不能改期",
   "请选择本周内的日期",
   "每项复盘内容最多 500 字",
+  "请输入目标名称",
+  "目标名称最多 60 个字",
+  "请选择有效截止日期",
+  "截止日期不能早于今天",
+  "长期目标最多添加 20 项",
+  "请选择有效目标",
   "备份文件格式无效",
   "备份文件版本不受支持",
   "保存失败，请立即导出备份"
@@ -157,6 +164,12 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
       }, now);
     case "weekly-review/save":
       return saveWeeklyReview(state, action.weekStart, action.summary, action.adjustment, now);
+    case "goal/add":
+      return addGoal(state, action.title, action.deadline, now);
+    case "goal/update":
+      return updateGoal(state, action.id, action.title, action.deadline, now);
+    case "goal/delete":
+      return deleteGoal(state, action.id);
     case "backup/import":
       return rollover(action.state, now);
     case "system/rollover":
