@@ -49,6 +49,44 @@ describe("WeekPage", () => {
     expect(screen.getByText(/预计 60 分钟 · 实际 75 分钟 · 多 15 分钟/)).toBeVisible();
   });
 
+  it("filters the weekly plan by priority, category, and completion status", async () => {
+    const state = createInitialState(new Date(2026, 7, 5, 9));
+    state.scheduledTasks.push(
+      {
+        id: "high-study", title: "高优先学习", categoryId: "study", categoryNameSnapshot: "学习",
+        scheduledDate: "2026-08-05", status: "pending", priority: "high",
+        createdAt: new Date(2026, 7, 5, 9).toISOString()
+      },
+      {
+        id: "low-work", title: "低优先工作", categoryId: "work", categoryNameSnapshot: "工作",
+        scheduledDate: "2026-08-05", status: "pending", priority: "low",
+        createdAt: new Date(2026, 7, 5, 9).toISOString()
+      },
+      {
+        id: "done-study", title: "完成的学习", categoryId: "study", categoryNameSnapshot: "学习",
+        scheduledDate: "2026-08-05", status: "completed", priority: "high",
+        completedAt: new Date(2026, 7, 5, 8).toISOString(),
+        createdAt: new Date(2026, 7, 5, 7).toISOString()
+      }
+    );
+    const { user } = renderWeek(state);
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "筛选优先级" }), "high");
+    expect(screen.getByText("高优先学习")).toBeVisible();
+    expect(screen.getByText("完成的学习")).toBeVisible();
+    expect(screen.queryByText("低优先工作")).not.toBeInTheDocument();
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "筛选分类" }), "study");
+    await user.selectOptions(screen.getByRole("combobox", { name: "筛选完成状态" }), "unfinished");
+    expect(screen.getByText("高优先学习")).toBeVisible();
+    expect(screen.queryByText("完成的学习")).not.toBeInTheDocument();
+    expect(screen.getByText("正在显示 1 项符合条件的任务")).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "清除筛选" }));
+    expect(screen.getByText("低优先工作")).toBeVisible();
+    expect(screen.getByText("完成的学习")).toBeVisible();
+  });
+
   it("moves an unfinished task to another available day in the week", async () => {
     const state = createInitialState(new Date(2026, 7, 5, 9));
     state.scheduledTasks.push({
@@ -81,7 +119,7 @@ describe("WeekPage", () => {
     await user.click(screen.getByRole("button", { name: "补记完成：跑步 4KM" }));
 
     expect(repository.state.scheduledTasks[0]).toMatchObject({ status: "completed" });
-    expect(screen.getByText("已完成")).toBeVisible();
+    expect(screen.getByText("已完成", { selector: ".week-task__status" })).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: "撤销完成：跑步 4KM" }));
     expect(repository.state.scheduledTasks[0]).toMatchObject({ status: "backlog", completedAt: undefined });

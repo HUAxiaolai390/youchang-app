@@ -289,7 +289,7 @@ test("retroactively completes a forgotten task on its original day", async ({ pa
   await expect(plannedDay).toHaveCount(1);
   await plannedDay.click();
   await expect(page.getByText("忘记打勾的跑步", { exact: true })).toBeVisible();
-  await expect(page.getByText("已完成", { exact: true })).toBeVisible();
+  await expect(page.locator(".week-task__status").filter({ hasText: /^已完成$/ })).toBeVisible();
 
   await page.getByRole("button", { name: "撤销完成：忘记打勾的跑步" }).click();
   await expect(page.getByText("待安排", { exact: true })).toBeVisible();
@@ -378,6 +378,38 @@ test("sets task priorities and recommends the high-priority task first", async (
   await expect(highTask).toContainText("高");
   await expect(lowTask).toContainText("低");
   await expect(page.getByRole("region", { name: "下一项任务" })).toContainText("完成数学作业");
+  await expectNoHorizontalOverflow(page);
+});
+
+test("filters the weekly plan by priority, category, and status", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  await page.getByRole("button", { name: "添加任务", exact: true }).click();
+  await page.getByLabel("任务名称").fill("高优先学习任务");
+  await page.getByRole("radio", { name: /高 重要且紧急/ }).check();
+  await page.getByRole("button", { name: "保存任务" }).click();
+
+  await page.getByRole("button", { name: "添加任务", exact: true }).click();
+  await page.getByLabel("任务名称").fill("低优先工作任务");
+  await page.getByRole("radio", { name: "工作" }).check();
+  await page.getByRole("radio", { name: /低 日常且可灵活安排/ }).check();
+  await page.getByRole("button", { name: "保存任务" }).click();
+
+  await page.getByRole("button", { name: "计划", exact: true }).click();
+  const filters = page.getByRole("region", { name: "筛选任务" });
+  await filters.getByRole("combobox", { name: "筛选优先级" }).selectOption("low");
+  await filters.getByRole("combobox", { name: "筛选分类" }).selectOption("work");
+  await filters.getByRole("combobox", { name: "筛选完成状态" }).selectOption("unfinished");
+  await expect(page.getByText("低优先工作任务", { exact: true })).toBeVisible();
+  await expect(page.getByText("高优先学习任务", { exact: true })).toHaveCount(0);
+  await expect(filters).toContainText("正在显示 1 项符合条件的任务");
+
+  await filters.getByRole("combobox", { name: "筛选分类" }).selectOption("exercise");
+  await expect(page.getByText("没有符合筛选的任务", { exact: true })).toBeVisible();
+  await filters.getByRole("button", { name: "清除筛选" }).click();
+  await expect(page.getByText("高优先学习任务", { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 
