@@ -156,4 +156,45 @@ describe("WeekPage", () => {
     });
     expect(screen.getByText("英语听力")).toBeVisible();
   });
+
+  it("switches to a navigable month calendar and shows overdue history", async () => {
+    const state = createInitialState(new Date(2026, 7, 5, 9));
+    state.scheduledTasks.push({
+      id: "overdue", title: "补交作业", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-03", status: "archived",
+      createdAt: new Date(2026, 7, 3, 9).toISOString()
+    });
+    const { repository, user } = renderWeek(state);
+
+    await user.click(screen.getByRole("button", { name: "月" }));
+    expect(screen.getByRole("heading", { name: "2026年8月安排" })).toBeVisible();
+    expect(screen.getAllByRole("button", { name: /月\d+日，/ })).toHaveLength(42);
+
+    await user.click(screen.getByRole("button", { name: /8月3日，1 项任务.*逾期 1 项/ }));
+    expect(screen.getByText("补交作业")).toBeVisible();
+    expect(screen.getByText("逾期未完成")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "补记完成：补交作业" }));
+    expect(repository.state.scheduledTasks[0]).toMatchObject({ status: "completed" });
+
+    await user.click(screen.getByRole("button", { name: "下个月" }));
+    expect(screen.getByRole("heading", { name: "2026年9月安排" })).toBeVisible();
+  });
+
+  it("edits a scheduled task directly from the plan details", async () => {
+    const state = createInitialState(new Date(2026, 7, 5, 9));
+    state.scheduledTasks.push({
+      id: "task", title: "旧任务名", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-05", status: "pending",
+      createdAt: new Date(2026, 7, 5, 9).toISOString()
+    });
+    const { repository, user } = renderWeek(state);
+
+    await user.click(screen.getByRole("button", { name: "编辑：旧任务名" }));
+    await user.clear(screen.getByLabelText("任务名称"));
+    await user.type(screen.getByLabelText("任务名称"), "新任务名");
+    await user.click(screen.getByRole("button", { name: "保存修改" }));
+
+    expect(repository.state.scheduledTasks[0]?.title).toBe("新任务名");
+    expect(screen.getByText("新任务名")).toBeVisible();
+  });
 });

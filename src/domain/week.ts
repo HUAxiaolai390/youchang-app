@@ -13,7 +13,7 @@ export type WeekPlanTask = {
   goalId?: string;
   goalTitle?: string;
   date: DateKey;
-  status: "pending" | "completed" | "backlog";
+  status: "pending" | "completed" | "backlog" | "archived";
   plannedStartTime?: TimeKey;
   reminderMinutesBefore?: ReminderMinutesBefore;
   estimatedMinutes?: number;
@@ -29,6 +29,10 @@ export type WeekPlanDay = {
   completed: number;
   estimatedMinutes: number;
   actualMinutes: number;
+};
+
+type PlanDatesOptions = {
+  includeArchived?: boolean;
 };
 
 export function getWeekDates(anchor: Date): DateKey[] {
@@ -51,15 +55,23 @@ function compareTasks(left: WeekPlanTask, right: WeekPlanTask): number {
   return left.title.localeCompare(right.title, "zh-CN");
 }
 
-export function getWeekPlan(state: AppState, anchor: Date): WeekPlanDay[] {
+export function getPlanForDates(
+  state: AppState,
+  dates: DateKey[],
+  now: Date,
+  options: PlanDatesOptions = {}
+): WeekPlanDay[] {
   const categoryNames = new Map(state.categories.map((category) => [category.id, category.name]));
   const liveCategoryName = (categoryId: string) => categoryNames.get(categoryId)
     ?? categoryNames.get("other")
     ?? "其他";
   const goalNames = new Map((state.goals ?? []).map((goal) => [goal.id, goal.title]));
+  const visibleScheduledStatuses = options.includeArchived
+    ? ["pending", "completed", "backlog", "archived"]
+    : ["pending", "completed", "backlog"];
 
-  const today = toDateKey(anchor);
-  return getWeekDates(anchor).map((date) => {
+  const today = toDateKey(now);
+  return dates.map((date) => {
     const tasks: WeekPlanTask[] = [];
 
     for (const template of state.fixedTasks) {
@@ -87,7 +99,7 @@ export function getWeekPlan(state: AppState, anchor: Date): WeekPlanDay[] {
     }
 
     for (const task of state.scheduledTasks) {
-      if (task.scheduledDate !== date || !["pending", "completed", "backlog"].includes(task.status)) continue;
+      if (task.scheduledDate !== date || !visibleScheduledStatuses.includes(task.status)) continue;
       tasks.push({
         id: task.id,
         taskId: task.id,
@@ -117,4 +129,8 @@ export function getWeekPlan(state: AppState, anchor: Date): WeekPlanDay[] {
       actualMinutes: tasks.reduce((sum, task) => sum + (task.actualMinutes ?? 0), 0)
     };
   });
+}
+
+export function getWeekPlan(state: AppState, anchor: Date): WeekPlanDay[] {
+  return getPlanForDates(state, getWeekDates(anchor), anchor);
 }

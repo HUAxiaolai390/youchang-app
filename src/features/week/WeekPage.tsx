@@ -8,12 +8,15 @@ import { getTaskStepProgress } from "../../domain/steps";
 import { formatTrackedTime } from "../../domain/time";
 import type { DateKey, TaskPriority } from "../../domain/types";
 import { getWeekPlan, type WeekPlanTask } from "../../domain/week";
+import { getMonthPlan, type MonthPlanDay } from "../../domain/month";
 import { TaskForm, type TaskFormValues } from "../today/TaskForm";
+import { MonthCalendar } from "./MonthCalendar";
 
 const shortWeekdays = ["日", "一", "二", "三", "四", "五", "六"];
 const longWeekdays = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
 type PriorityFilter = "all" | TaskPriority;
 type StatusFilter = "all" | "unfinished" | "completed";
+type PlanView = "week" | "month";
 
 function formatMonthDay(key: DateKey): string {
   const date = fromDateKey(key);
@@ -27,17 +30,20 @@ function formatFullDate(key: DateKey): string {
 
 function statusLabel(task: WeekPlanTask): string {
   if (task.status === "completed") return "已完成";
+  if (task.status === "archived") return "逾期未完成";
   if (task.status === "backlog") return "待安排";
   return task.kind === "fixed" ? task.repeatLabel ?? "每天" : "当天任务";
 }
 
-function WeekTaskCard({ task, canToggle, onMove, onToggle }: {
+function WeekTaskCard({ task, canToggle, canEdit, canMove, onEdit, onMove, onToggle }: {
   task: WeekPlanTask;
   canToggle: boolean;
+  canEdit: boolean;
+  canMove: boolean;
+  onEdit(task: WeekPlanTask): void;
   onMove(task: WeekPlanTask): void;
   onToggle(task: WeekPlanTask): void;
 }) {
-  const canMove = task.kind === "scheduled" && task.status !== "completed";
   const stepProgress = getTaskStepProgress(task.steps);
   return (
     <li className={`week-task${task.status === "completed" ? " week-task--completed" : ""}`}>
@@ -55,13 +61,14 @@ function WeekTaskCard({ task, canToggle, onMove, onToggle }: {
         <p>{task.title}</p>
         <small>{formatPlanComparison(task.estimatedMinutes, task.actualMinutes)}{task.reminderMinutesBefore !== undefined ? ` · ${formatReminderMinutes(task.reminderMinutesBefore)}` : ""}{stepProgress.total ? ` · 步骤 ${stepProgress.completed}/${stepProgress.total}` : ""}</small>
       </div>
-      {(canToggle || canMove) && <div className="week-task__actions">
+      {(canToggle || canEdit || canMove) && <div className="week-task__actions">
         {canToggle && <button
           type="button"
           className="week-task__complete"
           onClick={() => onToggle(task)}
           aria-label={`${task.status === "completed" ? "撤销完成" : "补记完成"}：${task.title}`}
         >{task.status === "completed" ? "撤销" : "完成"}</button>}
+        {canEdit && <button type="button" onClick={() => onEdit(task)} aria-label={`编辑：${task.title}`}>编辑</button>}
         {canMove && <button type="button" className="week-task__move" onClick={() => onMove(task)} aria-label={`改期：${task.title}`}>改到</button>}
       </div>}
     </li>
@@ -71,13 +78,18 @@ function WeekTaskCard({ task, canToggle, onMove, onToggle }: {
 export function WeekPage({ now = new Date() }: { now?: Date }) {
   const { state, dispatch, error } = useAppState();
   const today = toDateKey(now);
+  const [planView, setPlanView] = useState<PlanView>("week");
+  const [monthAnchor, setMonthAnchor] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1));
   const [selectedDate, setSelectedDate] = useState<DateKey>(today);
   const [movingTask, setMovingTask] = useState<WeekPlanTask>();
+  const [editingTask, setEditingTask] = useState<WeekPlanTask>();
   const [formOpen, setFormOpen] = useState(false);
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const allDays = useMemo(() => getWeekPlan(state, now), [state, now]);
+  const weekDays = useMemo(() => getWeekPlan(state, now), [state, now]);
+  const monthDays = useMemo(() => getMonthPlan(state, monthAnchor, now), [monthAnchor, now, state]);
+  const allDays = planView === "month" ? monthDays : weekDays;
   const filtersActive = priorityFilter !== "all" || categoryFilter !== "all" || statusFilter !== "all";
   const days = useMemo(() => allDays.map((day) => {
     const tasks = day.tasks.filter((task) => (
@@ -86,18 +98,59 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
       && (statusFilter === "all"
         || (statusFilter === "completed" ? task.status === "completed" : task.status !== "completed"))
     ));
-    return {
+    const filteredDay = {
       ...day,
       tasks,
       completed: tasks.filter((task) => task.status === "completed").length,
       estimatedMinutes: tasks.reduce((sum, task) => sum + (task.estimatedMinutes ?? 0), 0),
       actualMinutes: tasks.reduce((sum, task) => sum + (task.actualMinutes ?? 0), 0)
     };
-  }), [allDays, categoryFilter, priorityFilter, statusFilter]);
+    return "overdue" in day
+      ? { ...filteredDay, overdue: day.date < today ? tasks.filter((task) => task.status !== "completed").length : 0 }
+      : filteredDay;
+  }), [allDays, categoryFilter, priorityFilter, statusFilter, today]);
   const selectedDay = days.find((day) => day.date === selectedDate) ?? days[0];
-  const totalTasks = days.reduce((sum, day) => sum + day.tasks.length, 0);
-  const unfilteredTotalTasks = allDays.reduce((sum, day) => sum + day.tasks.length, 0);
-  const totalEstimated = days.reduce((sum, day) => sum + day.estimatedMinutes, 0);
+  const summaryDays = planView === "month" ? days.filter((day) => "inCurrentMonth" in day && day.inCurrentMonth) : days;
+  const unfilteredSummaryDays = planView === "month" ? allDays.filter((day) => "inCurrentMonth" in day && day.inCurrentMonth) : allDays;
+  const totalTasks = summaryDays.reduce((sum, day) => sum + day.tasks.length, 0);
+  const unfilteredTotalTasks = unfilteredSummaryDays.reduce((sum, day) => sum + day.tasks.length, 0);
+  const totalEstimated = summaryDays.reduce((sum, day) => sum + day.estimatedMinutes, 0);
+  const monthTitle = `${monthAnchor.getFullYear()}年${monthAnchor.getMonth() + 1}月`;
+  const editingFormValues = useMemo<TaskFormValues | undefined>(() => {
+    if (!editingTask) return undefined;
+    if (editingTask.kind === "fixed") {
+      const template = state.fixedTasks.find((task) => task.id === editingTask.taskId);
+      if (!template) return undefined;
+      return {
+        title: template.title,
+        kind: "fixed",
+        categoryId: template.categoryId,
+        goalId: template.goalId,
+        date: editingTask.date,
+        plannedStartTime: template.plannedStartTime,
+        reminderMinutesBefore: template.reminderMinutesBefore,
+        estimatedMinutes: template.estimatedMinutes,
+        priority: normalizeTaskPriority(template.priority),
+        steps: template.steps,
+        repeatRule: template.repeatRule
+      };
+    }
+    const task = state.scheduledTasks.find((item) => item.id === editingTask.taskId);
+    if (!task) return undefined;
+    return {
+      title: task.title,
+      kind: "scheduled",
+      categoryId: task.categoryId,
+      goalId: task.goalId,
+      date: task.scheduledDate,
+      plannedStartTime: task.plannedStartTime,
+      reminderMinutesBefore: task.reminderMinutesBefore,
+      estimatedMinutes: task.estimatedMinutes,
+      priority: normalizeTaskPriority(task.priority),
+      steps: task.steps,
+      completed: task.status === "completed"
+    };
+  }, [editingTask, state.fixedTasks, state.scheduledTasks]);
 
   function clearFilters() {
     setPriorityFilter("all");
@@ -120,9 +173,72 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
       : { type: "fixed/toggle-date", templateId: task.taskId, date: task.date });
   }
 
+  function openNewTask() {
+    setEditingTask(undefined);
+    setFormOpen(true);
+  }
+
+  function openEditTask(task: WeekPlanTask) {
+    setMovingTask(undefined);
+    setEditingTask(task);
+    setFormOpen(true);
+  }
+
+  function closeForm() {
+    setFormOpen(false);
+    setEditingTask(undefined);
+  }
+
+  function changeMonth(offset: number) {
+    const nextMonth = new Date(monthAnchor.getFullYear(), monthAnchor.getMonth() + offset, 1);
+    setMonthAnchor(nextMonth);
+    setSelectedDate(toDateKey(nextMonth));
+    setMovingTask(undefined);
+  }
+
+  function selectMonthDate(date: DateKey) {
+    const selected = fromDateKey(date);
+    if (selected.getFullYear() !== monthAnchor.getFullYear() || selected.getMonth() !== monthAnchor.getMonth()) {
+      setMonthAnchor(new Date(selected.getFullYear(), selected.getMonth(), 1));
+    }
+    setSelectedDate(date);
+    setMovingTask(undefined);
+  }
+
+  function returnToCurrentMonth() {
+    setMonthAnchor(new Date(now.getFullYear(), now.getMonth(), 1));
+    setSelectedDate(today);
+    setMovingTask(undefined);
+  }
+
   function saveTask(values: TaskFormValues) {
-    const saved = values.kind === "fixed"
-      ? dispatch({ type: "fixed/add", input: {
+    let saved: boolean;
+    if (editingTask?.kind === "fixed") {
+      saved = dispatch({ type: "fixed/update", id: editingTask.taskId, input: {
+        title: values.title,
+        categoryId: values.categoryId,
+        goalId: values.goalId,
+        plannedStartTime: values.plannedStartTime,
+        reminderMinutesBefore: values.reminderMinutesBefore,
+        estimatedMinutes: values.estimatedMinutes,
+        priority: values.priority,
+        steps: values.steps,
+        repeatRule: values.repeatRule
+      } });
+    } else if (editingTask?.kind === "scheduled") {
+      saved = dispatch({ type: "scheduled/update", id: editingTask.taskId, input: {
+        title: values.title,
+        categoryId: values.categoryId,
+        goalId: values.goalId,
+        scheduledDate: values.date,
+        plannedStartTime: values.plannedStartTime,
+        reminderMinutesBefore: values.reminderMinutesBefore,
+        estimatedMinutes: values.estimatedMinutes,
+        priority: values.priority,
+        steps: values.steps
+      } });
+    } else if (values.kind === "fixed") {
+      saved = dispatch({ type: "fixed/add", input: {
           title: values.title,
           categoryId: values.categoryId,
           goalId: values.goalId,
@@ -133,8 +249,9 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
           priority: values.priority,
           steps: values.steps,
           repeatRule: values.repeatRule
-        } })
-      : dispatch({ type: "scheduled/add", input: {
+        } });
+    } else {
+      saved = dispatch({ type: "scheduled/add", input: {
           title: values.title,
           categoryId: values.categoryId,
           goalId: values.goalId,
@@ -145,25 +262,33 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
           priority: values.priority,
           steps: values.steps
         } });
+    }
 
     if (saved) {
       setSelectedDate(values.kind === "scheduled" ? values.date : today);
       setFormOpen(false);
+      setEditingTask(undefined);
     }
   }
 
   if (!selectedDay) return null;
 
   return (
-    <section className="week-page" aria-label="一周计划">
+    <section className="week-page" aria-label="计划日历">
       <section className="surface-card week-overview" aria-labelledby="week-overview-title">
         <div>
-          <p>WEEKLY PLAN</p>
-          <h2 id="week-overview-title">本周安排</h2>
+          <p>{planView === "month" ? "MONTHLY PLAN" : "WEEKLY PLAN"}</p>
+          <h2 id="week-overview-title">{planView === "month" ? `${monthTitle}安排` : "本周安排"}</h2>
         </div>
-        <div className="week-overview__summary">
-          <span><strong>{totalTasks}</strong> {filtersActive ? `项符合 · 共 ${unfilteredTotalTasks} 项` : "项任务"}</span>
-          <span><strong>{formatTrackedTime(totalEstimated)}</strong> 预计</span>
+        <div className="week-overview__right">
+          <div className="plan-view-switch" role="group" aria-label="切换计划视图">
+            <button type="button" aria-pressed={planView === "week"} onClick={() => { setPlanView("week"); setSelectedDate(today); setMovingTask(undefined); }}>周</button>
+            <button type="button" aria-pressed={planView === "month"} onClick={() => { setPlanView("month"); setMonthAnchor(new Date(now.getFullYear(), now.getMonth(), 1)); setSelectedDate(today); setMovingTask(undefined); }}>月</button>
+          </div>
+          <div className="week-overview__summary">
+            <span><strong>{totalTasks}</strong> {filtersActive ? `项符合 · 共 ${unfilteredTotalTasks} 项` : "项任务"}</span>
+            <span><strong>{formatTrackedTime(totalEstimated)}</strong> 预计</span>
+          </div>
         </div>
       </section>
 
@@ -203,37 +328,54 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
         </div>
       </section>
 
-      <div className="week-day-strip" role="group" aria-label="选择本周日期">
-        {days.map((day) => {
-          const date = fromDateKey(day.date);
-          const selected = day.date === selectedDay.date;
-          return (
-            <button
-              key={day.date}
-              type="button"
-              aria-pressed={selected}
-              aria-label={`${longWeekdays[date.getDay()]} ${formatMonthDay(day.date)}，${day.tasks.length} 项任务`}
-              onClick={() => { setSelectedDate(day.date); setMovingTask(undefined); }}
-            >
-              <span>周{shortWeekdays[date.getDay()]}</span>
-              <strong>{date.getDate()}</strong>
-              <small>{day.tasks.length} 项</small>
-            </button>
-          );
-        })}
-      </div>
+      {planView === "week" ? (
+        <div className="week-day-strip" role="group" aria-label="选择本周日期">
+          {days.map((day) => {
+            const date = fromDateKey(day.date);
+            const selected = day.date === selectedDay.date;
+            return (
+              <button
+                key={day.date}
+                type="button"
+                aria-pressed={selected}
+                aria-label={`${longWeekdays[date.getDay()]} ${formatMonthDay(day.date)}，${day.tasks.length} 项任务`}
+                onClick={() => { setSelectedDate(day.date); setMovingTask(undefined); }}
+              >
+                <span>周{shortWeekdays[date.getDay()]}</span>
+                <strong>{date.getDate()}</strong>
+                <small>{day.tasks.length} 项</small>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <>
+          <div className="month-navigation surface-card" aria-label="切换月份">
+            <button type="button" onClick={() => changeMonth(-1)} aria-label="上个月">←</button>
+            <strong>{monthTitle}</strong>
+            <button type="button" onClick={returnToCurrentMonth}>回到本月</button>
+            <button type="button" onClick={() => changeMonth(1)} aria-label="下个月">→</button>
+          </div>
+          <MonthCalendar
+            days={days as MonthPlanDay[]}
+            selectedDate={selectedDay.date}
+            today={today}
+            onSelect={selectMonthDate}
+          />
+        </>
+      )}
 
       <section className="surface-card week-day-card" aria-labelledby="selected-day-title">
         <div className="week-day-card__heading">
           <div>
-            <p>{selectedDay.date === today ? "今天" : selectedDay.date < today ? "本周记录" : "待安排"}</p>
+            <p>{selectedDay.date === today ? "今天" : selectedDay.date < today ? "历史记录" : "待安排"}</p>
             <h2 id="selected-day-title">{formatFullDate(selectedDay.date)}</h2>
           </div>
           <button
             type="button"
             className="button button--primary"
             disabled={selectedDay.date < today}
-            onClick={() => setFormOpen(true)}
+            onClick={openNewTask}
           >添加到这天</button>
         </div>
 
@@ -258,6 +400,10 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
                 key={task.id}
                 task={task}
                 canToggle={task.date <= today}
+                canEdit={(task.kind === "fixed" && task.date >= today)
+                  || (task.kind === "scheduled" && task.status !== "archived")}
+                canMove={planView === "week" && task.kind === "scheduled" && task.status !== "completed"}
+                onEdit={openEditTask}
                 onMove={setMovingTask}
                 onToggle={toggleTask}
               />
@@ -294,9 +440,10 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
           goals={state.goals ?? []}
           today={today}
           defaultDate={selectedDay.date}
+          initialValues={editingFormValues}
           error={error}
           onSubmit={saveTask}
-          onCancel={() => setFormOpen(false)}
+          onCancel={closeForm}
         />
       )}
     </section>

@@ -147,6 +147,34 @@ test("plans a timed task and shows it in the weekly view", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
+test("plans, reviews, and edits work from the monthly calendar", async ({ page }) => {
+  await page.clock.setFixedTime(new Date(2026, 7, 11, 9, 0, 0));
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  await page.getByRole("button", { name: "添加任务", exact: true }).click();
+  await page.getByLabel("任务名称").fill("准备月末考试");
+  await page.getByLabel("执行日期").fill("2026-08-20");
+  await page.getByRole("button", { name: "保存任务" }).click();
+
+  await page.getByRole("button", { name: "计划", exact: true }).click();
+  await page.getByRole("button", { name: "月", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "2026年8月安排" })).toBeVisible();
+  await expect(page.locator(".month-calendar__day")).toHaveCount(42);
+
+  await page.getByRole("button", { name: /8月20日，1 项任务/ }).click();
+  await expect(page.getByText("准备月末考试", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "编辑：准备月末考试" }).click();
+  await page.getByLabel("任务名称").fill("准备月末模拟考");
+  await page.getByRole("button", { name: "保存修改" }).click();
+  await expect(page.getByText("准备月末模拟考", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "下个月" }).click();
+  await expect(page.getByRole("heading", { name: "2026年9月安排" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
 test("acts on a due task directly from the reminder", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => window.localStorage.clear());
