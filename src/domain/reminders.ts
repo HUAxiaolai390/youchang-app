@@ -10,8 +10,6 @@ export const reminderMinuteOptions: ReadonlyArray<{ value: ReminderMinutesBefore
 ];
 
 const validReminderMinutes = new Set<ReminderMinutesBefore>(reminderMinuteOptions.map((option) => option.value));
-const reminderGraceMinutes = 30;
-
 export type TaskReminder = {
   kind: "fixed" | "scheduled";
   id: string;
@@ -21,6 +19,7 @@ export type TaskReminder = {
   reminderMinutesBefore: ReminderMinutesBefore;
   startAt: Date;
   remindAt: Date;
+  snoozed: boolean;
 };
 
 export function isReminderMinutesBefore(value: unknown): value is ReminderMinutesBefore {
@@ -51,7 +50,8 @@ export function getPendingTaskReminders(state: AppState, now: Date): TaskReminde
   const candidates: TaskReminder[] = [];
 
   for (const record of state.fixedRecords) {
-    if (record.date !== today || record.completedAt || record.reminderSentAt
+    const snoozedUntil = record.reminderSnoozedUntil ? new Date(record.reminderSnoozedUntil) : undefined;
+    if ((!snoozedUntil && record.date !== today) || record.completedAt || record.reminderSentAt
       || !record.plannedStartTime || record.reminderMinutesBefore === undefined) continue;
     const startAt = dateAtTime(record.date, record.plannedStartTime);
     candidates.push({
@@ -62,12 +62,15 @@ export function getPendingTaskReminders(state: AppState, now: Date): TaskReminde
       plannedStartTime: record.plannedStartTime,
       reminderMinutesBefore: record.reminderMinutesBefore,
       startAt,
-      remindAt: new Date(startAt.getTime() - record.reminderMinutesBefore * 60_000)
+      remindAt: snoozedUntil ?? new Date(startAt.getTime() - record.reminderMinutesBefore * 60_000),
+      snoozed: Boolean(snoozedUntil)
     });
   }
 
   for (const task of state.scheduledTasks) {
-    if (task.scheduledDate !== today || task.status !== "pending" || task.reminderSentAt
+    const snoozedUntil = task.reminderSnoozedUntil ? new Date(task.reminderSnoozedUntil) : undefined;
+    const canRemindSnoozed = Boolean(snoozedUntil) && ["pending", "backlog", "archived"].includes(task.status);
+    if ((!snoozedUntil && task.scheduledDate !== today) || (!canRemindSnoozed && task.status !== "pending") || task.reminderSentAt
       || !task.plannedStartTime || task.reminderMinutesBefore === undefined) continue;
     const startAt = dateAtTime(task.scheduledDate, task.plannedStartTime);
     candidates.push({
@@ -78,13 +81,13 @@ export function getPendingTaskReminders(state: AppState, now: Date): TaskReminde
       plannedStartTime: task.plannedStartTime,
       reminderMinutesBefore: task.reminderMinutesBefore,
       startAt,
-      remindAt: new Date(startAt.getTime() - task.reminderMinutesBefore * 60_000)
+      remindAt: snoozedUntil ?? new Date(startAt.getTime() - task.reminderMinutesBefore * 60_000),
+      snoozed: Boolean(snoozedUntil)
     });
   }
 
   return candidates
-    .filter((reminder) => reminder.remindAt <= now
-      && now.getTime() <= reminder.startAt.getTime() + reminderGraceMinutes * 60_000)
+    .filter((reminder) => reminder.remindAt <= now)
     .sort((left, right) => left.startAt.getTime() - right.startAt.getTime());
 }
 
@@ -98,14 +101,37 @@ export function markTaskReminderSent(
     return {
       ...state,
       fixedRecords: state.fixedRecords.map((record) => record.id === id
-        ? { ...record, reminderSentAt: sentAt }
+        ? { ...record, reminderSentAt: sentAt, reminderSnoozedUntil: undefined }
         : record)
     };
   }
   return {
     ...state,
     scheduledTasks: state.scheduledTasks.map((task) => task.id === id
-      ? { ...task, reminderSentAt: sentAt }
+      ? { ...task, reminderSentAt: sentAt, reminderSnoozedUntil: undefined }
+      : task)
+  };
+}
+
+export function snoozeTaskReminder(
+  state: AppState,
+  kind: TaskReminder["kind"],
+  id: string,
+  until: string
+): AppState {
+  if (!Number.isFinite(Date.parse(until))) return state;
+  if (kind === "fixed") {
+    return {
+      ...state,
+      fixedRecords: state.fixedRecords.map((record) => record.id === id
+        ? { ...record, reminderSentAt: undefined, reminderSnoozedUntil: until }
+        : record)
+    };
+  }
+  return {
+    ...state,
+    scheduledTasks: state.scheduledTasks.map((task) => task.id === id
+      ? { ...task, reminderSentAt: undefined, reminderSnoozedUntil: until }
       : task)
   };
 }

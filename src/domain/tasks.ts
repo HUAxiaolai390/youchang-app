@@ -204,7 +204,7 @@ export function updateFixedTask(
       ...step,
       completed: currentCompletion.get(step.id) ?? step.completed
     }));
-    return { ...record, titleSnapshot: title, ...categorySnapshot(category), plannedStartTime, reminderMinutesBefore, reminderSentAt: undefined, estimatedMinutes, priority, steps };
+    return { ...record, titleSnapshot: title, ...categorySnapshot(category), plannedStartTime, reminderMinutesBefore, reminderSentAt: undefined, reminderSnoozedUntil: undefined, estimatedMinutes, priority, steps };
   });
   const todayRecord = fixedRecords.find((record) => record.templateId === id && record.date === today);
   const previewState = { ...state, fixedTasks, fixedRecords };
@@ -370,6 +370,7 @@ export function updateScheduledTask(
           plannedStartTime,
           reminderMinutesBefore,
           reminderSentAt: undefined,
+          reminderSnoozedUntil: undefined,
           estimatedMinutes,
           priority,
           steps

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAppState } from "../app/AppStateProvider";
+import { toDateKey } from "../domain/date";
 import {
   describeTaskReminder,
   getPendingTaskReminders,
@@ -7,6 +8,7 @@ import {
 } from "../domain/reminders";
 
 const readSystemTime = () => new Date();
+const snoozeOptions = [5, 10, 30] as const;
 
 async function showSystemNotification(reminder: TaskReminder) {
   if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
@@ -44,6 +46,7 @@ export function TaskReminderCenter({
   const { state, dispatch } = useAppState();
   const [currentTime, setCurrentTime] = useState(readNow);
   const [activeReminder, setActiveReminder] = useState<TaskReminder>();
+  const [snoozeMinutes, setSnoozeMinutes] = useState<(typeof snoozeOptions)[number]>(10);
   const pendingReminders = useMemo(
     () => getPendingTaskReminders(state, currentTime),
     [currentTime, state]
@@ -73,6 +76,47 @@ export function TaskReminderCenter({
 
   if (!activeReminder) return null;
 
+  function finishReminder() {
+    if (!activeReminder) return;
+    const saved = dispatch(activeReminder.kind === "fixed"
+      ? { type: "fixed/toggle", recordId: activeReminder.id }
+      : { type: "scheduled/toggle", id: activeReminder.id });
+    if (saved) setActiveReminder(undefined);
+  }
+
+  function snoozeReminder() {
+    if (!activeReminder) return;
+    const until = new Date(readNow().getTime() + snoozeMinutes * 60_000).toISOString();
+    const saved = dispatch({
+      type: "reminder/snooze",
+      kind: activeReminder.kind,
+      id: activeReminder.id,
+      until
+    });
+    if (saved) {
+      setCurrentTime(readNow());
+      setActiveReminder(undefined);
+    }
+  }
+
+  function moveOrSkipReminder() {
+    if (!activeReminder) return;
+    let saved = false;
+    if (activeReminder.kind === "scheduled") {
+      saved = dispatch({ type: "scheduled/postpone-tomorrow", id: activeReminder.id });
+    } else {
+      const record = state.fixedRecords.find((item) => item.id === activeReminder.id);
+      if (record) {
+        saved = dispatch({
+          type: "fixed/toggle-skip-date",
+          id: record.templateId,
+          date: record.date
+        });
+      }
+    }
+    if (saved) setActiveReminder(undefined);
+  }
+
   return (
     <aside className="task-reminder" role="alert" aria-label="任务提醒">
       <span className="task-reminder__icon" aria-hidden="true">◷</span>
@@ -82,8 +126,23 @@ export function TaskReminderCenter({
         <small>{activeReminder.plannedStartTime} · {describeTaskReminder(activeReminder, currentTime)}</small>
       </div>
       <div className="task-reminder__actions">
-        {onOpenTask && <button type="button" onClick={() => { onOpenTask(); setActiveReminder(undefined); }}>查看任务</button>}
-        <button type="button" onClick={() => setActiveReminder(undefined)}>知道了</button>
+        <button type="button" className="task-reminder__complete" onClick={finishReminder}>完成</button>
+        <label className="task-reminder__snooze-select">
+          <span className="visually-hidden">稍后提醒时间</span>
+          <select
+            aria-label="稍后提醒时间"
+            value={snoozeMinutes}
+            onChange={(event) => setSnoozeMinutes(Number(event.target.value) as typeof snoozeMinutes)}
+          >
+            {snoozeOptions.map((minutes) => <option value={minutes} key={minutes}>{minutes} 分钟后</option>)}
+          </select>
+        </label>
+        <button type="button" onClick={snoozeReminder}>稍后提醒</button>
+        <button type="button" onClick={moveOrSkipReminder}>
+          {activeReminder.kind === "scheduled" ? "改到明天" : activeReminder.date === toDateKey(currentTime) ? "今天跳过" : "跳过这次"}
+        </button>
+        {onOpenTask && <button type="button" onClick={() => { onOpenTask(); setActiveReminder(undefined); }}>查看</button>}
+        <button type="button" onClick={() => setActiveReminder(undefined)} aria-label="关闭提醒">×</button>
       </div>
     </aside>
   );

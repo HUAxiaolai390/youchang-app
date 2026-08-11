@@ -13,6 +13,7 @@ export type AppAction =
   | { type: "scheduled/step-toggle"; id: string; stepId: string }
   | { type: "scheduled/delete"; id: string }
   | { type: "scheduled/reschedule"; id: string; targetDate: DateKey }
+  | { type: "scheduled/postpone-tomorrow"; id: string }
   | { type: "scheduled/move-archived"; id: string; targetDate: DateKey }
   | { type: "fixed/add"; input: AddFixedTaskInput }
   | { type: "fixed/update"; id: string; input: UpdateFixedTaskInput }
@@ -29,6 +30,7 @@ export type AppAction =
   | { type: "settings/featured-achievements"; ids: string[] }
   | { type: "settings/system-notifications"; enabled: boolean }
   | { type: "reminder/mark-sent"; kind: "fixed" | "scheduled"; id: string; sentAt: string }
+  | { type: "reminder/snooze"; kind: "fixed" | "scheduled"; id: string; until: string }
   | { type: "focus/configure"; focusMinutes: number; breakMinutes: number; timer?: FocusTimerRuntime }
   | { type: "focus/session-complete"; minutes: number; timer?: FocusTimerRuntime }
   | { type: "focus/timer-save"; timer: FocusTimerRuntime }

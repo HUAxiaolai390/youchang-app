@@ -106,16 +106,23 @@ describe("versioned backups", () => {
     reminded.scheduledTasks.push({
       id: "reminder-task", title: "提醒任务", categoryId: "study", categoryNameSnapshot: "学习",
       scheduledDate: "2026-08-09", status: "pending", createdAt: "2026-08-09T00:00:00.000Z",
-      plannedStartTime: "09:00", reminderMinutesBefore: 10, reminderSentAt: "2026-08-09T00:50:00.000Z"
+      plannedStartTime: "09:00", reminderMinutesBefore: 10,
+      reminderSnoozedUntil: "2026-08-09T01:20:00.000Z"
     });
 
     const parsed = parseBackup(JSON.stringify(reminded));
     expect(parsed.settings.systemNotificationsEnabled).toBe(true);
-    expect(parsed.scheduledTasks[0]).toMatchObject({ reminderMinutesBefore: 10, reminderSentAt: "2026-08-09T00:50:00.000Z" });
+    expect(parsed.scheduledTasks[0]).toMatchObject({
+      reminderMinutesBefore: 10,
+      reminderSnoozedUntil: "2026-08-09T01:20:00.000Z"
+    });
 
     const invalid = JSON.parse(JSON.stringify(reminded));
     invalid.scheduledTasks[0].reminderMinutesBefore = 15;
     expect(() => parseBackup(JSON.stringify(invalid))).toThrow("备份文件格式无效");
+    const invalidSnooze = JSON.parse(JSON.stringify(reminded));
+    invalidSnooze.scheduledTasks[0].reminderSnoozedUntil = "later";
+    expect(() => parseBackup(JSON.stringify(invalidSnooze))).toThrow("备份文件格式无效");
   });
 
   it("round trips task priority and steps", () => {

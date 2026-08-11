@@ -147,6 +147,34 @@ test("plans a timed task and shows it in the weekly view", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
+test("acts on a due task directly from the reminder", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  const currentTime = await page.evaluate(() => {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  });
+  await page.getByRole("button", { name: "添加任务" }).click();
+  await page.getByLabel("任务名称").fill("提醒交互测试");
+  await page.getByLabel("开始时间（选填）").fill(currentTime);
+  await page.getByRole("combobox", { name: "任务提醒" }).selectOption("0");
+  await page.getByRole("button", { name: "保存任务" }).click();
+
+  const reminder = page.getByRole("alert", { name: "任务提醒" });
+  await expect(reminder).toBeVisible();
+  await expect(reminder.getByRole("button", { name: "完成" })).toBeVisible();
+  await expect(reminder.getByRole("combobox", { name: "稍后提醒时间" })).toHaveValue("10");
+  await expect(reminder.getByRole("button", { name: "稍后提醒" })).toBeVisible();
+  await expect(reminder.getByRole("button", { name: "改到明天" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  await reminder.getByRole("button", { name: "完成" }).click();
+  await expect(reminder).not.toBeVisible();
+  await expect(page.getByRole("checkbox", { name: "完成：提醒交互测试" })).toBeChecked();
+});
+
 test("reminds a scheduled task once at its planned time", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => window.localStorage.clear());
@@ -165,7 +193,7 @@ test("reminds a scheduled task once at its planned time", async ({ page }) => {
   const reminder = page.getByRole("alert", { name: "任务提醒" });
   await expect(reminder).toContainText("准时开始复习");
   await expect(page.getByText(/准时提醒/)).toBeVisible();
-  await reminder.getByRole("button", { name: "知道了" }).click();
+  await reminder.getByRole("button", { name: "关闭提醒" }).click();
   await expect(reminder).toBeHidden();
 
   await page.reload();

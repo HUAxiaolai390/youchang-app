@@ -95,6 +95,15 @@ export function rescheduleTask(
     throw new Error("请选择本周内的日期");
   }
 
+  return rescheduleTaskToDate(state, sourceTaskId, targetDate, now);
+}
+
+function rescheduleTaskToDate(
+  state: AppState,
+  sourceTaskId: string,
+  targetDate: DateKey,
+  now: Date
+): AppState {
   const source = requireReschedulableTask(state, sourceTaskId);
   const target: ScheduledTask = {
     id: crypto.randomUUID(),
@@ -127,6 +136,12 @@ export function rescheduleTask(
       : task).concat(target),
     reschedules: [...state.reschedules, record]
   };
+}
+
+export function postponeTaskUntilTomorrow(state: AppState, sourceTaskId: string, now: Date): AppState {
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return rescheduleTaskToDate(state, sourceTaskId, toDateKey(tomorrow), now);
 }
 
 export function moveArchivedTaskToCurrentWeek(

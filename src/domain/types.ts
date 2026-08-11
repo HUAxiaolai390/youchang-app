@@ -63,6 +63,7 @@ export interface FixedTaskRecord {
   plannedStartTime?: TimeKey;
   reminderMinutesBefore?: ReminderMinutesBefore;
   reminderSentAt?: string;
+  reminderSnoozedUntil?: string;
   priority?: TaskPriority;
   steps?: TaskStep[];
   estimatedMinutes?: number;
@@ -82,6 +83,7 @@ export interface ScheduledTask {
   plannedStartTime?: TimeKey;
   reminderMinutesBefore?: ReminderMinutesBefore;
   reminderSentAt?: string;
+  reminderSnoozedUntil?: string;
   priority?: TaskPriority;
   steps?: TaskStep[];
   estimatedMinutes?: number;

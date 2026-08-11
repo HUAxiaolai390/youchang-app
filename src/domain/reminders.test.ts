@@ -4,7 +4,8 @@ import {
   describeTaskReminder,
   getPendingTaskReminders,
   markTaskReminderSent,
-  normalizeReminderMinutesBefore
+  normalizeReminderMinutesBefore,
+  snoozeTaskReminder
 } from "./reminders";
 
 describe("task reminders", () => {
@@ -23,7 +24,7 @@ describe("task reminders", () => {
     expect(describeTaskReminder(due[0], new Date(2026, 7, 9, 8, 50))).toBe("还有 10 分钟开始");
   });
 
-  it("does not remind completed, expired, or already notified tasks", () => {
+  it("restores a missed reminder later the same day but skips completed and already notified tasks", () => {
     const state = createInitialState(new Date(2026, 7, 9, 10));
     state.scheduledTasks.push({
       id: "sent", title: "已提醒", categoryId: "study", categoryNameSnapshot: "学习",
@@ -39,7 +40,9 @@ describe("task reminders", () => {
       plannedStartTime: "08:00", reminderMinutesBefore: 10
     });
 
-    expect(getPendingTaskReminders(state, new Date(2026, 7, 9, 10))).toEqual([]);
+    expect(getPendingTaskReminders(state, new Date(2026, 7, 9, 10))).toEqual([
+      expect.objectContaining({ id: "expired", title: "已过期" })
+    ]);
   });
 
   it("marks fixed and scheduled reminders without changing other tasks", () => {
@@ -63,5 +66,20 @@ describe("task reminders", () => {
     expect(normalizeReminderMinutesBefore("0")).toBe(0);
     expect(normalizeReminderMinutesBefore("30")).toBe(30);
     expect(() => normalizeReminderMinutesBefore(15)).toThrow("请选择有效提醒时间");
+  });
+
+  it("snoozes and then makes a reminder pending again", () => {
+    const state = createInitialState(new Date(2026, 7, 9, 9));
+    state.scheduledTasks.push({
+      id: "task-1", title: "背单词", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-09", status: "pending", createdAt: "2026-08-09T00:00:00.000Z",
+      plannedStartTime: "09:00", reminderMinutesBefore: 0, reminderSentAt: "sent"
+    });
+    const snoozed = snoozeTaskReminder(state, "scheduled", "task-1", "2026-08-09T01:10:00.000Z");
+
+    expect(getPendingTaskReminders(snoozed, new Date(2026, 7, 9, 9, 9))).toEqual([]);
+    expect(getPendingTaskReminders(snoozed, new Date(2026, 7, 9, 9, 10))).toEqual([
+      expect.objectContaining({ id: "task-1", snoozed: true })
+    ]);
   });
 });

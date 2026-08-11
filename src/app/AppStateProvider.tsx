@@ -17,7 +17,7 @@ import {
   updateFixedTask,
   updateScheduledTask
 } from "../domain/tasks";
-import { moveArchivedTaskToCurrentWeek, rescheduleTask, rollover } from "../domain/rollover";
+import { moveArchivedTaskToCurrentWeek, postponeTaskUntilTomorrow, rescheduleTask, rollover } from "../domain/rollover";
 import type { AppState } from "../domain/types";
 import { completeFocusSession, configureFocus, saveFocusTimerRuntime } from "../domain/focus";
 import {
@@ -29,7 +29,7 @@ import {
 } from "../domain/time";
 import type { AppRepository } from "../storage/repository";
 import type { AppAction } from "./app-actions";
-import { markTaskReminderSent } from "../domain/reminders";
+import { markTaskReminderSent, snoozeTaskReminder } from "../domain/reminders";
 import { toggleFixedTaskStep, toggleScheduledTaskStep } from "../domain/steps";
 
 export type AppStateContextValue = {
@@ -83,6 +83,8 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
       return deleteTask(state, "scheduled", action.id);
     case "scheduled/reschedule":
       return rescheduleTask(state, action.id, action.targetDate, now);
+    case "scheduled/postpone-tomorrow":
+      return postponeTaskUntilTomorrow(state, action.id, now);
     case "scheduled/move-archived":
       return moveArchivedTaskToCurrentWeek(state, action.id, action.targetDate, now);
     case "fixed/add":
@@ -128,6 +130,8 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
       };
     case "reminder/mark-sent":
       return markTaskReminderSent(state, action.kind, action.id, action.sentAt);
+    case "reminder/snooze":
+      return snoozeTaskReminder(state, action.kind, action.id, action.until);
     case "focus/configure":
       return configureFocus(state, action.focusMinutes, action.breakMinutes, action.timer);
     case "focus/session-complete":
