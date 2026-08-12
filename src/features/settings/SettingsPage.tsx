@@ -11,10 +11,16 @@ import type { AppState, Category, DateKey, FixedRepeatRule, FixedTaskTemplate, T
 import { downloadBackup, parseBackup } from "../../storage/backup";
 import { InstallAppPanel } from "../../components/InstallAppPanel";
 import {
+  checkExactAlarmPermission,
   checkSystemNotificationPermission,
   isNativeAndroid,
+  openExactAlarmSettings,
   requestSystemNotificationPermission,
+  scheduleNativeTestNotification,
+  sendNativeTestNotification,
+  syncNativeTaskNotifications,
   supportsSystemNotifications,
+  type ExactAlarmPermission,
   type SystemNotificationPermission
 } from "../../native/task-notifications";
 
@@ -83,6 +89,10 @@ export function SettingsPage() {
       ? Notification.permission === "default" ? "prompt" : Notification.permission
       : "unsupported"
   );
+  const [exactAlarmPermission, setExactAlarmPermission] = useState<ExactAlarmPermission>(
+    nativeAndroid ? "prompt" : "unsupported"
+  );
+  const [notificationTestMessage, setNotificationTestMessage] = useState<string>();
   const systemNotificationsActive = Boolean(state.settings.systemNotificationsEnabled)
     && notificationPermission === "granted";
 
@@ -113,6 +123,11 @@ export function SettingsPage() {
       void checkSystemNotificationPermission().then((permission) => {
         if (active) setNotificationPermission(permission);
       });
+      if (nativeAndroid) {
+        void checkExactAlarmPermission().then((permission) => {
+          if (active) setExactAlarmPermission(permission);
+        });
+      }
     };
     refreshPermission();
     window.addEventListener("focus", refreshPermission);
@@ -247,6 +262,36 @@ export function SettingsPage() {
     }
   }
 
+  async function enableExactAlarm() {
+    const permission = await openExactAlarmSettings();
+    setExactAlarmPermission(permission);
+    if (permission === "granted") await syncNativeTaskNotifications(state);
+  }
+
+  async function testNativeNotification() {
+    setNotificationTestMessage(undefined);
+    try {
+      const sent = await sendNativeTestNotification();
+      setNotificationTestMessage(sent
+        ? "测试通知已发送，请下拉手机通知栏查看。"
+        : "测试通知发送失败，请先允许通知权限。");
+    } catch {
+      setNotificationTestMessage("测试通知发送失败，请检查手机通知权限。");
+    }
+  }
+
+  async function testScheduledNativeNotification() {
+    setNotificationTestMessage(undefined);
+    try {
+      const at = await scheduleNativeTestNotification();
+      setNotificationTestMessage(at
+        ? `定时测试已安排，请退出有常，约在 ${at.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })} 查看通知栏。`
+        : "定时测试安排失败，请先允许通知权限。");
+    } catch {
+      setNotificationTestMessage("定时测试安排失败，请先允许准时提醒权限。");
+    }
+  }
+
   const customCategories = state.categories.filter((category) => !category.builtIn);
   const managedFixedTasks = state.fixedTasks.filter((task) => !task.successorId);
   const exceptionTask = managedFixedTasks.find((task) => task.id === exceptionFixedId);
@@ -293,6 +338,27 @@ export function SettingsPage() {
         {notificationPermission === "denied" && <p className="settings-muted">{nativeAndroid
           ? "请到手机设置 → 应用 → 有常 → 通知，重新允许通知。"
           : "请在浏览器的网站权限中重新允许通知；应用内提醒仍然有效。"}</p>}
+        {nativeAndroid && systemNotificationsActive && (
+          <div className="settings-form">
+            <div className="settings-section__heading">
+              <div>
+                <strong>准时提醒权限</strong>
+                <p className="settings-muted">用于在设定时间准确唤醒提醒，不是普通通知权限。</p>
+              </div>
+              <span className={`notification-status notification-status--${exactAlarmPermission === "granted" ? "on" : "off"}`}>
+                {exactAlarmPermission === "granted" ? "已允许" : "未允许"}
+              </span>
+            </div>
+            {exactAlarmPermission !== "granted" && (
+              <button type="button" className="button button--primary" onClick={enableExactAlarm}>
+                去允许准时提醒
+              </button>
+            )}
+            <button type="button" className="button" onClick={testNativeNotification}>立即发送测试通知</button>
+            <button type="button" className="button" onClick={testScheduledNativeNotification}>测试 1 分钟后的定时通知</button>
+            {notificationTestMessage && <p className="settings-muted" role="status">{notificationTestMessage}</p>}
+          </div>
+        )}
         <p className="settings-muted">任务需要填写开始时间并选择提醒时间。修改日期或时间、完成或删除任务后，手机通知会自动同步。</p>
       </section>
 

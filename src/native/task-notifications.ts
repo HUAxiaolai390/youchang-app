@@ -9,6 +9,7 @@ import type { AppState } from "../domain/types";
 const taskReminderSource = "youchang-task-reminder";
 
 export type SystemNotificationPermission = PermissionState | "unsupported";
+export type ExactAlarmPermission = PermissionState | "unsupported";
 
 function webPermission(permission: NotificationPermission): SystemNotificationPermission {
   return permission === "default" ? "prompt" : permission;
@@ -34,6 +35,54 @@ export async function requestSystemNotificationPermission(): Promise<SystemNotif
     return (await LocalNotifications.requestPermissions()).display;
   }
   return typeof Notification === "undefined" ? "unsupported" : webPermission(await Notification.requestPermission());
+}
+
+export async function checkExactAlarmPermission(): Promise<ExactAlarmPermission> {
+  if (!isNativeAndroid()) return "unsupported";
+  return (await LocalNotifications.checkExactNotificationSetting()).exact_alarm;
+}
+
+export async function openExactAlarmSettings(): Promise<ExactAlarmPermission> {
+  if (!isNativeAndroid()) return "unsupported";
+  return (await LocalNotifications.changeExactNotificationSetting()).exact_alarm;
+}
+
+export async function sendNativeTestNotification(): Promise<boolean> {
+  if (!isNativeAndroid()) return false;
+  const permission = await checkSystemNotificationPermission();
+  if (permission !== "granted") return false;
+  await LocalNotifications.schedule({
+    notifications: [{
+      id: 2_100_000_001,
+      title: "有常 · 测试通知",
+      body: "如果你看到了这条消息，说明通知栏权限正常。",
+      largeBody: "如果你看到了这条消息，说明通知栏权限正常。接下来再测试任务的准时提醒。",
+      summaryText: "任务提醒",
+      autoCancel: true,
+      extra: { source: "youchang-notification-test" }
+    }]
+  });
+  return true;
+}
+
+export async function scheduleNativeTestNotification(delayMilliseconds = 60_000): Promise<Date | undefined> {
+  if (!isNativeAndroid()) return undefined;
+  const permission = await checkSystemNotificationPermission();
+  if (permission !== "granted") return undefined;
+  const at = new Date(Date.now() + delayMilliseconds);
+  await LocalNotifications.schedule({
+    notifications: [{
+      id: 2_100_000_002,
+      title: "有常 · 定时测试成功",
+      body: "这是一分钟前安排的测试提醒，说明准时提醒可以正常工作。",
+      largeBody: "这是一分钟前安排的测试提醒，说明退出有常后，安卓也能按时间显示任务通知。",
+      summaryText: "任务提醒",
+      autoCancel: true,
+      schedule: { at, allowWhileIdle: true },
+      extra: { source: "youchang-scheduled-notification-test" }
+    }]
+  });
+  return at;
 }
 
 function hashReminderKey(value: string): number {
