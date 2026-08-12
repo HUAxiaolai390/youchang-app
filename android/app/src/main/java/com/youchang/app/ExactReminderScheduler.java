@@ -19,18 +19,19 @@ public final class ExactReminderScheduler {
         return (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
     }
 
-    private static PendingIntent reminderIntent(Context context, int id, String title, String body, int pendingFlags) {
+    private static PendingIntent reminderIntent(Context context, int id, String title, String body, boolean wakeScreen, int pendingFlags) {
         Intent intent = new Intent(context, ExactReminderReceiver.class);
         intent.putExtra(ExactReminderReceiver.EXTRA_ID, id);
         intent.putExtra(ExactReminderReceiver.EXTRA_TITLE, title);
         intent.putExtra(ExactReminderReceiver.EXTRA_BODY, body);
+        intent.putExtra(ExactReminderReceiver.EXTRA_WAKE_SCREEN, wakeScreen);
         return PendingIntent.getBroadcast(context, id, intent, pendingFlags | PendingIntent.FLAG_IMMUTABLE);
     }
 
-    public static void schedule(Context context, int id, long at, String title, String body) {
+    public static void schedule(Context context, int id, long at, String title, String body, boolean wakeScreen) {
         if (at <= System.currentTimeMillis()) return;
         ExactReminderReceiver.ensureChannel(context);
-        PendingIntent trigger = reminderIntent(context, id, title, body, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent trigger = reminderIntent(context, id, title, body, wakeScreen, PendingIntent.FLAG_UPDATE_CURRENT);
         AlarmManager manager = alarmManager(context);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !manager.canScheduleExactAlarms()) {
             throw new SecurityException("Exact alarm permission denied");
@@ -50,7 +51,7 @@ public final class ExactReminderScheduler {
     }
 
     public static void cancel(Context context, int id) {
-        PendingIntent trigger = reminderIntent(context, id, "", "", PendingIntent.FLAG_NO_CREATE);
+        PendingIntent trigger = reminderIntent(context, id, "", "", false, PendingIntent.FLAG_NO_CREATE);
         if (trigger != null) {
             alarmManager(context).cancel(trigger);
             trigger.cancel();
@@ -68,7 +69,14 @@ public final class ExactReminderScheduler {
             JSONArray reminders = new JSONArray(stored);
             for (int index = 0; index < reminders.length(); index++) {
                 JSONObject item = reminders.getJSONObject(index);
-                schedule(context, item.getInt("id"), item.getLong("at"), item.getString("title"), item.getString("body"));
+                schedule(
+                    context,
+                    item.getInt("id"),
+                    item.getLong("at"),
+                    item.getString("title"),
+                    item.getString("body"),
+                    item.optBoolean("wakeScreen", true)
+                );
             }
         } catch (JSONException | SecurityException ignored) {
             // The app will synchronize again the next time it opens.

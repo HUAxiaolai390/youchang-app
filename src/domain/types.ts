@@ -163,6 +163,7 @@ export interface AppState {
     musicVolume?: number;
     featuredAchievementIds?: string[];
     systemNotificationsEnabled?: boolean;
+    wakeScreenForReminders?: boolean;
   };
   categories: Category[];
   fixedTasks: FixedTaskTemplate[];

@@ -9,10 +9,10 @@ import type { AppState } from "../domain/types";
 const taskReminderSource = "youchang-task-reminder";
 const exactReminderIdsStorageKey = "youchang.exact-reminder-ids.v1";
 
-type ExactReminderSchedule = { id: number; at: number; title: string; body: string };
+type ExactReminderSchedule = { id: number; at: number; title: string; body: string; wakeScreen: boolean };
 interface ExactReminderPlugin {
   replace(options: { oldIds: number[]; reminders: ExactReminderSchedule[] }): Promise<void>;
-  scheduleTest(options: { at: number }): Promise<{ at: number }>;
+  scheduleTest(options: { at: number; wakeScreen: boolean }): Promise<{ at: number }>;
 }
 const ExactReminder = registerPlugin<ExactReminderPlugin>("ExactReminder");
 
@@ -73,12 +73,15 @@ export async function sendNativeTestNotification(): Promise<boolean> {
   return true;
 }
 
-export async function scheduleNativeTestNotification(delayMilliseconds = 60_000): Promise<Date | undefined> {
+export async function scheduleNativeTestNotification(
+  delayMilliseconds = 60_000,
+  wakeScreen = true
+): Promise<Date | undefined> {
   if (!isNativeAndroid()) return undefined;
   const permission = await checkSystemNotificationPermission();
   if (permission !== "granted") return undefined;
   const at = new Date(Date.now() + delayMilliseconds);
-  await ExactReminder.scheduleTest({ at: at.getTime() });
+  await ExactReminder.scheduleTest({ at: at.getTime(), wakeScreen });
   return at;
 }
 
@@ -155,7 +158,13 @@ async function performNativeTaskNotificationSync(state: AppState, now: Date): Pr
   const reminders = notifications.flatMap((notification): ExactReminderSchedule[] => {
     const at = notification.schedule?.at?.getTime();
     if (!at) return [];
-    return [{ id: notification.id, at, title: notification.title, body: notification.body }];
+    return [{
+      id: notification.id,
+      at,
+      title: notification.title,
+      body: notification.body,
+      wakeScreen: state.settings.wakeScreenForReminders !== false
+    }];
   });
   await ExactReminder.replace({ oldIds, reminders });
   rememberExactReminderIds(reminders.map(({ id }) => id));

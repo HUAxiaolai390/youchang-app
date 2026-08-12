@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createInitialState } from "../domain/defaults";
 import type { AppState } from "../domain/types";
 import type { AppRepository } from "../storage/repository";
-import { AppStateProvider, useAppState } from "./AppStateProvider";
+import { AppStateProvider, reduceAppState, useAppState } from "./AppStateProvider";
 
 class InMemoryRepository implements AppRepository {
   state: AppState;
@@ -98,6 +98,18 @@ afterEach(() => {
 });
 
 describe("AppStateProvider", () => {
+  it("stores whether reminders should light the locked screen", () => {
+    const state = createInitialState(new Date(2026, 7, 12, 9));
+    const next = reduceAppState(
+      state,
+      { type: "settings/wake-screen-reminders", enabled: false },
+      new Date(2026, 7, 12, 9)
+    );
+
+    expect(next.settings.wakeScreenForReminders).toBe(false);
+    expect(state.settings.wakeScreenForReminders).toBe(true);
+  });
+
   it("persists a task added through dispatch", async () => {
     const repository = new InMemoryRepository(createInitialState(new Date(2026, 6, 31, 9)));
     const user = userEvent.setup();

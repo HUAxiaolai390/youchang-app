@@ -10,6 +10,7 @@ export function NativeTaskNotificationSync() {
     const reminders = buildNativeTaskNotifications(state, new Date());
     return JSON.stringify({
       enabled: Boolean(state.settings.systemNotificationsEnabled),
+      wakeScreen: state.settings.wakeScreenForReminders !== false,
       reminders: reminders.map((notification) => [
         notification.id,
         notification.title,
