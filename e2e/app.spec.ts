@@ -558,6 +558,40 @@ test("keeps edit available after a scheduled task is completed", async ({ page }
   await expectNoHorizontalOverflow(page);
 });
 
+test("shows the complete scheduled task name on a narrow phone screen", async ({ page }, testInfo) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  const taskName = "数模学习与算法代码复习";
+  await page.getByRole("button", { name: "添加任务", exact: true }).click();
+  await page.getByLabel("任务名称").fill(taskName);
+  await page.getByRole("button", { name: "保存任务" }).click();
+
+  const task = page.getByRole("checkbox", { name: `完成：${taskName}` }).locator("xpath=ancestor::li");
+  const title = task.locator(".task-item__copy p");
+  await expect(title).toContainText(taskName);
+
+  if (testInfo.project.name === "mobile") {
+    const layout = await title.evaluate((element) => {
+      const style = window.getComputedStyle(element);
+      return {
+        whiteSpace: style.whiteSpace,
+        fitsWidth: element.scrollWidth <= element.clientWidth,
+      };
+    });
+    expect(layout).toEqual({ whiteSpace: "normal", fitsWidth: true });
+
+    const copyBounds = await task.locator(".task-item__copy").boundingBox();
+    const actionsBounds = await task.locator(".task-item__actions").boundingBox();
+    expect(copyBounds).not.toBeNull();
+    expect(actionsBounds).not.toBeNull();
+    expect(actionsBounds!.y).toBeGreaterThanOrEqual(copyBounds!.y + copyBounds!.height - 1);
+  }
+
+  await expectNoHorizontalOverflow(page);
+});
+
 test("completes the core task, growth, and backup flow", async ({ page }, testInfo) => {
   const runtimeErrors: string[] = [];
   page.on("console", (message) => {

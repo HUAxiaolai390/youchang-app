@@ -1057,6 +1057,10 @@ button:focus-visible {
   .week-task__actions { grid-column: 2; justify-self: start; justify-content: flex-start; }
   .week-task__actions button { min-height: 30px; }
   .week-move-panel__dates { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .task-item { grid-template-columns: auto minmax(0, 1fr); align-items: start; }
+  .task-item__copy p { overflow: visible; line-height: 1.45; overflow-wrap: anywhere; text-overflow: clip; white-space: normal; }
+  .task-item__actions { grid-column: 2; justify-content: flex-start; }
+  .task-item__actions button { min-height: 30px; padding: 0 5px; }
   .today-page { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .focus-drawer, .category-filter { grid-row: auto; grid-column: 1; }
   .today-hero { grid-template-columns: minmax(0, 1fr) 102px; gap: 12px 9px; padding: 16px; }
