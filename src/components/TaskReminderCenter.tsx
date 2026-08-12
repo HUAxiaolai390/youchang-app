@@ -6,6 +6,7 @@ import {
   getPendingTaskReminders,
   type TaskReminder
 } from "../domain/reminders";
+import { isNativeAndroid } from "../native/task-notifications";
 
 const readSystemTime = () => new Date();
 const snoozeOptions = [5, 10, 30] as const;
@@ -44,6 +45,7 @@ export function TaskReminderCenter({
   tickMilliseconds?: number;
 }) {
   const { state, dispatch } = useAppState();
+  const nativeAndroid = isNativeAndroid();
   const [currentTime, setCurrentTime] = useState(readNow);
   const [activeReminder, setActiveReminder] = useState<TaskReminder>();
   const [snoozeMinutes, setSnoozeMinutes] = useState<(typeof snoozeOptions)[number]>(10);
@@ -53,6 +55,7 @@ export function TaskReminderCenter({
   );
 
   useEffect(() => {
+    if (nativeAndroid) return;
     const refresh = () => setCurrentTime(readNow());
     const timer = window.setInterval(refresh, tickMilliseconds);
     const refreshWhenVisible = () => {
@@ -63,16 +66,17 @@ export function TaskReminderCenter({
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
-  }, [readNow, tickMilliseconds]);
+  }, [nativeAndroid, readNow, tickMilliseconds]);
 
   useEffect(() => {
+    if (nativeAndroid) return;
     const reminder = pendingReminders[0];
     if (activeReminder || !reminder) return;
     const sentAt = currentTime.toISOString();
     if (!dispatch({ type: "reminder/mark-sent", kind: reminder.kind, id: reminder.id, sentAt })) return;
     setActiveReminder(reminder);
     if (state.settings.systemNotificationsEnabled) void showSystemNotification(reminder);
-  }, [activeReminder, currentTime, dispatch, pendingReminders, state.settings.systemNotificationsEnabled]);
+  }, [activeReminder, currentTime, dispatch, nativeAndroid, pendingReminders, state.settings.systemNotificationsEnabled]);
 
   useEffect(() => {
     if (!activeReminder) return;
@@ -87,7 +91,7 @@ export function TaskReminderCenter({
     }
   }, [activeReminder, state.fixedRecords, state.scheduledTasks]);
 
-  if (!activeReminder) return null;
+  if (nativeAndroid || !activeReminder) return null;
 
   function finishReminder() {
     if (!activeReminder) return;

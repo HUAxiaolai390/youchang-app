@@ -7,6 +7,12 @@ const config: CapacitorConfig = {
   android: {
     backgroundColor: "#f4f0e8",
   },
+  plugins: {
+    LocalNotifications: {
+      smallIcon: "ic_stat_youchang",
+      iconColor: "#B98243"
+    }
+  }
 };
 
 export default config;

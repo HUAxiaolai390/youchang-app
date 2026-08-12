@@ -52,6 +52,7 @@ describe("SettingsPage", () => {
 
     expect(screen.getByRole("heading", { name: "任务提醒" })).toBeVisible();
     expect(screen.getByText(/有常打开时会显示应用内提醒/)).toBeVisible();
+    expect(screen.getByText(/修改日期或时间、完成或删除任务后/)).toBeVisible();
   });
 
   it("rejects an invalid backup without clearing tasks", async () => {

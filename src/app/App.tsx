@@ -10,6 +10,7 @@ import { BackgroundMusic } from "../components/BackgroundMusic";
 import { getDailyQuote } from "../domain/daily-quotes";
 import { TaskReminderCenter } from "../components/TaskReminderCenter";
 import { InstallPromptProvider } from "../components/InstallPromptProvider";
+import { NativeTaskNotificationSync } from "../components/NativeTaskNotificationSync";
 
 import { useEffect, useState } from "react";
 import { createLocalRepository } from "../storage/repository";
@@ -120,6 +121,7 @@ function AppContents() {
           </div>
         )}
       </AppShell>
+      <NativeTaskNotificationSync />
       <TaskReminderCenter onOpenTask={() => setActivePage("today")} />
       <PwaUpdatePrompt />
     </>

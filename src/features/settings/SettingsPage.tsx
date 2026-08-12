@@ -10,6 +10,13 @@ import { formatTaskPriority, taskPriorityOptions } from "../../domain/priorities
 import type { AppState, Category, DateKey, FixedRepeatRule, FixedTaskTemplate, TaskPriority, TaskStep, TimeKey } from "../../domain/types";
 import { downloadBackup, parseBackup } from "../../storage/backup";
 import { InstallAppPanel } from "../../components/InstallAppPanel";
+import {
+  checkSystemNotificationPermission,
+  isNativeAndroid,
+  requestSystemNotificationPermission,
+  supportsSystemNotifications,
+  type SystemNotificationPermission
+} from "../../native/task-notifications";
 
 function backupErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message === "备份文件版本不受支持") return "备份版本不受支持";
@@ -69,9 +76,12 @@ export function SettingsPage() {
   const [clearPhrase, setClearPhrase] = useState("");
   const [clearArmed, setClearArmed] = useState(false);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
-  const notificationsSupported = typeof Notification !== "undefined";
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">(
-    notificationsSupported ? Notification.permission : "unsupported"
+  const nativeAndroid = isNativeAndroid();
+  const notificationsSupported = supportsSystemNotifications();
+  const [notificationPermission, setNotificationPermission] = useState<SystemNotificationPermission>(
+    nativeAndroid ? "prompt" : notificationsSupported
+      ? Notification.permission === "default" ? "prompt" : Notification.permission
+      : "unsupported"
   );
   const systemNotificationsActive = Boolean(state.settings.systemNotificationsEnabled)
     && notificationPermission === "granted";
@@ -98,10 +108,19 @@ export function SettingsPage() {
 
   useEffect(() => {
     if (!notificationsSupported) return;
-    const refreshPermission = () => setNotificationPermission(Notification.permission);
+    let active = true;
+    const refreshPermission = () => {
+      void checkSystemNotificationPermission().then((permission) => {
+        if (active) setNotificationPermission(permission);
+      });
+    };
+    refreshPermission();
     window.addEventListener("focus", refreshPermission);
-    return () => window.removeEventListener("focus", refreshPermission);
-  }, [notificationsSupported]);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", refreshPermission);
+    };
+  }, [notificationsSupported, nativeAndroid]);
 
   function saveDisplayName(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -221,7 +240,7 @@ export function SettingsPage() {
     }
     const permission = notificationPermission === "granted"
       ? "granted"
-      : await Notification.requestPermission();
+      : await requestSystemNotificationPermission();
     setNotificationPermission(permission);
     if (permission === "granted") {
       dispatch({ type: "settings/system-notifications", enabled: true });
@@ -253,7 +272,9 @@ export function SettingsPage() {
         <div className="settings-section__heading">
           <div>
             <h2 id="reminder-settings-title">任务提醒</h2>
-            <p className="settings-muted">有常打开时会显示应用内提醒；开启系统通知后，还会弹出电脑通知。</p>
+            <p className="settings-muted">{nativeAndroid
+              ? "开启后，任务会像微信消息一样显示在手机通知栏，退出有常后也能提醒。"
+              : "有常打开时会显示应用内提醒；开启系统通知后，还会弹出电脑通知。"}</p>
           </div>
           <span className={`notification-status notification-status--${systemNotificationsActive ? "on" : "off"}`}>
             {systemNotificationsActive ? "已开启" : "未开启"}
@@ -269,8 +290,10 @@ export function SettingsPage() {
             : notificationPermission === "denied" ? "通知权限已被拒绝"
               : systemNotificationsActive ? "关闭系统通知" : "开启系统通知"}
         </button>
-        {notificationPermission === "denied" && <p className="settings-muted">请在浏览器的网站权限中重新允许通知；应用内提醒仍然有效。</p>}
-        <p className="settings-muted">任务需要填写开始时间并选择提醒时间。手机后台提醒会在安装手机版时继续增强。</p>
+        {notificationPermission === "denied" && <p className="settings-muted">{nativeAndroid
+          ? "请到手机设置 → 应用 → 有常 → 通知，重新允许通知。"
+          : "请在浏览器的网站权限中重新允许通知；应用内提醒仍然有效。"}</p>}
+        <p className="settings-muted">任务需要填写开始时间并选择提醒时间。修改日期或时间、完成或删除任务后，手机通知会自动同步。</p>
       </section>
 
       <section className="surface-card settings-section" aria-labelledby="fixed-settings-title">

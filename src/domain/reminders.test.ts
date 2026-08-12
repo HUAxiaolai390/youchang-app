@@ -3,6 +3,7 @@ import { createInitialState } from "./defaults";
 import {
   describeTaskReminder,
   getPendingTaskReminders,
+  getSchedulableTaskReminders,
   getTaskReminderOverview,
   markTaskReminderSent,
   normalizeReminderMinutesBefore,
@@ -10,6 +11,41 @@ import {
 } from "./reminders";
 
 describe("task reminders", () => {
+  it("prepares future reminders across dates for the phone operating system", () => {
+    const state = createInitialState(new Date(2026, 7, 9, 8));
+    state.scheduledTasks.push({
+      id: "tomorrow", title: "数模学习", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-10", status: "pending", createdAt: "2026-08-09T00:00:00.000Z",
+      plannedStartTime: "09:30", reminderMinutesBefore: 10
+    }, {
+      id: "finished", title: "已完成任务", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-10", status: "completed", createdAt: "2026-08-09T00:00:00.000Z",
+      plannedStartTime: "10:00", reminderMinutesBefore: 0
+    }, {
+      id: "past", title: "过期任务", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-09", status: "pending", createdAt: "2026-08-09T00:00:00.000Z",
+      plannedStartTime: "07:30", reminderMinutesBefore: 0
+    });
+
+    const reminders = getSchedulableTaskReminders(state, new Date(2026, 7, 9, 8));
+    expect(reminders).toHaveLength(1);
+    expect(reminders[0]).toMatchObject({ id: "tomorrow", title: "数模学习" });
+    expect(reminders[0].remindAt).toEqual(new Date(2026, 7, 10, 9, 20));
+  });
+
+  it("pre-schedules predictable fixed tasks even before tomorrow's record exists", () => {
+    const state = createInitialState(new Date(2026, 7, 9, 8));
+    state.fixedTasks.push({
+      id: "words", title: "英语单词", categoryId: "study", categoryNameSnapshot: "学习",
+      activeFrom: "2026-08-09", order: 0, createdAt: "2026-08-09T00:00:00.000Z",
+      repeatRule: { type: "daily" }, plannedStartTime: "07:30", reminderMinutesBefore: 0
+    });
+
+    const reminders = getSchedulableTaskReminders(state, new Date(2026, 7, 9, 8));
+    expect(reminders.some((reminder) => reminder.date === "2026-08-10" && reminder.title === "英语单词")).toBe(true);
+    expect(reminders.some((reminder) => reminder.date === "2026-09-08" && reminder.title === "英语单词")).toBe(true);
+  });
+
   it("finds a scheduled reminder when its lead time arrives", () => {
     const state = createInitialState(new Date(2026, 7, 9, 8));
     state.scheduledTasks.push({

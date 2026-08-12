@@ -1,4 +1,5 @@
 import { fromDateKey, toDateKey } from "./date";
+import { getFixedRepeatRule, isFixedTaskDueOnDate } from "./repeat";
 import type { AppState, DateKey, ReminderMinutesBefore, TimeKey } from "./types";
 
 export const reminderMinuteOptions: ReadonlyArray<{ value: ReminderMinutesBefore; label: string }> = [
@@ -49,6 +50,85 @@ function dateAtTime(date: DateKey, time: TimeKey): Date {
   const [hours, minutes] = time.split(":").map(Number);
   result.setHours(hours, minutes, 0, 0);
   return result;
+}
+
+/**
+ * Returns every future reminder that can be handed to the phone operating
+ * system. Unlike the in-app reminder list, this is not limited to today.
+ */
+export function getSchedulableTaskReminders(state: AppState, now: Date): TaskReminder[] {
+  const candidates: TaskReminder[] = [];
+  const fixedOccurrences = new Set<string>();
+
+  for (const record of state.fixedRecords) {
+    fixedOccurrences.add(`${record.templateId}:${record.date}`);
+    const snoozedUntil = record.reminderSnoozedUntil ? new Date(record.reminderSnoozedUntil) : undefined;
+    if (record.completedAt || record.reminderSentAt || !record.plannedStartTime
+      || record.reminderMinutesBefore === undefined) continue;
+    const startAt = dateAtTime(record.date, record.plannedStartTime);
+    candidates.push({
+      kind: "fixed",
+      id: record.id,
+      title: record.titleSnapshot,
+      date: record.date,
+      plannedStartTime: record.plannedStartTime,
+      reminderMinutesBefore: record.reminderMinutesBefore,
+      startAt,
+      remindAt: snoozedUntil ?? new Date(startAt.getTime() - record.reminderMinutesBefore * 60_000),
+      snoozed: Boolean(snoozedUntil)
+    });
+  }
+
+  // Fixed records are normally created when a day begins. Pre-schedule the
+  // predictable occurrences as well, so daily habits still notify if the app
+  // stays closed overnight. Weekly-count habits are intentionally limited to
+  // today because their remaining days depend on what the user completes.
+  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  for (let offset = 0; offset <= 30; offset += 1) {
+    const dateKey = toDateKey(date);
+    for (const task of state.fixedTasks) {
+      if (fixedOccurrences.has(`${task.id}:${dateKey}`) || !task.plannedStartTime
+        || task.reminderMinutesBefore === undefined) continue;
+      if (getFixedRepeatRule(task).type === "weekly-count" && offset > 0) continue;
+      if (!isFixedTaskDueOnDate(state, task, dateKey)) continue;
+      const startAt = dateAtTime(dateKey, task.plannedStartTime);
+      candidates.push({
+        kind: "fixed",
+        id: `${task.id}:${dateKey}`,
+        title: task.title,
+        date: dateKey,
+        plannedStartTime: task.plannedStartTime,
+        reminderMinutesBefore: task.reminderMinutesBefore,
+        startAt,
+        remindAt: new Date(startAt.getTime() - task.reminderMinutesBefore * 60_000),
+        snoozed: false
+      });
+    }
+    date.setDate(date.getDate() + 1);
+  }
+
+  for (const task of state.scheduledTasks) {
+    const snoozedUntil = task.reminderSnoozedUntil ? new Date(task.reminderSnoozedUntil) : undefined;
+    const canRemindSnoozed = Boolean(snoozedUntil) && ["pending", "backlog", "archived"].includes(task.status);
+    if ((!canRemindSnoozed && task.status !== "pending") || task.reminderSentAt
+      || !task.plannedStartTime || task.reminderMinutesBefore === undefined) continue;
+    const startAt = dateAtTime(task.scheduledDate, task.plannedStartTime);
+    candidates.push({
+      kind: "scheduled",
+      id: task.id,
+      title: task.title,
+      date: task.scheduledDate,
+      plannedStartTime: task.plannedStartTime,
+      reminderMinutesBefore: task.reminderMinutesBefore,
+      startAt,
+      remindAt: snoozedUntil ?? new Date(startAt.getTime() - task.reminderMinutesBefore * 60_000),
+      snoozed: Boolean(snoozedUntil)
+    });
+  }
+
+  return candidates
+    .filter((reminder) => reminder.remindAt.getTime() > now.getTime())
+    .sort((left, right) => left.remindAt.getTime() - right.remindAt.getTime());
 }
 
 export function getPendingTaskReminders(state: AppState, now: Date): TaskReminder[] {
