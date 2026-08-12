@@ -1,4 +1,4 @@
-import { Capacitor, type PermissionState } from "@capacitor/core";
+import { Capacitor, registerPlugin, type PermissionState } from "@capacitor/core";
 import {
   LocalNotifications,
   type LocalNotificationSchema
@@ -7,6 +7,14 @@ import { getSchedulableTaskReminders, type TaskReminder } from "../domain/remind
 import type { AppState } from "../domain/types";
 
 const taskReminderSource = "youchang-task-reminder";
+const exactReminderIdsStorageKey = "youchang.exact-reminder-ids.v1";
+
+type ExactReminderSchedule = { id: number; at: number; title: string; body: string };
+interface ExactReminderPlugin {
+  replace(options: { oldIds: number[]; reminders: ExactReminderSchedule[] }): Promise<void>;
+  scheduleTest(options: { at: number }): Promise<{ at: number }>;
+}
+const ExactReminder = registerPlugin<ExactReminderPlugin>("ExactReminder");
 
 export type SystemNotificationPermission = PermissionState | "unsupported";
 export type ExactAlarmPermission = PermissionState | "unsupported";
@@ -70,18 +78,7 @@ export async function scheduleNativeTestNotification(delayMilliseconds = 60_000)
   const permission = await checkSystemNotificationPermission();
   if (permission !== "granted") return undefined;
   const at = new Date(Date.now() + delayMilliseconds);
-  await LocalNotifications.schedule({
-    notifications: [{
-      id: 2_100_000_002,
-      title: "有常 · 定时测试成功",
-      body: "这是一分钟前安排的测试提醒，说明准时提醒可以正常工作。",
-      largeBody: "这是一分钟前安排的测试提醒，说明退出有常后，安卓也能按时间显示任务通知。",
-      summaryText: "任务提醒",
-      autoCancel: true,
-      schedule: { at, allowWhileIdle: true },
-      extra: { source: "youchang-scheduled-notification-test" }
-    }]
-  });
+  await ExactReminder.scheduleTest({ at: at.getTime() });
   return at;
 }
 
@@ -130,12 +127,20 @@ let notificationSyncQueue = Promise.resolve();
 async function performNativeTaskNotificationSync(state: AppState, now: Date): Promise<void> {
   if (!isNativeAndroid()) return;
 
-  const pending = await LocalNotifications.getPending();
-  const owned = pending.notifications.filter((notification) => notification.extra?.source === taskReminderSource);
-  if (owned.length > 0) {
-    await LocalNotifications.cancel({ notifications: owned.map(({ id }) => ({ id })) });
+  // Remove timers created by the older generic implementation during the
+  // migration, otherwise a delayed duplicate could still appear.
+  const oldPluginPending = await LocalNotifications.getPending();
+  const oldPluginOwned = oldPluginPending.notifications.filter((notification) => notification.extra?.source === taskReminderSource);
+  if (oldPluginOwned.length > 0) {
+    await LocalNotifications.cancel({ notifications: oldPluginOwned.map(({ id }) => ({ id })) });
   }
-  if (!state.settings.systemNotificationsEnabled) return;
+
+  const oldIds = readExactReminderIds();
+  if (!state.settings.systemNotificationsEnabled) {
+    await ExactReminder.replace({ oldIds, reminders: [] });
+    rememberExactReminderIds([]);
+    return;
+  }
 
   let permission = await checkSystemNotificationPermission();
   if (permission === "prompt" || permission === "prompt-with-rationale") {
@@ -143,8 +148,30 @@ async function performNativeTaskNotificationSync(state: AppState, now: Date): Pr
   }
   if (permission !== "granted") return;
 
+  const exactPermission = await checkExactAlarmPermission();
+  if (exactPermission !== "granted") return;
+
   const notifications = buildNativeTaskNotifications(state, now);
-  if (notifications.length > 0) await LocalNotifications.schedule({ notifications });
+  const reminders = notifications.flatMap((notification): ExactReminderSchedule[] => {
+    const at = notification.schedule?.at?.getTime();
+    if (!at) return [];
+    return [{ id: notification.id, at, title: notification.title, body: notification.body }];
+  });
+  await ExactReminder.replace({ oldIds, reminders });
+  rememberExactReminderIds(reminders.map(({ id }) => id));
+}
+
+function readExactReminderIds(): number[] {
+  try {
+    const value = JSON.parse(window.localStorage.getItem(exactReminderIdsStorageKey) ?? "[]");
+    return Array.isArray(value) ? value.filter((id): id is number => Number.isInteger(id)) : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberExactReminderIds(ids: number[]) {
+  window.localStorage.setItem(exactReminderIdsStorageKey, JSON.stringify(ids));
 }
 
 export function syncNativeTaskNotifications(state: AppState, now = new Date()): Promise<void> {
