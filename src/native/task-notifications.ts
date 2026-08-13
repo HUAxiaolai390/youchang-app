@@ -4,15 +4,31 @@ import {
   type LocalNotificationSchema
 } from "@capacitor/local-notifications";
 import { getSchedulableTaskReminders, type TaskReminder } from "../domain/reminders";
-import type { AppState } from "../domain/types";
+import type { AppState, DateKey } from "../domain/types";
 
 const taskReminderSource = "youchang-task-reminder";
 const exactReminderIdsStorageKey = "youchang.exact-reminder-ids.v1";
 
-type ExactReminderSchedule = { id: number; at: number; title: string; body: string; wakeScreen: boolean };
+type ExactReminderSchedule = {
+  id: number;
+  at: number;
+  title: string;
+  body: string;
+  kind: "fixed" | "scheduled";
+  taskId: string;
+  date: DateKey;
+};
+export type NativeReminderAction = {
+  action: "complete" | "snooze";
+  kind: "fixed" | "scheduled";
+  taskId: string;
+  date: DateKey;
+  at: number;
+};
 interface ExactReminderPlugin {
   replace(options: { oldIds: number[]; reminders: ExactReminderSchedule[] }): Promise<void>;
-  scheduleTest(options: { at: number; wakeScreen: boolean }): Promise<{ at: number }>;
+  scheduleTest(options: { at: number }): Promise<{ at: number }>;
+  consumeActions(): Promise<{ actions: NativeReminderAction[] }>;
 }
 const ExactReminder = registerPlugin<ExactReminderPlugin>("ExactReminder");
 
@@ -74,15 +90,30 @@ export async function sendNativeTestNotification(): Promise<boolean> {
 }
 
 export async function scheduleNativeTestNotification(
-  delayMilliseconds = 60_000,
-  wakeScreen = true
+  delayMilliseconds = 60_000
 ): Promise<Date | undefined> {
   if (!isNativeAndroid()) return undefined;
   const permission = await checkSystemNotificationPermission();
   if (permission !== "granted") return undefined;
   const at = new Date(Date.now() + delayMilliseconds);
-  await ExactReminder.scheduleTest({ at: at.getTime(), wakeScreen });
+  await ExactReminder.scheduleTest({ at: at.getTime() });
   return at;
+}
+
+export async function consumeNativeReminderActions(): Promise<NativeReminderAction[]> {
+  if (!isNativeAndroid()) return [];
+  const result = await ExactReminder.consumeActions();
+  return Array.isArray(result.actions) ? result.actions.filter((action): action is NativeReminderAction => (
+    (action.action === "complete" || action.action === "snooze")
+      && (action.kind === "fixed" || action.kind === "scheduled")
+      && typeof action.taskId === "string"
+      && isDateKey(action.date)
+      && Number.isFinite(action.at)
+  )) : [];
+}
+
+function isDateKey(value: unknown): value is DateKey {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
 function hashReminderKey(value: string): number {
@@ -157,13 +188,19 @@ async function performNativeTaskNotificationSync(state: AppState, now: Date): Pr
   const notifications = buildNativeTaskNotifications(state, now);
   const reminders = notifications.flatMap((notification): ExactReminderSchedule[] => {
     const at = notification.schedule?.at?.getTime();
-    if (!at) return [];
+    const kind = notification.extra?.kind;
+    const taskId = notification.extra?.taskId;
+    const date = notification.extra?.date;
+    if (!at || (kind !== "fixed" && kind !== "scheduled")
+      || typeof taskId !== "string" || !isDateKey(date)) return [];
     return [{
       id: notification.id,
       at,
       title: notification.title,
       body: notification.body,
-      wakeScreen: state.settings.wakeScreenForReminders !== false
+      kind,
+      taskId,
+      date
     }];
   });
   await ExactReminder.replace({ oldIds, reminders });

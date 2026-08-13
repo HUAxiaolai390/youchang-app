@@ -86,6 +86,12 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
       return updateScheduledTask(state, action.id, action.input);
     case "scheduled/toggle":
       return toggleScheduledTask(state, action.id, now);
+    case "scheduled/complete-from-notification": {
+      const task = state.scheduledTasks.find((item) => item.id === action.id);
+      return task && task.status !== "completed"
+        ? toggleScheduledTask(state, action.id, new Date(action.completedAt))
+        : state;
+    }
     case "scheduled/step-toggle":
       return toggleScheduledTaskStep(state, action.id, action.stepId);
     case "scheduled/delete":
@@ -102,6 +108,17 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
       return updateFixedTask(state, action.id, action.input, toDateKey(now));
     case "fixed/toggle":
       return toggleFixedRecord(state, action.recordId, now);
+    case "fixed/complete-from-notification": {
+      const existing = state.fixedRecords.find((record) => record.id === action.recordId);
+      if (existing) {
+        return existing.completedAt
+          ? state
+          : toggleFixedRecord(state, existing.id, new Date(action.completedAt));
+      }
+      const separator = action.recordId.lastIndexOf(":");
+      const templateId = separator > 0 ? action.recordId.slice(0, separator) : action.recordId;
+      return toggleFixedTaskForDate(state, templateId, action.date, new Date(action.completedAt));
+    }
     case "fixed/step-toggle":
       return toggleFixedTaskStep(state, action.recordId, action.stepId);
     case "fixed/toggle-date":
@@ -136,11 +153,6 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
       return {
         ...state,
         settings: { ...state.settings, systemNotificationsEnabled: action.enabled }
-      };
-    case "settings/wake-screen-reminders":
-      return {
-        ...state,
-        settings: { ...state.settings, wakeScreenForReminders: action.enabled }
       };
     case "reminder/mark-sent":
       return markTaskReminderSent(state, action.kind, action.id, action.sentAt);

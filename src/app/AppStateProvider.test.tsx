@@ -98,16 +98,62 @@ afterEach(() => {
 });
 
 describe("AppStateProvider", () => {
-  it("stores whether reminders should light the locked screen", () => {
-    const state = createInitialState(new Date(2026, 7, 12, 9));
-    const next = reduceAppState(
-      state,
-      { type: "settings/wake-screen-reminders", enabled: false },
-      new Date(2026, 7, 12, 9)
-    );
+  it("applies a scheduled-task completion from the notification bar once", () => {
+    const now = new Date(2026, 7, 13, 9);
+    const state = createInitialState(now);
+    state.scheduledTasks.push({
+      id: "notification-task",
+      title: "通知任务",
+      categoryId: "study",
+      categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-13",
+      status: "pending",
+      createdAt: now.toISOString()
+    });
 
-    expect(next.settings.wakeScreenForReminders).toBe(false);
-    expect(state.settings.wakeScreenForReminders).toBe(true);
+    const completed = reduceAppState(state, {
+      type: "scheduled/complete-from-notification",
+      id: "notification-task",
+      completedAt: now.getTime()
+    }, now);
+    const repeated = reduceAppState(completed, {
+      type: "scheduled/complete-from-notification",
+      id: "notification-task",
+      completedAt: now.getTime() + 1000
+    }, now);
+
+    expect(completed.scheduledTasks[0].status).toBe("completed");
+    expect(repeated.scheduledTasks[0].status).toBe("completed");
+    expect(repeated.scheduledTasks[0].completedAt).toBe(completed.scheduledTasks[0].completedAt);
+  });
+
+  it("creates and completes a pre-scheduled fixed occurrence from the notification bar", () => {
+    const now = new Date(2026, 7, 13, 9);
+    const state = createInitialState(now);
+    state.fixedTasks.push({
+      id: "daily-english",
+      title: "英语单词",
+      categoryId: "study",
+      categoryNameSnapshot: "学习",
+      activeFrom: "2026-08-13",
+      repeatRule: { type: "daily" },
+      order: 0,
+      createdAt: now.toISOString()
+    });
+
+    const completed = reduceAppState(state, {
+      type: "fixed/complete-from-notification",
+      recordId: "daily-english:2026-08-13",
+      date: "2026-08-13",
+      completedAt: now.getTime()
+    }, now);
+
+    expect(completed.fixedRecords).toHaveLength(1);
+    expect(completed.fixedRecords[0]).toMatchObject({
+      templateId: "daily-english",
+      date: "2026-08-13",
+      completedAt: now.toISOString()
+    });
   });
 
   it("persists a task added through dispatch", async () => {

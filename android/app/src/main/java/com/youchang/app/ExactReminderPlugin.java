@@ -23,8 +23,10 @@ public class ExactReminderPlugin extends Plugin {
                 long at = object.getLong("at");
                 String title = object.getString("title");
                 String body = object.getString("body");
-                boolean wakeScreen = object.optBoolean("wakeScreen", true);
-                schedule(id, at, title, body, wakeScreen);
+                String kind = object.getString("kind");
+                String taskId = object.getString("taskId");
+                String date = object.getString("date");
+                schedule(id, at, title, body, kind, taskId, date);
             }
             ExactReminderScheduler.persist(getContext(), reminders);
             call.resolve();
@@ -42,16 +44,22 @@ public class ExactReminderPlugin extends Plugin {
         }
         long at = ((Number) atValue).longValue();
         try {
-            boolean wakeScreen = call.getBoolean("wakeScreen", true);
-            schedule(2_100_000_002, at, "有常 · 定时测试成功", "即使没有打开有常，这条提醒也按时出现了。", wakeScreen);
+            ExactReminderScheduler.schedule(getContext(), 2_100_000_002, at, "有常 · 定时测试成功", "即使没有打开有常，这条提醒也按时出现了。");
             call.resolve(new JSObject().put("at", at));
         } catch (SecurityException error) {
             call.reject("请先允许准时提醒权限", error);
         }
     }
 
-    private void schedule(int id, long at, String title, String body, boolean wakeScreen) {
-        ExactReminderScheduler.schedule(getContext(), id, at, title, body, wakeScreen);
+    @PluginMethod
+    public void consumeActions(PluginCall call) {
+        JSObject result = new JSObject();
+        result.put("actions", ReminderActionStore.consume(getContext()));
+        call.resolve(result);
+    }
+
+    private void schedule(int id, long at, String title, String body, String kind, String taskId, String date) {
+        ExactReminderScheduler.schedule(getContext(), id, at, title, body, kind, taskId, date);
     }
 
     private void cancel(int id) {

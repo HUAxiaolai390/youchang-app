@@ -157,7 +157,6 @@ describe("versioned backups", () => {
   it("round trips reminder settings and rejects unsupported lead times", () => {
     const reminded = createInitialState(new Date(2026, 7, 9, 8));
     reminded.settings.systemNotificationsEnabled = true;
-    reminded.settings.wakeScreenForReminders = false;
     reminded.scheduledTasks.push({
       id: "reminder-task", title: "提醒任务", categoryId: "study", categoryNameSnapshot: "学习",
       scheduledDate: "2026-08-09", status: "pending", createdAt: "2026-08-09T00:00:00.000Z",
@@ -167,7 +166,6 @@ describe("versioned backups", () => {
 
     const parsed = parseBackup(JSON.stringify(reminded));
     expect(parsed.settings.systemNotificationsEnabled).toBe(true);
-    expect(parsed.settings.wakeScreenForReminders).toBe(false);
     expect(parsed.scheduledTasks[0]).toMatchObject({
       reminderMinutesBefore: 10,
       reminderSnoozedUntil: "2026-08-09T01:20:00.000Z"

@@ -283,7 +283,7 @@ export function SettingsPage() {
   async function testScheduledNativeNotification() {
     setNotificationTestMessage(undefined);
     try {
-      const at = await scheduleNativeTestNotification(60_000, state.settings.wakeScreenForReminders !== false);
+      const at = await scheduleNativeTestNotification(60_000);
       setNotificationTestMessage(at
         ? `定时测试已安排。请退出有常并熄屏，约在 ${at.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })} 观察锁屏通知。`
         : "定时测试安排失败，请先允许通知权限。");
@@ -354,23 +354,6 @@ export function SettingsPage() {
                 去允许准时提醒
               </button>
             )}
-            <div className="settings-section__heading">
-              <div>
-                <strong>提醒时点亮屏幕</strong>
-                <p className="settings-muted">熄屏时短暂亮屏并显示锁屏通知，不会自动打开有常。</p>
-              </div>
-              <button
-                type="button"
-                className="button"
-                aria-pressed={state.settings.wakeScreenForReminders !== false}
-                onClick={() => dispatch({
-                  type: "settings/wake-screen-reminders",
-                  enabled: state.settings.wakeScreenForReminders === false
-                })}
-              >
-                {state.settings.wakeScreenForReminders !== false ? "已开启" : "已关闭"}
-              </button>
-            </div>
             <button type="button" className="button" onClick={testNativeNotification}>立即发送测试通知</button>
             <button type="button" className="button" onClick={testScheduledNativeNotification}>测试 1 分钟后的定时通知</button>
             {notificationTestMessage && <p className="settings-muted" role="status">{notificationTestMessage}</p>}

@@ -10,6 +10,7 @@ export type AppAction =
   | { type: "scheduled/add"; input: AddScheduledTaskInput }
   | { type: "scheduled/update"; id: string; input: UpdateScheduledTaskInput }
   | { type: "scheduled/toggle"; id: string }
+  | { type: "scheduled/complete-from-notification"; id: string; completedAt: number }
   | { type: "scheduled/step-toggle"; id: string; stepId: string }
   | { type: "scheduled/delete"; id: string }
   | { type: "scheduled/reschedule"; id: string; targetDate: DateKey }
@@ -18,6 +19,7 @@ export type AppAction =
   | { type: "fixed/add"; input: AddFixedTaskInput }
   | { type: "fixed/update"; id: string; input: UpdateFixedTaskInput }
   | { type: "fixed/toggle"; recordId: string }
+  | { type: "fixed/complete-from-notification"; recordId: string; date: DateKey; completedAt: number }
   | { type: "fixed/step-toggle"; recordId: string; stepId: string }
   | { type: "fixed/toggle-date"; templateId: string; date: DateKey }
   | { type: "fixed/set-active"; id: string; active: boolean }
@@ -29,7 +31,6 @@ export type AppAction =
   | { type: "settings/music-volume"; value: number }
   | { type: "settings/featured-achievements"; ids: string[] }
   | { type: "settings/system-notifications"; enabled: boolean }
-  | { type: "settings/wake-screen-reminders"; enabled: boolean }
   | { type: "reminder/mark-sent"; kind: "fixed" | "scheduled"; id: string; sentAt: string }
   | { type: "reminder/snooze"; kind: "fixed" | "scheduled"; id: string; until: string }
   | { type: "focus/configure"; focusMinutes: number; breakMinutes: number; timer?: FocusTimerRuntime }

@@ -21,8 +21,7 @@ export function createInitialState(now: Date): AppState {
       lastOpenedDate: toDateKey(now),
       musicVolume: 0.35,
       featuredAchievementIds: [],
-      systemNotificationsEnabled: false,
-      wakeScreenForReminders: true
+      systemNotificationsEnabled: false
     },
     categories: builtInCategories.map((category, order) => ({
       ...category,
