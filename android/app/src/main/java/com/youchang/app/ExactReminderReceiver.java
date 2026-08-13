@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
+import android.os.PowerManager;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
@@ -17,6 +18,7 @@ public class ExactReminderReceiver extends BroadcastReceiver {
     public static final String EXTRA_ID = "notificationId";
     public static final String EXTRA_TITLE = "notificationTitle";
     public static final String EXTRA_BODY = "notificationBody";
+    public static final String EXTRA_WAKE_SCREEN = "wakeScreen";
     public static final String EXTRA_KIND = "taskKind";
     public static final String EXTRA_TASK_ID = "taskId";
     public static final String EXTRA_DATE = "taskDate";
@@ -38,6 +40,7 @@ public class ExactReminderReceiver extends BroadcastReceiver {
         int id = intent.getIntExtra(EXTRA_ID, 0);
         String title = intent.getStringExtra(EXTRA_TITLE);
         String body = intent.getStringExtra(EXTRA_BODY);
+        boolean wakeScreen = intent.getBooleanExtra(EXTRA_WAKE_SCREEN, true);
         String kind = intent.getStringExtra(EXTRA_KIND);
         String taskId = intent.getStringExtra(EXTRA_TASK_ID);
         String date = intent.getStringExtra(EXTRA_DATE);
@@ -53,8 +56,8 @@ public class ExactReminderReceiver extends BroadcastReceiver {
         PendingIntent completeAction = null;
         PendingIntent snoozeAction = null;
         if (("fixed".equals(kind) || "scheduled".equals(kind)) && taskId != null && date != null) {
-            completeAction = actionIntent(context, ReminderActionReceiver.ACTION_COMPLETE, id, title, kind, taskId, date, id ^ 0x20000000);
-            snoozeAction = actionIntent(context, ReminderActionReceiver.ACTION_SNOOZE, id, title, kind, taskId, date, id ^ 0x30000000);
+            completeAction = actionIntent(context, ReminderActionReceiver.ACTION_COMPLETE, id, title, wakeScreen, kind, taskId, date, id ^ 0x20000000);
+            snoozeAction = actionIntent(context, ReminderActionReceiver.ACTION_SNOOZE, id, title, wakeScreen, kind, taskId, date, id ^ 0x30000000);
         }
 
         NotificationCompat.Builder notification = new NotificationCompat.Builder(context, CHANNEL_ID)
@@ -77,6 +80,7 @@ public class ExactReminderReceiver extends BroadcastReceiver {
 
         try {
             NotificationManagerCompat.from(context).notify(id, notification.build());
+            if (wakeScreen) wakeScreenBriefly(context);
         } catch (SecurityException ignored) {
             // Notification permission can be revoked after the alarm is scheduled.
         }
@@ -87,6 +91,7 @@ public class ExactReminderReceiver extends BroadcastReceiver {
         String action,
         int notificationId,
         String title,
+        boolean wakeScreen,
         String kind,
         String taskId,
         String date,
@@ -96,6 +101,7 @@ public class ExactReminderReceiver extends BroadcastReceiver {
         intent.setAction(action);
         intent.putExtra(EXTRA_ID, notificationId);
         intent.putExtra(EXTRA_TITLE, title);
+        intent.putExtra(EXTRA_WAKE_SCREEN, wakeScreen);
         intent.putExtra(EXTRA_KIND, kind);
         intent.putExtra(EXTRA_TASK_ID, taskId);
         intent.putExtra(EXTRA_DATE, date);
@@ -105,6 +111,19 @@ public class ExactReminderReceiver extends BroadcastReceiver {
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
+    }
+
+    @SuppressWarnings("deprecation")
+    private void wakeScreenBriefly(Context context) {
+        PowerManager manager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+        if (manager == null || manager.isInteractive()) return;
+        PowerManager.WakeLock wakeLock = manager.newWakeLock(
+            PowerManager.SCREEN_BRIGHT_WAKE_LOCK
+                | PowerManager.ACQUIRE_CAUSES_WAKEUP
+                | PowerManager.ON_AFTER_RELEASE,
+            "有常:任务提醒亮屏"
+        );
+        wakeLock.acquire(5_000L);
     }
 
 }

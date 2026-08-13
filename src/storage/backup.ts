@@ -166,7 +166,8 @@ function hasValidSettings(value: unknown): boolean {
         && Number.isFinite(value.musicVolume)
         && value.musicVolume >= 0
         && value.musicVolume <= 1))
-    && (value.systemNotificationsEnabled === undefined || typeof value.systemNotificationsEnabled === "boolean");
+    && (value.systemNotificationsEnabled === undefined || typeof value.systemNotificationsEnabled === "boolean")
+    && (value.wakeScreenForReminders === undefined || typeof value.wakeScreenForReminders === "boolean");
 }
 
 function isWeeklyReview(value: unknown): boolean {

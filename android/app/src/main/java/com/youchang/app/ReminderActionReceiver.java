@@ -24,6 +24,7 @@ public class ReminderActionReceiver extends BroadcastReceiver {
         } else {
             long remindAt = System.currentTimeMillis() + 10 * 60_000L;
             String title = intent.getStringExtra(ExactReminderReceiver.EXTRA_TITLE);
+            boolean wakeScreen = intent.getBooleanExtra(ExactReminderReceiver.EXTRA_WAKE_SCREEN, true);
             if (title == null) title = "有常 · 任务提醒";
             ExactReminderScheduler.schedule(
                 context,
@@ -31,6 +32,7 @@ public class ReminderActionReceiver extends BroadcastReceiver {
                 remindAt,
                 title,
                 "已推迟 10 分钟，现在可以继续行动了。",
+                wakeScreen,
                 kind,
                 taskId,
                 date

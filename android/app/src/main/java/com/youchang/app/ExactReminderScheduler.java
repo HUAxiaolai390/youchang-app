@@ -24,6 +24,7 @@ public final class ExactReminderScheduler {
         int id,
         String title,
         String body,
+        boolean wakeScreen,
         String kind,
         String taskId,
         String date,
@@ -33,14 +34,15 @@ public final class ExactReminderScheduler {
         intent.putExtra(ExactReminderReceiver.EXTRA_ID, id);
         intent.putExtra(ExactReminderReceiver.EXTRA_TITLE, title);
         intent.putExtra(ExactReminderReceiver.EXTRA_BODY, body);
+        intent.putExtra(ExactReminderReceiver.EXTRA_WAKE_SCREEN, wakeScreen);
         intent.putExtra(ExactReminderReceiver.EXTRA_KIND, kind);
         intent.putExtra(ExactReminderReceiver.EXTRA_TASK_ID, taskId);
         intent.putExtra(ExactReminderReceiver.EXTRA_DATE, date);
         return PendingIntent.getBroadcast(context, id, intent, pendingFlags | PendingIntent.FLAG_IMMUTABLE);
     }
 
-    public static void schedule(Context context, int id, long at, String title, String body) {
-        schedule(context, id, at, title, body, "", "", "");
+    public static void schedule(Context context, int id, long at, String title, String body, boolean wakeScreen) {
+        schedule(context, id, at, title, body, wakeScreen, "", "", "");
     }
 
     public static void schedule(
@@ -49,13 +51,14 @@ public final class ExactReminderScheduler {
         long at,
         String title,
         String body,
+        boolean wakeScreen,
         String kind,
         String taskId,
         String date
     ) {
         if (at <= System.currentTimeMillis()) return;
         ExactReminderReceiver.ensureChannel(context);
-        PendingIntent trigger = reminderIntent(context, id, title, body, kind, taskId, date, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent trigger = reminderIntent(context, id, title, body, wakeScreen, kind, taskId, date, PendingIntent.FLAG_UPDATE_CURRENT);
         AlarmManager manager = alarmManager(context);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !manager.canScheduleExactAlarms()) {
             throw new SecurityException("Exact alarm permission denied");
@@ -75,7 +78,7 @@ public final class ExactReminderScheduler {
     }
 
     public static void cancel(Context context, int id) {
-        PendingIntent trigger = reminderIntent(context, id, "", "", "", "", "", PendingIntent.FLAG_NO_CREATE);
+        PendingIntent trigger = reminderIntent(context, id, "", "", false, "", "", "", PendingIntent.FLAG_NO_CREATE);
         if (trigger != null) {
             alarmManager(context).cancel(trigger);
             trigger.cancel();
@@ -99,6 +102,7 @@ public final class ExactReminderScheduler {
                     item.getLong("at"),
                     item.getString("title"),
                     item.getString("body"),
+                    item.optBoolean("wakeScreen", true),
                     item.optString("kind", ""),
                     item.optString("taskId", ""),
                     item.optString("date", "")

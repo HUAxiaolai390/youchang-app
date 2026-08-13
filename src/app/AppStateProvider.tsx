@@ -154,6 +154,11 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
         ...state,
         settings: { ...state.settings, systemNotificationsEnabled: action.enabled }
       };
+    case "settings/wake-screen-reminders":
+      return {
+        ...state,
+        settings: { ...state.settings, wakeScreenForReminders: action.enabled }
+      };
     case "reminder/mark-sent":
       return markTaskReminderSent(state, action.kind, action.id, action.sentAt);
     case "reminder/snooze":

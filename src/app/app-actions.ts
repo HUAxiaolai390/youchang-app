@@ -31,6 +31,7 @@ export type AppAction =
   | { type: "settings/music-volume"; value: number }
   | { type: "settings/featured-achievements"; ids: string[] }
   | { type: "settings/system-notifications"; enabled: boolean }
+  | { type: "settings/wake-screen-reminders"; enabled: boolean }
   | { type: "reminder/mark-sent"; kind: "fixed" | "scheduled"; id: string; sentAt: string }
   | { type: "reminder/snooze"; kind: "fixed" | "scheduled"; id: string; until: string }
   | { type: "focus/configure"; focusMinutes: number; breakMinutes: number; timer?: FocusTimerRuntime }

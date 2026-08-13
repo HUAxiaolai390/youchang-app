@@ -14,6 +14,7 @@ type ExactReminderSchedule = {
   at: number;
   title: string;
   body: string;
+  wakeScreen: boolean;
   kind: "fixed" | "scheduled";
   taskId: string;
   date: DateKey;
@@ -27,7 +28,7 @@ export type NativeReminderAction = {
 };
 interface ExactReminderPlugin {
   replace(options: { oldIds: number[]; reminders: ExactReminderSchedule[] }): Promise<void>;
-  scheduleTest(options: { at: number }): Promise<{ at: number }>;
+  scheduleTest(options: { at: number; wakeScreen: boolean }): Promise<{ at: number }>;
   consumeActions(): Promise<{ actions: NativeReminderAction[] }>;
 }
 const ExactReminder = registerPlugin<ExactReminderPlugin>("ExactReminder");
@@ -90,13 +91,14 @@ export async function sendNativeTestNotification(): Promise<boolean> {
 }
 
 export async function scheduleNativeTestNotification(
-  delayMilliseconds = 60_000
+  delayMilliseconds = 60_000,
+  wakeScreen = true
 ): Promise<Date | undefined> {
   if (!isNativeAndroid()) return undefined;
   const permission = await checkSystemNotificationPermission();
   if (permission !== "granted") return undefined;
   const at = new Date(Date.now() + delayMilliseconds);
-  await ExactReminder.scheduleTest({ at: at.getTime() });
+  await ExactReminder.scheduleTest({ at: at.getTime(), wakeScreen });
   return at;
 }
 
@@ -198,6 +200,7 @@ async function performNativeTaskNotificationSync(state: AppState, now: Date): Pr
       at,
       title: notification.title,
       body: notification.body,
+      wakeScreen: state.settings.wakeScreenForReminders !== false,
       kind,
       taskId,
       date

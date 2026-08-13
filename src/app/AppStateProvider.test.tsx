@@ -98,6 +98,17 @@ afterEach(() => {
 });
 
 describe("AppStateProvider", () => {
+  it("stores whether reminders should light the locked screen", () => {
+    const state = createInitialState(new Date(2026, 7, 13, 9));
+    const next = reduceAppState(state, {
+      type: "settings/wake-screen-reminders",
+      enabled: false
+    }, new Date(2026, 7, 13, 9));
+
+    expect(state.settings.wakeScreenForReminders).toBe(true);
+    expect(next.settings.wakeScreenForReminders).toBe(false);
+  });
+
   it("applies a scheduled-task completion from the notification bar once", () => {
     const now = new Date(2026, 7, 13, 9);
     const state = createInitialState(now);
