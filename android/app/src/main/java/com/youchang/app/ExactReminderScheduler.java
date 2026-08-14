@@ -12,6 +12,8 @@ import org.json.JSONObject;
 public final class ExactReminderScheduler {
     private static final String PREFERENCES = "youchang_exact_reminders";
     private static final String SCHEDULES = "schedules";
+    private static final String FOCUS_SCHEDULE = "focus_schedule";
+    private static final int FOCUS_REMINDER_ID = 2_100_000_100;
 
     private ExactReminderScheduler() {}
 
@@ -90,6 +92,25 @@ public final class ExactReminderScheduler {
             .edit().putString(SCHEDULES, reminders.toString()).apply();
     }
 
+    public static void persistFocus(Context context, long at, String title, String body, boolean wakeScreen) {
+        try {
+            JSONObject reminder = new JSONObject();
+            reminder.put("at", at);
+            reminder.put("title", title);
+            reminder.put("body", body);
+            reminder.put("wakeScreen", wakeScreen);
+            context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+                .edit().putString(FOCUS_SCHEDULE, reminder.toString()).apply();
+        } catch (JSONException ignored) {
+            // These values are generated locally and should always serialize.
+        }
+    }
+
+    public static void clearFocus(Context context) {
+        context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+            .edit().remove(FOCUS_SCHEDULE).apply();
+    }
+
     public static void restore(Context context) {
         String stored = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE).getString(SCHEDULES, "[]");
         try {
@@ -110,6 +131,26 @@ public final class ExactReminderScheduler {
             }
         } catch (JSONException | SecurityException ignored) {
             // The app will synchronize again the next time it opens.
+        }
+        String focusStored = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE).getString(FOCUS_SCHEDULE, "");
+        if (focusStored.isEmpty()) return;
+        try {
+            JSONObject focus = new JSONObject(focusStored);
+            long focusAt = focus.getLong("at");
+            if (focusAt <= System.currentTimeMillis()) {
+                clearFocus(context);
+                return;
+            }
+            schedule(
+                context,
+                FOCUS_REMINDER_ID,
+                focusAt,
+                focus.getString("title"),
+                focus.getString("body"),
+                focus.optBoolean("wakeScreen", true)
+            );
+        } catch (JSONException | SecurityException ignored) {
+            clearFocus(context);
         }
     }
 }

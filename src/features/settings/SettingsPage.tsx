@@ -16,8 +16,6 @@ import {
   isNativeAndroid,
   openExactAlarmSettings,
   requestSystemNotificationPermission,
-  scheduleNativeTestNotification,
-  sendNativeTestNotification,
   syncNativeTaskNotifications,
   supportsSystemNotifications,
   type ExactAlarmPermission,
@@ -54,15 +52,6 @@ export function SettingsPage() {
   const [displayName, setDisplayName] = useState(state.settings.displayName);
   const [categoryNameInput, setCategoryNameInput] = useState("");
   const [categoryIconInput, setCategoryIconInput] = useState("分");
-  const [fixedTitle, setFixedTitle] = useState("");
-  const [fixedCategoryId, setFixedCategoryId] = useState("study");
-  const [fixedGoalId, setFixedGoalId] = useState("");
-  const [fixedPriority, setFixedPriority] = useState<TaskPriority>("medium");
-  const [fixedSteps, setFixedSteps] = useState("");
-  const [fixedStartTime, setFixedStartTime] = useState("");
-  const [fixedReminderMinutes, setFixedReminderMinutes] = useState("");
-  const [fixedEstimatedMinutes, setFixedEstimatedMinutes] = useState("");
-  const [fixedRepeatRule, setFixedRepeatRule] = useState<FixedRepeatRule>({ type: "daily" });
   const [fixedTaskError, setFixedTaskError] = useState<string>();
   const [editingFixedId, setEditingFixedId] = useState<string>();
   const [editingFixedTitle, setEditingFixedTitle] = useState("");
@@ -92,9 +81,9 @@ export function SettingsPage() {
   const [exactAlarmPermission, setExactAlarmPermission] = useState<ExactAlarmPermission>(
     nativeAndroid ? "prompt" : "unsupported"
   );
-  const [notificationTestMessage, setNotificationTestMessage] = useState<string>();
   const systemNotificationsActive = Boolean(state.settings.systemNotificationsEnabled)
-    && notificationPermission === "granted";
+    && notificationPermission === "granted"
+    && (!nativeAndroid || exactAlarmPermission === "granted");
 
   useEffect(() => {
     setDisplayName(state.settings.displayName);
@@ -102,13 +91,11 @@ export function SettingsPage() {
 
   useEffect(() => {
     const fallback = fallbackCategoryId(state.categories);
-    setFixedCategoryId((current) => state.categories.some((category) => category.id === current) ? current : fallback);
     setEditingFixedCategoryId((current) => state.categories.some((category) => category.id === current) ? current : fallback);
   }, [state.categories]);
 
   useEffect(() => {
     const goals = state.goals ?? [];
-    setFixedGoalId((current) => current && !goals.some((goal) => goal.id === current) ? "" : current);
     setEditingFixedGoalId((current) => current && !goals.some((goal) => goal.id === current) ? "" : current);
   }, [state.goals]);
 
@@ -147,43 +134,6 @@ export function SettingsPage() {
     if (dispatch({ type: "category/add", name: categoryNameInput, icon: categoryIconInput.trim() || "分" })) {
       setCategoryNameInput("");
       setCategoryIconInput("分");
-    }
-  }
-
-  function addFixedTask(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!state.categories.some((category) => category.id === fixedCategoryId)) {
-      setFixedTaskError("没有可用分类，请先添加分类");
-      return;
-    }
-    if (!fixedStartTime && fixedReminderMinutes !== "") {
-      setFixedTaskError("设置提醒前，请先填写开始时间");
-      return;
-    }
-    setFixedTaskError(undefined);
-    if (dispatch({
-      type: "fixed/add",
-      input: {
-        title: fixedTitle,
-        categoryId: fixedCategoryId,
-        goalId: fixedGoalId || undefined,
-        priority: fixedPriority,
-        steps: stepsFromLines(fixedSteps),
-        activeFrom: toDateKey(new Date()),
-        plannedStartTime: fixedStartTime ? fixedStartTime as TimeKey : undefined,
-        reminderMinutesBefore: fixedStartTime ? normalizeReminderMinutesBefore(fixedReminderMinutes) : undefined,
-        estimatedMinutes: fixedEstimatedMinutes ? Number(fixedEstimatedMinutes) : undefined,
-        repeatRule: fixedRepeatRule
-      }
-    })) {
-      setFixedTitle("");
-      setFixedPriority("medium");
-      setFixedGoalId("");
-      setFixedSteps("");
-      setFixedStartTime("");
-      setFixedReminderMinutes("");
-      setFixedEstimatedMinutes("");
-      setFixedRepeatRule({ type: "daily" });
     }
   }
 
@@ -259,36 +209,21 @@ export function SettingsPage() {
     setNotificationPermission(permission);
     if (permission === "granted") {
       dispatch({ type: "settings/system-notifications", enabled: true });
-    }
-  }
-
-  async function enableExactAlarm() {
-    const permission = await openExactAlarmSettings();
-    setExactAlarmPermission(permission);
-    if (permission === "granted") await syncNativeTaskNotifications(state);
-  }
-
-  async function testNativeNotification() {
-    setNotificationTestMessage(undefined);
-    try {
-      const sent = await sendNativeTestNotification();
-      setNotificationTestMessage(sent
-        ? "测试通知已发送，请下拉手机通知栏查看。"
-        : "测试通知发送失败，请先允许通知权限。");
-    } catch {
-      setNotificationTestMessage("测试通知发送失败，请检查手机通知权限。");
-    }
-  }
-
-  async function testScheduledNativeNotification() {
-    setNotificationTestMessage(undefined);
-    try {
-      const at = await scheduleNativeTestNotification(60_000, state.settings.wakeScreenForReminders !== false);
-      setNotificationTestMessage(at
-        ? `定时测试已安排。请退出有常并熄屏，约在 ${at.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })} 观察锁屏通知。`
-        : "定时测试安排失败，请先允许通知权限。");
-    } catch {
-      setNotificationTestMessage("定时测试安排失败，请先允许准时提醒权限。");
+      dispatch({ type: "settings/wake-screen-reminders", enabled: true });
+      if (nativeAndroid && exactAlarmPermission !== "granted") {
+        const exactPermission = await openExactAlarmSettings();
+        setExactAlarmPermission(exactPermission);
+        if (exactPermission === "granted") {
+          await syncNativeTaskNotifications({
+            ...state,
+            settings: {
+              ...state.settings,
+              systemNotificationsEnabled: true,
+              wakeScreenForReminders: true
+            }
+          });
+        }
+      }
     }
   }
 
@@ -316,10 +251,10 @@ export function SettingsPage() {
       <section className="surface-card settings-section" aria-labelledby="reminder-settings-title">
         <div className="settings-section__heading">
           <div>
-            <h2 id="reminder-settings-title">任务提醒</h2>
+            <h2 id="reminder-settings-title">通知权限</h2>
             <p className="settings-muted">{nativeAndroid
-              ? "开启后，任务会像微信消息一样显示在手机通知栏，退出有常后也能提醒。"
-              : "有常打开时会显示应用内提醒；开启系统通知后，还会弹出电脑通知。"}</p>
+              ? "一个开关统一管理任务提醒、专注完成、休息结束、通知栏快捷操作和到点亮屏。"
+              : "一个开关统一管理任务、专注完成和休息结束的系统通知。"}</p>
           </div>
           <span className={`notification-status notification-status--${systemNotificationsActive ? "on" : "off"}`}>
             {systemNotificationsActive ? "已开启" : "未开启"}
@@ -333,82 +268,20 @@ export function SettingsPage() {
         >
           {!notificationsSupported ? "当前浏览器不支持系统通知"
             : notificationPermission === "denied" ? "通知权限已被拒绝"
-              : systemNotificationsActive ? "关闭系统通知" : "开启系统通知"}
+              : systemNotificationsActive ? "关闭通知" : "开启通知"}
         </button>
         {notificationPermission === "denied" && <p className="settings-muted">{nativeAndroid
           ? "请到手机设置 → 应用 → 有常 → 通知，重新允许通知。"
           : "请在浏览器的网站权限中重新允许通知；应用内提醒仍然有效。"}</p>}
-        {nativeAndroid && systemNotificationsActive && (
-          <div className="settings-form">
-            <div className="settings-section__heading">
-              <div>
-                <strong>准时提醒权限</strong>
-                <p className="settings-muted">用于在设定时间准确唤醒提醒，不是普通通知权限。</p>
-              </div>
-              <span className={`notification-status notification-status--${exactAlarmPermission === "granted" ? "on" : "off"}`}>
-                {exactAlarmPermission === "granted" ? "已允许" : "未允许"}
-              </span>
-            </div>
-            {exactAlarmPermission !== "granted" && (
-              <button type="button" className="button button--primary" onClick={enableExactAlarm}>
-                去允许准时提醒
-              </button>
-            )}
-            <div className="settings-section__heading">
-              <div>
-                <strong>提醒时点亮屏幕</strong>
-                <p className="settings-muted">到点时短暂亮屏并显示通知，同时保留“完成”和“10 分钟后”。</p>
-              </div>
-              <button
-                type="button"
-                className="button"
-                aria-pressed={state.settings.wakeScreenForReminders !== false}
-                onClick={() => dispatch({
-                  type: "settings/wake-screen-reminders",
-                  enabled: state.settings.wakeScreenForReminders === false
-                })}
-              >
-                {state.settings.wakeScreenForReminders !== false ? "已开启" : "已关闭"}
-              </button>
-            </div>
-            <button type="button" className="button" onClick={testNativeNotification}>立即发送测试通知</button>
-            <button type="button" className="button" onClick={testScheduledNativeNotification}>测试 1 分钟后的定时通知</button>
-            {notificationTestMessage && <p className="settings-muted" role="status">{notificationTestMessage}</p>}
-          </div>
+        {nativeAndroid && notificationPermission === "granted" && exactAlarmPermission !== "granted" && (
+          <p className="settings-muted">点击“开启通知”后，请按系统提示允许有常准时提醒；返回有常后会自动完成设置。</p>
         )}
-        <p className="settings-muted">任务需要填写开始时间并选择提醒时间。修改日期或时间、完成或删除任务后，手机通知会自动同步。</p>
+        <p className="settings-muted">任务需填写开始时间并选择提醒时间；专注或休息倒计时开始后会自动登记结束提醒。</p>
       </section>
 
       <section className="surface-card settings-section" aria-labelledby="fixed-settings-title">
         <h2 id="fixed-settings-title">固定任务管理</h2>
-        <form className="settings-form" onSubmit={addFixedTask}>
-          <label className="field-label" htmlFor="fixed-title">固定任务名称</label>
-          <input id="fixed-title" className="field-control" value={fixedTitle} onChange={(event) => setFixedTitle(event.target.value)} />
-          <label className="field-label" htmlFor="fixed-category">固定任务分类</label>
-          <select id="fixed-category" className="field-control" value={fixedCategoryId} onChange={(event) => setFixedCategoryId(event.target.value)}>
-            {state.categories.length === 0 && <option value="">暂无可用分类</option>}
-            {state.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-          </select>
-          <label className="field-label" htmlFor="fixed-goal">关联长期目标（选填）</label>
-          <select id="fixed-goal" className="field-control" value={fixedGoalId} onChange={(event) => setFixedGoalId(event.target.value)}>
-            <option value="">不关联目标</option>
-            {(state.goals ?? []).map((goal) => <option key={goal.id} value={goal.id}>{goal.title}</option>)}
-          </select>
-          <label className="field-label" htmlFor="fixed-priority">固定任务优先级</label>
-          <select id="fixed-priority" className="field-control" value={fixedPriority} onChange={(event) => setFixedPriority(event.target.value as TaskPriority)}>
-            {taskPriorityOptions.map((option) => <option key={option.value} value={option.value}>{option.label} · {option.description}</option>)}
-          </select>
-          <label className="field-label" htmlFor="fixed-steps">任务步骤（选填，每行一个）</label>
-          <textarea id="fixed-steps" className="field-control settings-step-lines" value={fixedSteps} onChange={(event) => setFixedSteps(event.target.value)} placeholder={"例如：\n热身\n正式训练\n拉伸"} />
-          <RepeatRuleFields idPrefix="fixed" value={fixedRepeatRule} onChange={setFixedRepeatRule} />
-          <div className="task-form__planning">
-            <label htmlFor="fixed-start-time"><span>开始时间（选填）</span><input id="fixed-start-time" className="field-control" type="time" value={fixedStartTime} onChange={(event) => setFixedStartTime(event.target.value)} /></label>
-            <label htmlFor="fixed-estimated-minutes"><span>预计用时（分钟）</span><input id="fixed-estimated-minutes" className="field-control" type="number" min="1" max={maximumEstimatedMinutes} placeholder="例如 30" value={fixedEstimatedMinutes} onChange={(event) => setFixedEstimatedMinutes(event.target.value)} /></label>
-            <label className="task-form__reminder" htmlFor="fixed-reminder"><span>任务提醒</span><select id="fixed-reminder" className="field-control" value={fixedReminderMinutes} onChange={(event) => setFixedReminderMinutes(event.target.value)}><option value="">不提醒</option>{reminderMinuteOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
-          </div>
-          <button className="button" type="submit">新增固定任务</button>
-          {fixedTaskError && <p className="form-error" role="alert">{fixedTaskError}</p>}
-        </form>
+        <p className="settings-muted">这里只管理已有固定任务。新建固定任务请回到“今日”，点击“添加任务”。</p>
         <ul className="settings-list" aria-label="固定任务列表">
           {managedFixedTasks.length === 0 && <li className="settings-muted">还没有固定任务</li>}
           {managedFixedTasks.map((task) => (

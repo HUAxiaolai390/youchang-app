@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { AppStateProvider } from "../../app/AppStateProvider";
 import { createInitialState } from "../../domain/defaults";
-import type { AppState } from "../../domain/types";
+import type { AppState, FixedTaskTemplate } from "../../domain/types";
 import type { AppRepository } from "../../storage/repository";
 import { SettingsPage } from "./SettingsPage";
 import { InstallPromptProvider } from "../../components/InstallPromptProvider";
@@ -35,6 +35,21 @@ function backupFile(text: string, name = "backup.json") {
   return file;
 }
 
+function addManagedFixedTask(state: AppState, overrides: Partial<FixedTaskTemplate> = {}) {
+  const task: FixedTaskTemplate = {
+    id: "fixed-managed",
+    title: "晨读",
+    categoryId: "study",
+    categoryNameSnapshot: "学习",
+    activeFrom: "2026-08-01",
+    order: 0,
+    createdAt: "2026-08-01T04:00:00.000Z",
+    ...overrides
+  };
+  state.fixedTasks.push(task);
+  return task;
+}
+
 describe("SettingsPage", () => {
   it("changes the display name", async () => {
     const repository = renderSettings();
@@ -50,9 +65,9 @@ describe("SettingsPage", () => {
   it("shows the system-notification capability without blocking in-app reminders", () => {
     renderSettings();
 
-    expect(screen.getByRole("heading", { name: "任务提醒" })).toBeVisible();
-    expect(screen.getByText(/有常打开时会显示应用内提醒/)).toBeVisible();
-    expect(screen.getByText(/修改日期或时间、完成或删除任务后/)).toBeVisible();
+    expect(screen.getByRole("heading", { name: "通知权限" })).toBeVisible();
+    expect(screen.getByText(/统一管理任务、专注完成和休息结束/)).toBeVisible();
+    expect(screen.getByText(/专注或休息倒计时开始后/)).toBeVisible();
   });
 
   it("rejects an invalid backup without clearing tasks", async () => {
@@ -104,19 +119,11 @@ describe("SettingsPage", () => {
     expect(repository.load().settings.displayName).toBe("新的称呼");
   });
 
-  it("falls back to an imported other category before adding a fixed task", async () => {
-    const repository = renderSettings();
-    const imported = createInitialState(new Date(2026, 6, 30, 9));
-    imported.categories = [imported.categories.find((category) => category.id === "other")!];
-    const user = userEvent.setup();
+  it("keeps fixed-task creation out of settings", () => {
+    renderSettings();
 
-    await user.upload(screen.getByLabelText("导入备份"), backupFile(JSON.stringify(imported)));
-    await user.click(screen.getByRole("button", { name: "确认导入" }));
-
-    expect(screen.getByLabelText("固定任务分类")).toHaveValue("other");
-    await user.type(screen.getByLabelText("固定任务名称"), "备份后的固定任务");
-    await user.click(screen.getByRole("button", { name: "新增固定任务" }));
-    expect(repository.load().fixedTasks[0]).toMatchObject({ title: "备份后的固定任务", categoryId: "other" });
+    expect(screen.queryByLabelText("固定任务名称")).not.toBeInTheDocument();
+    expect(screen.getByText(/新建固定任务请回到“今日”/)).toBeVisible();
   });
 
   it("requires typing 清空 before clearing data", async () => {
@@ -163,13 +170,12 @@ describe("SettingsPage", () => {
   it("adds and can pause a fixed task", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.setSystemTime(new Date(2026, 7, 1, 12));
-    const repository = renderSettings();
+    const state = createInitialState(new Date(2026, 7, 1, 12));
+    addManagedFixedTask(state);
+    const repository = renderSettings(state);
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
     try {
-      await user.type(screen.getByLabelText("固定任务名称"), "晨读");
-      await user.selectOptions(screen.getByLabelText("固定任务分类"), "study");
-      await user.click(screen.getByRole("button", { name: "新增固定任务" }));
       await user.click(screen.getByRole("button", { name: "停用：晨读" }));
 
       expect(repository.load().fixedTasks).toHaveLength(1);
@@ -184,13 +190,14 @@ describe("SettingsPage", () => {
     vi.setSystemTime(new Date(2026, 7, 1, 12));
     const state = createInitialState(new Date(2026, 7, 1, 12));
     state.goals = [{ id: "health", title: "完成三个月体能训练", deadline: "2026-11-01", createdAt: "2026-08-01T04:00:00.000Z" }];
+    addManagedFixedTask(state, { title: "晨跑" });
     const repository = renderSettings(state);
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
     try {
-      await user.type(screen.getByLabelText("固定任务名称"), "晨跑");
-      await user.selectOptions(screen.getByLabelText("关联长期目标（选填）"), "health");
-      await user.click(screen.getByRole("button", { name: "新增固定任务" }));
+      await user.click(screen.getByRole("button", { name: "编辑固定任务：晨跑" }));
+      await user.selectOptions(screen.getByLabelText("编辑关联长期目标（选填）"), "health");
+      await user.click(screen.getByRole("button", { name: "保存固定任务" }));
 
       expect(repository.load().fixedTasks[0]).toMatchObject({ goalId: "health" });
       expect(screen.getByText(/目标：完成三个月体能训练/)).toBeVisible();
@@ -202,20 +209,21 @@ describe("SettingsPage", () => {
   it("saves a reminder for a fixed task with a start time", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.setSystemTime(new Date(2026, 7, 1, 12));
-    const repository = renderSettings();
+    const state = createInitialState(new Date(2026, 7, 1, 12));
+    addManagedFixedTask(state, { title: "晚间复盘" });
+    const repository = renderSettings(state);
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
     try {
-      await user.type(screen.getByLabelText("固定任务名称"), "晚间复盘");
-      await user.type(screen.getByLabelText("开始时间（选填）"), "21:00");
-      await user.selectOptions(screen.getByRole("combobox", { name: "任务提醒" }), "30");
-      await user.click(screen.getByRole("button", { name: "新增固定任务" }));
+      await user.click(screen.getByRole("button", { name: "编辑固定任务：晚间复盘" }));
+      await user.type(screen.getByLabelText("编辑开始时间（选填）"), "21:00");
+      await user.selectOptions(screen.getByRole("combobox", { name: "编辑任务提醒" }), "30");
+      await user.click(screen.getByRole("button", { name: "保存固定任务" }));
 
       expect(repository.load().fixedTasks[0]).toMatchObject({
         plannedStartTime: "21:00",
         reminderMinutesBefore: 30
       });
-      expect(repository.load().fixedRecords[0]).toMatchObject({ reminderMinutesBefore: 30 });
     } finally {
       vi.useRealTimers();
     }
@@ -224,16 +232,15 @@ describe("SettingsPage", () => {
   it("adds a weekly target and supports one-day leave and temporary pause", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.setSystemTime(new Date(2026, 7, 3, 12));
-    const repository = renderSettings();
+    const state = createInitialState(new Date(2026, 7, 3, 12));
+    addManagedFixedTask(state, {
+      title: "每周跑步",
+      repeatRule: { type: "weekly-count", timesPerWeek: 2 }
+    });
+    const repository = renderSettings(state);
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
     try {
-      await user.type(screen.getByLabelText("固定任务名称"), "每周跑步");
-      await user.selectOptions(screen.getByLabelText("重复方式"), "weekly-count");
-      await user.clear(screen.getByLabelText("每周完成次数"));
-      await user.type(screen.getByLabelText("每周完成次数"), "2");
-      await user.click(screen.getByRole("button", { name: "新增固定任务" }));
-
       expect(repository.load().fixedTasks[0].repeatRule).toEqual({ type: "weekly-count", timesPerWeek: 2 });
       await user.click(screen.getByRole("button", { name: "请假或暂停：每周跑步" }));
       await user.click(screen.getByRole("button", { name: "仅请假这一天" }));

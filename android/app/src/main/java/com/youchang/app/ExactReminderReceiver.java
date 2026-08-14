@@ -26,8 +26,8 @@ public class ExactReminderReceiver extends BroadcastReceiver {
     public static void ensureChannel(Context context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
         NotificationManager manager = context.getSystemService(NotificationManager.class);
-        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "任务准时提醒", NotificationManager.IMPORTANCE_HIGH);
-        channel.setDescription("在设定时间显示有常任务提醒");
+        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "有常通知提醒", NotificationManager.IMPORTANCE_HIGH);
+        channel.setDescription("任务、专注完成和休息结束提醒");
         channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
         channel.enableVibration(true);
         channel.enableLights(true);
@@ -65,7 +65,7 @@ public class ExactReminderReceiver extends BroadcastReceiver {
             .setColor(Color.rgb(185, 130, 67))
             .setContentTitle(title)
             .setContentText(body)
-            .setStyle(new NotificationCompat.BigTextStyle().bigText(body).setSummaryText("任务提醒"))
+            .setStyle(new NotificationCompat.BigTextStyle().bigText(body).setSummaryText("有常提醒"))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)

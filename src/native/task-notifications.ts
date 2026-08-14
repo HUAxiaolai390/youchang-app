@@ -29,6 +29,8 @@ export type NativeReminderAction = {
 interface ExactReminderPlugin {
   replace(options: { oldIds: number[]; reminders: ExactReminderSchedule[] }): Promise<void>;
   scheduleTest(options: { at: number; wakeScreen: boolean }): Promise<{ at: number }>;
+  scheduleFocus(options: { at: number; title: string; body: string; wakeScreen: boolean }): Promise<{ at: number }>;
+  cancelFocus(): Promise<void>;
   consumeActions(): Promise<{ actions: NativeReminderAction[] }>;
 }
 const ExactReminder = registerPlugin<ExactReminderPlugin>("ExactReminder");
@@ -100,6 +102,30 @@ export async function scheduleNativeTestNotification(
   const at = new Date(Date.now() + delayMilliseconds);
   await ExactReminder.scheduleTest({ at: at.getTime(), wakeScreen });
   return at;
+}
+
+export async function scheduleFocusPhaseNotification(
+  phase: "focus" | "break",
+  at: number,
+  nextPhaseMinutes: number,
+  wakeScreen = true
+): Promise<boolean> {
+  if (!isNativeAndroid()) return false;
+  const permission = await checkSystemNotificationPermission();
+  if (permission !== "granted") return false;
+  const exactPermission = await checkExactAlarmPermission();
+  if (exactPermission !== "granted") return false;
+  const title = phase === "focus" ? "有常 · 专注完成" : "有常 · 休息结束";
+  const body = phase === "focus"
+    ? `辛苦了，该休息 ${nextPhaseMinutes} 分钟了。`
+    : "状态恢复，可以开始下一轮专注了。";
+  await ExactReminder.scheduleFocus({ at, title, body, wakeScreen });
+  return true;
+}
+
+export async function cancelFocusPhaseNotification(): Promise<void> {
+  if (!isNativeAndroid()) return;
+  await ExactReminder.cancelFocus();
 }
 
 export async function consumeNativeReminderActions(): Promise<NativeReminderAction[]> {
@@ -174,6 +200,7 @@ async function performNativeTaskNotificationSync(state: AppState, now: Date): Pr
   const oldIds = readExactReminderIds();
   if (!state.settings.systemNotificationsEnabled) {
     await ExactReminder.replace({ oldIds, reminders: [] });
+    await ExactReminder.cancelFocus();
     rememberExactReminderIds([]);
     return;
   }

@@ -11,6 +11,10 @@ import {
 } from "../../domain/focus";
 import { stopwatchSecondsToMinutes } from "../../domain/time";
 import type { FocusTimerMode, FocusTimerPhase, FocusTimerRuntime } from "../../domain/types";
+import {
+  cancelFocusPhaseNotification,
+  scheduleFocusPhaseNotification
+} from "../../native/task-notifications";
 
 type FocusTimerProps = {
   onFocusComplete(): void;
@@ -119,6 +123,26 @@ export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps
   useEffect(() => {
     onRunningChange?.(isRunning || stopwatchRunning);
   }, [isRunning, onRunningChange, stopwatchRunning]);
+
+  useEffect(() => {
+    if (!state.settings.systemNotificationsEnabled || !isRunning || deadline.current === null) {
+      void cancelFocusPhaseNotification().catch(() => undefined);
+      return;
+    }
+    void scheduleFocusPhaseNotification(
+      phase,
+      deadline.current,
+      phase === "focus" ? focus.breakMinutes : focus.focusMinutes,
+      state.settings.wakeScreenForReminders !== false
+    ).catch(() => undefined);
+  }, [
+    focus.breakMinutes,
+    focus.focusMinutes,
+    isRunning,
+    phase,
+    state.settings.systemNotificationsEnabled,
+    state.settings.wakeScreenForReminders
+  ]);
 
   const phaseMinutes = phase === "focus" ? focus.focusMinutes : focus.breakMinutes;
   const totalSeconds = phaseMinutes * 60;

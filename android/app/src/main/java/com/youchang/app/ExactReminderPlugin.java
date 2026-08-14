@@ -11,6 +11,8 @@ import org.json.JSONObject;
 
 @CapacitorPlugin(name = "ExactReminder")
 public class ExactReminderPlugin extends Plugin {
+    private static final int FOCUS_REMINDER_ID = 2_100_000_100;
+
     @PluginMethod
     public void replace(PluginCall call) {
         JSArray oldIds = call.getArray("oldIds", new JSArray());
@@ -51,6 +53,34 @@ public class ExactReminderPlugin extends Plugin {
         } catch (SecurityException error) {
             call.reject("请先允许准时提醒权限", error);
         }
+    }
+
+    @PluginMethod
+    public void scheduleFocus(PluginCall call) {
+        Object atValue = call.getData().opt("at");
+        String title = call.getString("title");
+        String body = call.getString("body");
+        if (!(atValue instanceof Number) || title == null || body == null) {
+            call.reject("缺少专注提醒信息");
+            return;
+        }
+        long at = ((Number) atValue).longValue();
+        boolean wakeScreen = call.getBoolean("wakeScreen", true);
+        try {
+            ExactReminderScheduler.cancel(getContext(), FOCUS_REMINDER_ID);
+            ExactReminderScheduler.schedule(getContext(), FOCUS_REMINDER_ID, at, title, body, wakeScreen);
+            ExactReminderScheduler.persistFocus(getContext(), at, title, body, wakeScreen);
+            call.resolve(new JSObject().put("at", at));
+        } catch (SecurityException error) {
+            call.reject("请先允许通知权限", error);
+        }
+    }
+
+    @PluginMethod
+    public void cancelFocus(PluginCall call) {
+        ExactReminderScheduler.cancel(getContext(), FOCUS_REMINDER_ID);
+        ExactReminderScheduler.clearFocus(getContext());
+        call.resolve();
     }
 
     @PluginMethod
