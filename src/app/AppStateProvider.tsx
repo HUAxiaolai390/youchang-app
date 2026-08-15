@@ -67,7 +67,8 @@ const knownErrorMessages = new Set([
   "请选择有效目标",
   "备份文件格式无效",
   "备份文件版本不受支持",
-  "保存失败，请立即导出备份"
+  "保存失败，请立即导出备份",
+  "检测到异常数据，已创建恢复副本并重置当前数据"
 ]);
 
 function getDisplayError(error: unknown): string {
@@ -158,6 +159,11 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
       return {
         ...state,
         settings: { ...state.settings, wakeScreenForReminders: action.enabled }
+      };
+    case "settings/backup-exported":
+      return {
+        ...state,
+        settings: { ...state.settings, lastBackupAt: action.at }
       };
     case "reminder/mark-sent":
       return markTaskReminderSent(state, action.kind, action.id, action.sentAt);

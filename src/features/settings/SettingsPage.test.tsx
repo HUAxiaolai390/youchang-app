@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppStateProvider } from "../../app/AppStateProvider";
 import { createInitialState } from "../../domain/defaults";
 import type { AppState, FixedTaskTemplate } from "../../domain/types";
@@ -51,6 +51,8 @@ function addManagedFixedTask(state: AppState, overrides: Partial<FixedTaskTempla
 }
 
 describe("SettingsPage", () => {
+  beforeEach(() => window.localStorage.clear());
+
   it("changes the display name", async () => {
     const repository = renderSettings();
     const user = userEvent.setup();
@@ -68,6 +70,40 @@ describe("SettingsPage", () => {
     expect(screen.getByRole("heading", { name: "通知权限" })).toBeVisible();
     expect(screen.getByText(/统一管理任务、专注完成和休息结束/)).toBeVisible();
     expect(screen.getByText(/专注或休息倒计时开始后/)).toBeVisible();
+  });
+
+  it("shows compact notification diagnostics on demand", async () => {
+    renderSettings();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("button", { name: "检查通知状态" }));
+
+    expect(screen.getByRole("status", { name: "通知状态检查结果" })).toHaveTextContent("通知栏权限");
+  });
+
+  it("shows the last backup status and a weekly reminder", () => {
+    const state = createInitialState(new Date(2026, 7, 15, 9));
+    state.settings.lastBackupAt = "2026-08-01T01:00:00.000Z";
+
+    renderSettings(state);
+
+    expect(screen.getByText("建议备份")).toBeVisible();
+    expect(screen.getByText(/已超过 7 天/)).toBeVisible();
+  });
+
+  it("offers a safe way to remove an abnormal-data recovery copy", async () => {
+    window.localStorage.setItem("youchang:recovery:2026-08-15T01:00:00.000Z", "{");
+    renderSettings();
+    const user = userEvent.setup();
+
+    expect(screen.getByRole("heading", { name: "发现异常数据恢复副本" })).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "删除副本" }));
+    const dialog = screen.getByRole("dialog", { name: "删除异常数据副本" });
+    expect(dialog).toBeVisible();
+    await user.click(within(dialog).getByRole("button", { name: "删除副本" }));
+
+    expect(screen.queryByRole("heading", { name: "发现异常数据恢复副本" })).not.toBeInTheDocument();
+    expect(window.localStorage.getItem("youchang:recovery:2026-08-15T01:00:00.000Z")).toBeNull();
   });
 
   it("rejects an invalid backup without clearing tasks", async () => {

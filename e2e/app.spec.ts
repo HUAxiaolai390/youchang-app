@@ -40,6 +40,25 @@ async function expectMascotInsideViewport(page: Page) {
   return mascot;
 }
 
+test("keeps frequent task actions finger-sized on a phone", async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 999) >= 480, "手机端点击区域检查");
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  await page.getByRole("button", { name: "添加任务", exact: true }).click();
+  await page.getByLabel("任务名称").fill("手机点击测试");
+  await page.getByRole("button", { name: "保存任务" }).click();
+
+  for (const buttonName of ["记录用时：手机点击测试", "编辑：手机点击测试", "删除：手机点击测试"]) {
+    const bounds = await page.getByRole("button", { name: buttonName }).boundingBox();
+    expect(bounds?.height).toBeGreaterThanOrEqual(44);
+  }
+  const categoryBounds = await page.getByRole("button", { name: "只看学习" }).boundingBox();
+  expect(categoryBounds?.height).toBeGreaterThanOrEqual(44);
+  await expectNoHorizontalOverflow(page);
+});
+
 test("keeps the mascot visible and responds to interaction and completion", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => window.localStorage.clear());

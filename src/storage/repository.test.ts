@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState } from "../domain/defaults";
-import { createLocalRepository } from "./repository";
+import {
+  createLocalRepository,
+  listRecoverySnapshots,
+  removeRecoverySnapshot
+} from "./repository";
 
 class MemoryStorage implements Storage {
   #values = new Map<string, string>();
@@ -66,13 +70,22 @@ describe("local repository", () => {
       .toBe("2026-07-31");
   });
 
-  it("keeps malformed saved data in a recovery copy before returning initial state", () => {
+  it("keeps malformed saved data in a visible recovery copy and resets persisted state", () => {
     const storage = new MemoryStorage();
     storage.setItem("youchang:state", "{");
     const repository = createLocalRepository(storage, () => today);
 
+    expect(() => repository.load()).toThrow("检测到异常数据，已创建恢复副本并重置当前数据");
+    expect(JSON.parse(storage.getItem("youchang:state") ?? "{}").schemaVersion).toBe(1);
+    expect(listRecoverySnapshots(storage)).toEqual([{
+      key: "youchang:recovery:2026-07-31T01:00:00.000Z",
+      createdAt: "2026-07-31T01:00:00.000Z",
+      raw: "{"
+    }]);
+
+    removeRecoverySnapshot(storage, "youchang:recovery:2026-07-31T01:00:00.000Z");
+    expect(listRecoverySnapshots(storage)).toEqual([]);
     expect(repository.load().schemaVersion).toBe(1);
-    expect(storage.getItem("youchang:recovery:2026-07-31T01:00:00.000Z")).toBe("{");
   });
 
   it("reports the save warning when a malformed-data recovery copy cannot be written", () => {

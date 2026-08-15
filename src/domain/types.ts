@@ -164,6 +164,7 @@ export interface AppState {
     featuredAchievementIds?: string[];
     systemNotificationsEnabled?: boolean;
     wakeScreenForReminders?: boolean;
+    lastBackupAt?: string;
   };
   categories: Category[];
   fixedTasks: FixedTaskTemplate[];

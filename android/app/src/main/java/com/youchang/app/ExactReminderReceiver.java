@@ -46,6 +46,10 @@ public class ExactReminderReceiver extends BroadcastReceiver {
         String date = intent.getStringExtra(EXTRA_DATE);
         if (id == 0 || title == null || body == null) return;
 
+        if (("fixed".equals(kind) || "scheduled".equals(kind)) && taskId != null && date != null) {
+            ExactReminderScheduler.removePersistedReminder(context, id);
+        }
+
         ensureChannel(context);
         Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
         if (launchIntent == null) return;

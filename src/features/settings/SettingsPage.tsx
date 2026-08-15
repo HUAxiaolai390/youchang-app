@@ -8,7 +8,12 @@ import { formatFixedRepeatRule, getFixedRepeatRule } from "../../domain/repeat";
 import { formatReminderMinutes, normalizeReminderMinutesBefore, reminderMinuteOptions } from "../../domain/reminders";
 import { formatTaskPriority, taskPriorityOptions } from "../../domain/priorities";
 import type { AppState, Category, DateKey, FixedRepeatRule, FixedTaskTemplate, TaskPriority, TaskStep, TimeKey } from "../../domain/types";
-import { downloadBackup, parseBackup } from "../../storage/backup";
+import { downloadBackup, downloadTextFile, parseBackup } from "../../storage/backup";
+import {
+  listRecoverySnapshots,
+  removeRecoverySnapshot,
+  type RecoverySnapshot
+} from "../../storage/repository";
 import { InstallAppPanel } from "../../components/InstallAppPanel";
 import {
   checkExactAlarmPermission,
@@ -47,6 +52,24 @@ function fallbackCategoryId(categories: Category[]): string {
   return categories.find((category) => category.id === "other")?.id ?? categories[0]?.id ?? "";
 }
 
+function permissionLabel(permission: SystemNotificationPermission | ExactAlarmPermission): string {
+  if (permission === "granted") return "已允许";
+  if (permission === "denied") return "未允许";
+  if (permission === "prompt") return "等待授权";
+  return "不支持";
+}
+
+function formatBackupAt(value: string): string {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "时间未知";
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
+
 export function SettingsPage() {
   const { state, dispatch } = useAppState();
   const [displayName, setDisplayName] = useState(state.settings.displayName);
@@ -67,6 +90,10 @@ export function SettingsPage() {
   const [exceptionDate, setExceptionDate] = useState<DateKey>(() => toDateKey(new Date()));
   const [pendingBackup, setPendingBackup] = useState<AppState>();
   const [backupError, setBackupError] = useState<string>();
+  const [recoverySnapshots, setRecoverySnapshots] = useState<RecoverySnapshot[]>(
+    () => listRecoverySnapshots(window.localStorage)
+  );
+  const [recoveryToDelete, setRecoveryToDelete] = useState<RecoverySnapshot>();
   const [categoryToDelete, setCategoryToDelete] = useState<Category>();
   const [clearPhrase, setClearPhrase] = useState("");
   const [clearArmed, setClearArmed] = useState(false);
@@ -81,6 +108,7 @@ export function SettingsPage() {
   const [exactAlarmPermission, setExactAlarmPermission] = useState<ExactAlarmPermission>(
     nativeAndroid ? "prompt" : "unsupported"
   );
+  const [notificationDiagnosticsOpen, setNotificationDiagnosticsOpen] = useState(false);
   const systemNotificationsActive = Boolean(state.settings.systemNotificationsEnabled)
     && notificationPermission === "granted"
     && (!nativeAndroid || exactAlarmPermission === "granted");
@@ -197,6 +225,36 @@ export function SettingsPage() {
     if (dispatch({ type: "backup/import", state: pendingBackup })) setPendingBackup(undefined);
   }
 
+  async function exportBackup() {
+    try {
+      await downloadBackup(state);
+      setBackupError(undefined);
+      dispatch({ type: "settings/backup-exported", at: new Date().toISOString() });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setBackupError("未能导出备份，请重试");
+    }
+  }
+
+  async function exportRecoverySnapshot(snapshot: RecoverySnapshot) {
+    try {
+      const safeTime = snapshot.createdAt.replace(/[:.]/g, "-");
+      await downloadTextFile(snapshot.raw, `有常异常数据恢复-${safeTime}.json`);
+      setBackupError(undefined);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setBackupError("未能导出恢复副本，请重试");
+    }
+  }
+
+  async function refreshNotificationDiagnostics() {
+    setNotificationDiagnosticsOpen(true);
+    if (!notificationsSupported) return;
+    const permission = await checkSystemNotificationPermission();
+    setNotificationPermission(permission);
+    if (nativeAndroid) setExactAlarmPermission(await checkExactAlarmPermission());
+  }
+
   async function toggleSystemNotifications() {
     if (!notificationsSupported || notificationPermission === "denied") return;
     if (systemNotificationsActive) {
@@ -231,6 +289,9 @@ export function SettingsPage() {
   const managedFixedTasks = state.fixedTasks.filter((task) => !task.successorId);
   const exceptionTask = managedFixedTasks.find((task) => task.id === exceptionFixedId);
   const todayKey = toDateKey(new Date());
+  const lastBackupAt = state.settings.lastBackupAt;
+  const backupDue = !lastBackupAt
+    || Date.now() - new Date(lastBackupAt).getTime() >= 7 * 24 * 60 * 60 * 1000;
   const categoryHistory = [
     ...state.scheduledTasks.map((task) => ({ id: task.id, label: "当前任务", title: task.title, categoryId: task.categoryId, originalCategory: task.categoryNameSnapshot })),
     ...state.fixedRecords.map((record) => ({ id: record.id, label: "历史任务", title: record.titleSnapshot, categoryId: record.categoryId, originalCategory: record.categoryNameSnapshot }))
@@ -277,6 +338,20 @@ export function SettingsPage() {
           <p className="settings-muted">点击“开启通知”后，请按系统提示允许有常准时提醒；返回有常后会自动完成设置。</p>
         )}
         <p className="settings-muted">任务需填写开始时间并选择提醒时间；专注或休息倒计时开始后会自动登记结束提醒。</p>
+        <button
+          type="button"
+          className="button button--quiet"
+          aria-expanded={notificationDiagnosticsOpen}
+          onClick={refreshNotificationDiagnostics}
+        >检查通知状态</button>
+        {notificationDiagnosticsOpen && (
+          <div className="notification-diagnostics" role="status" aria-label="通知状态检查结果">
+            <span><strong>通知栏权限</strong><em>{permissionLabel(notificationPermission)}</em></span>
+            {nativeAndroid && <span><strong>准时提醒权限</strong><em>{permissionLabel(exactAlarmPermission)}</em></span>}
+            {nativeAndroid && <span><strong>到点亮屏</strong><em>{state.settings.wakeScreenForReminders === false ? "已关闭" : "已开启"}</em></span>}
+            {nativeAndroid && <p>若熄屏后仍延迟，请把“有常”的电池策略保持为“不限制”，这是部分安卓系统保证后台准时运行所需的设置。</p>}
+          </div>
+        )}
       </section>
 
       <section className="surface-card settings-section" aria-labelledby="fixed-settings-title">
@@ -369,11 +444,30 @@ export function SettingsPage() {
       </section>
 
       <section className="surface-card settings-section" aria-labelledby="backup-settings-title">
-        <h2 id="backup-settings-title">备份与恢复</h2>
-        <p className="settings-muted">导出会下载完整备份；导入会先核对内容，确认后才替换当前数据。</p>
-        <div className="settings-inline-actions"><button type="button" className="button" onClick={() => downloadBackup(state)}>导出备份</button><label className="button" htmlFor="backup-file">导入备份</label><input id="backup-file" className="visually-hidden" type="file" accept="application/json,.json" onChange={importBackup} /></div>
+        <div className="settings-section__heading">
+          <div><h2 id="backup-settings-title">备份与恢复</h2><p className="settings-muted">导出会下载完整备份；导入会先核对内容，确认后才替换当前数据。</p></div>
+          <span className={`notification-status notification-status--${backupDue ? "off" : "on"}`}>{backupDue ? "建议备份" : "已备份"}</span>
+        </div>
+        <p className="settings-muted">{lastBackupAt ? `上次备份：${formatBackupAt(lastBackupAt)}${backupDue ? "，已超过 7 天" : ""}` : "还没有备份记录，建议现在导出一份。"}</p>
+        <div className="settings-inline-actions"><button type="button" className="button" onClick={exportBackup}>导出备份</button><label className="button" htmlFor="backup-file">导入备份</label><input id="backup-file" className="visually-hidden" type="file" accept="application/json,.json" onChange={importBackup} /></div>
         {backupError && <p className="form-error" role="alert">{backupError}</p>}
         {pendingBackup && <div className="backup-preview" role="status"><p>{backupSummary(pendingBackup)}</p><div className="settings-inline-actions"><button className="button" type="button" onClick={() => setPendingBackup(undefined)}>取消导入</button><button className="button button--primary" type="button" onClick={confirmImport}>确认导入</button></div></div>}
+        {recoverySnapshots.length > 0 && (
+          <section className="recovery-snapshots" aria-labelledby="recovery-snapshots-title">
+            <div><h3 id="recovery-snapshots-title">发现异常数据恢复副本</h3><p className="settings-muted">有常已保留出错前的原始数据。建议先导出副本再删除；原始副本不一定能直接导入。</p></div>
+            <ul>
+              {recoverySnapshots.map((snapshot) => (
+                <li key={snapshot.key}>
+                  <span>保存于 {formatBackupAt(snapshot.createdAt)}</span>
+                  <span className="settings-inline-actions">
+                    <button type="button" onClick={() => exportRecoverySnapshot(snapshot)}>导出副本</button>
+                    <button type="button" onClick={() => setRecoveryToDelete(snapshot)}>删除副本</button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </section>
 
       <section className="surface-card settings-section settings-section--danger" aria-labelledby="danger-settings-title">
@@ -383,9 +477,10 @@ export function SettingsPage() {
         {clearArmed && <div className="clear-confirmation"><label className="field-label" htmlFor="clear-phrase">确认清空</label><input id="clear-phrase" className="field-control" value={clearPhrase} onChange={(event) => setClearPhrase(event.target.value)} placeholder="请输入“清空”" /><button className="button" type="button" disabled={clearPhrase !== "清空"} onClick={() => setClearDialogOpen(true)}>确认清空</button></div>}
       </section>
 
-      <p className="settings-version">有常 0.1.0</p>
+      <p className="settings-version">有常 1.5</p>
 
       {categoryToDelete && <ConfirmDialog title="删除自定义分类" message={`删除“${categoryToDelete.name}”后，当前任务会归入“其他”。`} confirmLabel="删除分类" onCancel={() => setCategoryToDelete(undefined)} onConfirm={() => { dispatch({ type: "category/delete", id: categoryToDelete.id }); setCategoryToDelete(undefined); }} />}
+      {recoveryToDelete && <ConfirmDialog title="删除异常数据副本" message="删除后无法恢复。若还没导出，建议先取消并保存一份。" confirmLabel="删除副本" onCancel={() => setRecoveryToDelete(undefined)} onConfirm={() => { removeRecoverySnapshot(window.localStorage, recoveryToDelete.key); setRecoverySnapshots(listRecoverySnapshots(window.localStorage)); setRecoveryToDelete(undefined); }} />}
       {clearDialogOpen && <ConfirmDialog title="确认清空所有数据" message="这会清空本机所有数据，且无法恢复。" confirmLabel="我确认清空" onCancel={() => setClearDialogOpen(false)} onConfirm={() => { dispatch({ type: "data/clear" }); setClearDialogOpen(false); setClearArmed(false); setClearPhrase(""); }} />}
     </section>
   );

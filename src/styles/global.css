@@ -963,6 +963,10 @@ button:focus-visible {
 .settings-section__heading > div { display: grid; gap: 5px; }
 .notification-status { flex: 0 0 auto; padding: 5px 9px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 11px; font-weight: 800; }
 .notification-status--on { border-color: #9eab91; background: #eef3e9; color: #4f6248; }
+.notification-diagnostics { display: grid; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-control); background: #f7f4ee; }
+.notification-diagnostics > span { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; }
+.notification-diagnostics em { color: #52684b; font-style: normal; font-weight: 800; }
+.notification-diagnostics p { margin: 2px 0 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
 .settings-form { display: grid; gap: 9px; }
 .settings-form--edit, .backup-preview, .clear-confirmation, .settings-history { display: grid; gap: 10px; padding: 13px; border-radius: var(--radius-control); background: #f0efea; }
 .fixed-exception-panel h3, .fixed-exception-panel p { margin: 0; }
@@ -978,6 +982,10 @@ button:focus-visible {
 .settings-history li { display: grid; gap: 2px; font-size: 14px; }
 .settings-history small { color: var(--muted); }
 .backup-preview p { margin: 0; font-size: 14px; font-weight: 700; }
+.recovery-snapshots { display: grid; gap: 10px; padding: 13px; border: 1px solid #dfc6a8; border-radius: var(--radius-control); background: #fff8ee; }
+.recovery-snapshots h3, .recovery-snapshots p { margin: 0; }
+.recovery-snapshots ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.recovery-snapshots li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 8px; border-top: 1px solid #ead8c1; font-size: 13px; }
 .settings-section--danger { border-color: #d9aeae; }
 .settings-section--danger h2 { color: #8d3131; }
 .clear-confirmation { margin-top: -4px; }
@@ -1036,7 +1044,8 @@ button:focus-visible {
   .week-day-strip button > small { font-size: 9px; }
   .month-navigation { grid-template-columns: 36px minmax(0, 1fr) auto 36px; gap: 5px; padding: 8px; }
   .month-navigation strong { font-size: 14px; }
-  .month-navigation button { min-height: 34px; padding: 0 8px; font-size: 10px; }
+  .month-navigation { grid-template-columns: 44px minmax(0, 1fr) auto 44px; }
+  .month-navigation button { min-height: 44px; padding: 0 8px; font-size: 10px; }
   .month-calendar { gap: 5px; padding: 8px; }
   .month-calendar__weekdays, .month-calendar__grid { gap: 3px; }
   .month-calendar__weekdays span { font-size: 9px; }
@@ -1055,12 +1064,12 @@ button:focus-visible {
   .week-task { grid-template-columns: 50px minmax(0, 1fr); gap: 9px; padding: 10px; }
   .week-task__time { padding-right: 7px; }
   .week-task__actions { grid-column: 2; justify-self: start; justify-content: flex-start; }
-  .week-task__actions button { min-height: 30px; }
+  .week-task__actions button { min-height: 44px; }
   .week-move-panel__dates { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .task-item { grid-template-columns: auto minmax(0, 1fr); align-items: start; }
   .task-item__copy p { overflow: visible; line-height: 1.45; overflow-wrap: anywhere; text-overflow: clip; white-space: normal; }
   .task-item__actions { grid-column: 2; justify-content: flex-start; }
-  .task-item__actions button { min-height: 30px; padding: 0 5px; }
+  .task-item__actions button { min-height: 44px; padding: 0 9px; }
   .today-page { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .focus-drawer, .category-filter { grid-row: auto; grid-column: 1; }
   .today-hero { grid-template-columns: minmax(0, 1fr) 102px; gap: 12px 9px; padding: 16px; }
@@ -1082,7 +1091,7 @@ button:focus-visible {
   .reminder-overview__content { gap: 15px; padding: 11px; }
   .reminder-item { grid-template-columns: 46px minmax(0, 1fr); gap: 8px; padding: 9px; }
   .reminder-item__actions { grid-column: 1 / -1; justify-content: flex-end; }
-  .reminder-item__actions button { min-height: 34px; }
+  .reminder-item__actions button { min-height: 44px; }
   .today-achievements { grid-row: auto; grid-column: 1; grid-template-columns: 65px minmax(0, 1fr); gap: 8px; min-height: 0; padding: 9px; }
   .today-achievements__heading > span { display: none; }
   .today-achievements__heading > strong { font-size: 12px; }
@@ -1132,6 +1141,7 @@ button:focus-visible {
   .achievement-card > p { min-height: 32px; font-size: 11px; }
   .achievement-card__footer { display: grid; justify-items: stretch; }
   .achievement-card__footer button { width: 100%; }
+  .achievement-card__footer button, .time-period-switch button { min-height: 44px; }
   .achievement-medal__emblem { width: 58px; }
   .achievement-medal__emblem > span { width: 39px; font-size: 17px; }
   .achievement-medal--compact { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 1px; text-align: center; }
@@ -1142,6 +1152,10 @@ button:focus-visible {
   .time-allocation-card__heading { align-items: start; }
   .time-allocation-visual { grid-template-columns: minmax(0, 1fr); gap: 24px; }
   .time-allocation-pie { width: min(68vw, 210px); }
+  .category-filter button, .backlog-card__actions button, .task-reminder__actions button,
+  .task-reminder__snooze-select select, .settings-inline-actions > button,
+  .settings-inline-actions > label.button, .settings-list__item button { min-height: 44px; }
+  .recovery-snapshots li { align-items: flex-start; flex-direction: column; }
 }
 
 @media (min-width: 640px) {

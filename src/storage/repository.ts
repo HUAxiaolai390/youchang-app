@@ -6,6 +6,13 @@ import { parseBackup, serializeBackup } from "./backup";
 const STATE_KEY = "youchang:state";
 const RECOVERY_PREFIX = "youchang:recovery:";
 const SAVE_ERROR = "保存失败，请立即导出备份";
+const RECOVERY_ERROR = "检测到异常数据，已创建恢复副本并重置当前数据";
+
+export interface RecoverySnapshot {
+  key: string;
+  createdAt: string;
+  raw: string;
+}
 
 export interface AppRepository {
   load(): AppState;
@@ -37,7 +44,8 @@ export function createLocalRepository(storage: Storage, now: () => Date): AppRep
         state = parseBackup(raw);
       } catch {
         write(`${RECOVERY_PREFIX}${current.toISOString()}`, raw);
-        return createInitialState(current);
+        save(createInitialState(current));
+        throw new Error(RECOVERY_ERROR);
       }
 
       const rolled = rollover(state, current);
@@ -53,4 +61,21 @@ export function createLocalRepository(storage: Storage, now: () => Date): AppRep
       return initial;
     }
   };
+}
+
+export function listRecoverySnapshots(storage: Storage): RecoverySnapshot[] {
+  const snapshots: RecoverySnapshot[] = [];
+  for (let index = 0; index < storage.length; index++) {
+    const key = storage.key(index);
+    if (!key?.startsWith(RECOVERY_PREFIX)) continue;
+    const raw = storage.getItem(key);
+    if (raw === null) continue;
+    snapshots.push({ key, createdAt: key.slice(RECOVERY_PREFIX.length), raw });
+  }
+  return snapshots.sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+}
+
+export function removeRecoverySnapshot(storage: Storage, key: string): void {
+  if (!key.startsWith(RECOVERY_PREFIX)) return;
+  storage.removeItem(key);
 }

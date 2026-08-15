@@ -92,6 +92,59 @@ public final class ExactReminderScheduler {
             .edit().putString(SCHEDULES, reminders.toString()).apply();
     }
 
+    public static void upsertPersistedReminder(
+        Context context,
+        int id,
+        long at,
+        String title,
+        String body,
+        boolean wakeScreen,
+        String kind,
+        String taskId,
+        String date
+    ) {
+        try {
+            JSONArray current = readPersistedReminders(context);
+            JSONArray updated = new JSONArray();
+            for (int index = 0; index < current.length(); index++) {
+                JSONObject item = current.optJSONObject(index);
+                if (item != null && item.optInt("id") != id) updated.put(item);
+            }
+            JSONObject reminder = new JSONObject();
+            reminder.put("id", id);
+            reminder.put("at", at);
+            reminder.put("title", title);
+            reminder.put("body", body);
+            reminder.put("wakeScreen", wakeScreen);
+            reminder.put("kind", kind);
+            reminder.put("taskId", taskId);
+            reminder.put("date", date);
+            updated.put(reminder);
+            persist(context, updated);
+        } catch (JSONException ignored) {
+            // These values are generated locally and should always serialize.
+        }
+    }
+
+    public static void removePersistedReminder(Context context, int id) {
+        JSONArray current = readPersistedReminders(context);
+        JSONArray updated = new JSONArray();
+        for (int index = 0; index < current.length(); index++) {
+            JSONObject item = current.optJSONObject(index);
+            if (item != null && item.optInt("id") != id) updated.put(item);
+        }
+        persist(context, updated);
+    }
+
+    private static JSONArray readPersistedReminders(Context context) {
+        String stored = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE).getString(SCHEDULES, "[]");
+        try {
+            return new JSONArray(stored);
+        } catch (JSONException ignored) {
+            return new JSONArray();
+        }
+    }
+
     public static void persistFocus(Context context, long at, String title, String body, boolean wakeScreen) {
         try {
             JSONObject reminder = new JSONObject();
@@ -112,9 +165,8 @@ public final class ExactReminderScheduler {
     }
 
     public static void restore(Context context) {
-        String stored = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE).getString(SCHEDULES, "[]");
         try {
-            JSONArray reminders = new JSONArray(stored);
+            JSONArray reminders = readPersistedReminders(context);
             for (int index = 0; index < reminders.length(); index++) {
                 JSONObject item = reminders.getJSONObject(index);
                 schedule(

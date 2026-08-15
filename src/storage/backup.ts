@@ -167,7 +167,8 @@ function hasValidSettings(value: unknown): boolean {
         && value.musicVolume >= 0
         && value.musicVolume <= 1))
     && (value.systemNotificationsEnabled === undefined || typeof value.systemNotificationsEnabled === "boolean")
-    && (value.wakeScreenForReminders === undefined || typeof value.wakeScreenForReminders === "boolean");
+    && (value.wakeScreenForReminders === undefined || typeof value.wakeScreenForReminders === "boolean")
+    && (value.lastBackupAt === undefined || isValidTimestamp(value.lastBackupAt));
 }
 
 function isWeeklyReview(value: unknown): boolean {
@@ -313,11 +314,28 @@ export function parseBackup(text: string): AppState {
   return normalizeCategoryReferences(copied);
 }
 
-export function downloadBackup(state: AppState): void {
-  const blob = new Blob([serializeBackup(state)], { type: "application/json" });
+export async function downloadTextFile(text: string, filename: string): Promise<void> {
+  const file = new File([text], filename, { type: "application/json" });
+  if (typeof navigator.share === "function"
+    && typeof navigator.canShare === "function"
+    && navigator.canShare({ files: [file] })) {
+    await navigator.share({ files: [file], title: filename });
+    return;
+  }
+
+  const blob = new Blob([text], { type: "application/json" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = `有常备份-${toDateKey(new Date())}.json`;
+  link.download = filename;
+  document.body.append(link);
   link.click();
-  URL.revokeObjectURL(link.href);
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(link.href), 0);
+}
+
+export function downloadBackup(state: AppState): Promise<void> {
+  return downloadTextFile(
+    serializeBackup(state),
+    `有常备份-${toDateKey(new Date())}.json`
+  );
 }

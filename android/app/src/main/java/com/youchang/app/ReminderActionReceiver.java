@@ -20,6 +20,7 @@ public class ReminderActionReceiver extends BroadcastReceiver {
             || kind == null || taskId == null || date == null || notificationId == 0) return;
 
         if (ACTION_COMPLETE.equals(action)) {
+            ExactReminderScheduler.removePersistedReminder(context, notificationId);
             ReminderActionStore.append(context, "complete", kind, taskId, date, System.currentTimeMillis());
         } else {
             long remindAt = System.currentTimeMillis() + 10 * 60_000L;
@@ -27,6 +28,17 @@ public class ReminderActionReceiver extends BroadcastReceiver {
             boolean wakeScreen = intent.getBooleanExtra(ExactReminderReceiver.EXTRA_WAKE_SCREEN, true);
             if (title == null) title = "有常 · 任务提醒";
             ExactReminderScheduler.schedule(
+                context,
+                notificationId,
+                remindAt,
+                title,
+                "已推迟 10 分钟，现在可以继续行动了。",
+                wakeScreen,
+                kind,
+                taskId,
+                date
+            );
+            ExactReminderScheduler.upsertPersistedReminder(
                 context,
                 notificationId,
                 remindAt,
