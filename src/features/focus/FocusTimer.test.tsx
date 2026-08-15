@@ -70,6 +70,7 @@ describe("FocusTimer", () => {
 
     expect(screen.getByRole("heading", { name: "休息时间" })).toBeInTheDocument();
     expect(screen.getByLabelText("剩余 02:00")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "开始休息" })).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("获得 5 点经验");
     expect(repository.value.focus).toMatchObject({
       focusMinutes: 1,
@@ -79,6 +80,11 @@ describe("FocusTimer", () => {
       experience: 5
     });
     expect(onFocusComplete).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "开始休息" }));
+    act(() => vi.advanceTimersByTime(1_000));
+    fireEvent.click(screen.getByRole("button", { name: "暂停" }));
+    expect(screen.getByRole("button", { name: "继续休息" })).toBeInTheDocument();
   });
 
   it("pauses and resets without awarding experience", () => {
@@ -88,7 +94,7 @@ describe("FocusTimer", () => {
     fireEvent.click(screen.getByRole("button", { name: "开始专注" }));
     act(() => vi.advanceTimersByTime(10_000));
     fireEvent.click(screen.getByRole("button", { name: "暂停" }));
-    expect(screen.getByRole("button", { name: "继续" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "继续专注" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "重置" }));
 
     expect(screen.getByLabelText("剩余 25:00")).toBeInTheDocument();

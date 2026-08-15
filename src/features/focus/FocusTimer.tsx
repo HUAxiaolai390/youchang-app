@@ -153,6 +153,11 @@ export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps
   const ringStyle = {
     "--timer-progress": `${(mode === "countdown" ? elapsedRatio : stopwatchRatio) * 360}deg`
   } as CSSProperties;
+  const countdownActionLabel = isRunning
+    ? "暂停"
+    : phase === "focus"
+      ? remainingSeconds === totalSeconds ? "开始专注" : "继续专注"
+      : remainingSeconds === totalSeconds ? "开始休息" : "继续休息";
 
   useEffect(() => {
     if (isRunning) return;
@@ -398,7 +403,7 @@ export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps
 
           <div className="focus-actions">
             <button type="button" className="button button--primary focus-actions__main" onClick={isRunning ? pauseTimer : startTimer}>
-              {isRunning ? "暂停" : remainingSeconds === totalSeconds ? "开始专注" : "继续"}
+              {countdownActionLabel}
             </button>
             <button type="button" className="button" onClick={resetTimer}>重置</button>
             <button type="button" className="focus-actions__switch" onClick={switchPhase}>
