@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -14,6 +15,11 @@ import android.os.Build;
 import android.os.PowerManager;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class ExactReminderReceiver extends BroadcastReceiver {
     public static final String CHANNEL_ID = "youchang-exact-reminders-v2";
@@ -24,6 +30,33 @@ public class ExactReminderReceiver extends BroadcastReceiver {
     public static final String EXTRA_KIND = "taskKind";
     public static final String EXTRA_TASK_ID = "taskId";
     public static final String EXTRA_DATE = "taskDate";
+    private static final String MASCOT_PREFERENCES = "youchang_notification_mascots";
+    private static final String MASCOT_ORDER = "task_mascot_order_v2";
+    private static final String MASCOT_CURSOR = "task_mascot_cursor_v2";
+    private static final String MASCOT_LAST = "task_mascot_last_v2";
+    private static final int[] TASK_MASCOTS = {
+        R.drawable.notification_cat_idle_02,
+        R.drawable.notification_cat_idle_03,
+        R.drawable.notification_cat_idle_04,
+        R.drawable.notification_cat_idle_05,
+        R.drawable.notification_cat_idle_06,
+        R.drawable.notification_cat_idle_08,
+        R.drawable.notification_cat_idle_09,
+        R.drawable.notification_cat_idle_10,
+        R.drawable.notification_cat_idle_11,
+        R.drawable.notification_cat_idle_12,
+        R.drawable.notification_cat_idle_13,
+        R.drawable.notification_cat_idle_14,
+        R.drawable.notification_cat_idle_15,
+        R.drawable.notification_cat_idle_16,
+        R.drawable.notification_cat_idle_17,
+        R.drawable.notification_cat_idle_18,
+        R.drawable.notification_cat_idle_19,
+        R.drawable.notification_cat_idle_20,
+        R.drawable.notification_cat_sleep,
+        R.drawable.notification_cat_celebrate,
+        R.drawable.notification_cat_react
+    };
 
     public static void ensureChannel(Context context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
@@ -78,7 +111,7 @@ public class ExactReminderReceiver extends BroadcastReceiver {
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setAutoCancel(true)
             .setContentIntent(openApp);
-        Bitmap mascot = BitmapFactory.decodeResource(context.getResources(), mascotResource(id, title));
+        Bitmap mascot = BitmapFactory.decodeResource(context.getResources(), mascotResource(context, title));
         if (mascot != null) {
             notification.setLargeIcon(NotificationCompat.reduceLargeIconSize(context, mascot));
         }
@@ -96,15 +129,66 @@ public class ExactReminderReceiver extends BroadcastReceiver {
         }
     }
 
-    private int mascotResource(int notificationId, String title) {
-        if (title.contains("专注完成")) return R.drawable.notification_cat_focus_done;
-        if (title.contains("休息结束")) return R.drawable.notification_cat_break_done;
-        if (title.contains("定时测试")) return R.drawable.notification_cat_task_study;
+    private int mascotResource(Context context, String title) {
+        if (title.contains("专注完成")) return R.drawable.notification_cat_sleep;
+        if (title.contains("休息结束")) return R.drawable.notification_cat_celebrate;
+        return nextTaskMascot(context);
+    }
 
-        int variant = Math.floorMod(notificationId, 3);
-        if (variant == 1) return R.drawable.notification_cat_task_phone;
-        if (variant == 2) return R.drawable.notification_cat_task_balance;
-        return R.drawable.notification_cat_task_study;
+    private int nextTaskMascot(Context context) {
+        SharedPreferences preferences = context.getSharedPreferences(MASCOT_PREFERENCES, Context.MODE_PRIVATE);
+        int[] order = parseMascotOrder(preferences.getString(MASCOT_ORDER, ""));
+        int cursor = preferences.getInt(MASCOT_CURSOR, 0);
+        int last = preferences.getInt(MASCOT_LAST, -1);
+        if (order == null || cursor < 0 || cursor >= order.length) {
+            order = shuffledMascotOrder(last);
+            cursor = 0;
+        }
+
+        int selected = order[cursor];
+        preferences.edit()
+            .putString(MASCOT_ORDER, serializeMascotOrder(order))
+            .putInt(MASCOT_CURSOR, cursor + 1)
+            .putInt(MASCOT_LAST, selected)
+            .apply();
+        return TASK_MASCOTS[selected];
+    }
+
+    private int[] shuffledMascotOrder(int last) {
+        List<Integer> shuffled = new ArrayList<>();
+        for (int index = 0; index < TASK_MASCOTS.length; index++) shuffled.add(index);
+        Collections.shuffle(shuffled);
+        if (shuffled.size() > 1 && shuffled.get(0) == last) {
+            Collections.swap(shuffled, 0, 1);
+        }
+        int[] order = new int[shuffled.size()];
+        for (int index = 0; index < shuffled.size(); index++) order[index] = shuffled.get(index);
+        return order;
+    }
+
+    private int[] parseMascotOrder(String value) {
+        String[] parts = value.split(",");
+        if (parts.length != TASK_MASCOTS.length) return null;
+        int[] order = new int[parts.length];
+        Set<Integer> seen = new HashSet<>();
+        try {
+            for (int index = 0; index < parts.length; index++) {
+                order[index] = Integer.parseInt(parts[index]);
+                if (order[index] < 0 || order[index] >= TASK_MASCOTS.length || !seen.add(order[index])) return null;
+            }
+            return order;
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    private String serializeMascotOrder(int[] order) {
+        StringBuilder value = new StringBuilder();
+        for (int index = 0; index < order.length; index++) {
+            if (index > 0) value.append(',');
+            value.append(order[index]);
+        }
+        return value.toString();
     }
 
     private PendingIntent actionIntent(

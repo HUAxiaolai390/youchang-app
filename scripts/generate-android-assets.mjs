@@ -6,13 +6,19 @@ import sharp from "sharp";
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const source = resolve(projectRoot, "public", "maskable-icon-512x512.png");
 const resources = resolve(projectRoot, "android", "app", "src", "main", "res");
-const notificationMascots = {
-  notification_cat_task_study: resolve(projectRoot, "public", "mascot", "idle", "02.png"),
-  notification_cat_task_phone: resolve(projectRoot, "public", "mascot", "idle", "17.png"),
-  notification_cat_task_balance: resolve(projectRoot, "public", "mascot", "idle", "20.png"),
-  notification_cat_focus_done: resolve(projectRoot, "public", "mascot", "sleep.png"),
-  notification_cat_break_done: resolve(projectRoot, "public", "mascot", "celebrate.png"),
-};
+const notificationIdleVariants = [
+  "02", "03", "04", "05", "06", "08", "09", "10", "11",
+  "12", "13", "14", "15", "16", "17", "18", "19", "20",
+];
+const notificationMascots = Object.fromEntries([
+  ...notificationIdleVariants.map((variant) => [
+    `notification_cat_idle_${variant}`,
+    resolve(projectRoot, "public", "mascot", "idle", `${variant}.png`),
+  ]),
+  ["notification_cat_sleep", resolve(projectRoot, "public", "mascot", "sleep.png")],
+  ["notification_cat_celebrate", resolve(projectRoot, "public", "mascot", "celebrate.png")],
+  ["notification_cat_react", resolve(projectRoot, "public", "mascot", "react.png")],
+]);
 
 const iconSizes = {
   mdpi: { launcher: 48, foreground: 108 },

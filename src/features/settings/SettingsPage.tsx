@@ -477,7 +477,7 @@ export function SettingsPage() {
         {clearArmed && <div className="clear-confirmation"><label className="field-label" htmlFor="clear-phrase">确认清空</label><input id="clear-phrase" className="field-control" value={clearPhrase} onChange={(event) => setClearPhrase(event.target.value)} placeholder="请输入“清空”" /><button className="button" type="button" disabled={clearPhrase !== "清空"} onClick={() => setClearDialogOpen(true)}>确认清空</button></div>}
       </section>
 
-      <p className="settings-version">有常 1.6</p>
+      <p className="settings-version">有常 1.7</p>
 
       {categoryToDelete && <ConfirmDialog title="删除自定义分类" message={`删除“${categoryToDelete.name}”后，当前任务会归入“其他”。`} confirmLabel="删除分类" onCancel={() => setCategoryToDelete(undefined)} onConfirm={() => { dispatch({ type: "category/delete", id: categoryToDelete.id }); setCategoryToDelete(undefined); }} />}
       {recoveryToDelete && <ConfirmDialog title="删除异常数据副本" message="删除后无法恢复。若还没导出，建议先取消并保存一份。" confirmLabel="删除副本" onCancel={() => setRecoveryToDelete(undefined)} onConfirm={() => { removeRecoverySnapshot(window.localStorage, recoveryToDelete.key); setRecoverySnapshots(listRecoverySnapshots(window.localStorage)); setRecoveryToDelete(undefined); }} />}
