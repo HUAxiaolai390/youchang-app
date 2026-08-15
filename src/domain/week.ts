@@ -16,7 +16,6 @@ export type WeekPlanTask = {
   status: "pending" | "completed" | "backlog" | "archived";
   plannedStartTime?: TimeKey;
   reminderMinutesBefore?: ReminderMinutesBefore;
-  estimatedMinutes?: number;
   actualMinutes?: number;
   priority?: TaskPriority;
   steps?: TaskStep[];
@@ -27,7 +26,6 @@ export type WeekPlanDay = {
   date: DateKey;
   tasks: WeekPlanTask[];
   completed: number;
-  estimatedMinutes: number;
   actualMinutes: number;
 };
 
@@ -90,7 +88,6 @@ export function getPlanForDates(
         status: record?.completedAt ? "completed" : "pending",
         plannedStartTime: record?.plannedStartTime ?? template.plannedStartTime,
         reminderMinutesBefore: record?.reminderMinutesBefore ?? template.reminderMinutesBefore,
-        estimatedMinutes: record?.estimatedMinutes ?? template.estimatedMinutes,
         actualMinutes: record?.actualMinutes,
         priority: record?.priority ?? template.priority,
         steps: record?.steps ?? template.steps,
@@ -113,7 +110,6 @@ export function getPlanForDates(
         status: task.status as WeekPlanTask["status"],
         plannedStartTime: task.plannedStartTime,
         reminderMinutesBefore: task.reminderMinutesBefore,
-        estimatedMinutes: task.estimatedMinutes,
         actualMinutes: task.actualMinutes,
         priority: task.priority,
         steps: task.steps
@@ -125,7 +121,6 @@ export function getPlanForDates(
       date,
       tasks,
       completed: tasks.filter((task) => task.status === "completed").length,
-      estimatedMinutes: tasks.reduce((sum, task) => sum + (task.estimatedMinutes ?? 0), 0),
       actualMinutes: tasks.reduce((sum, task) => sum + (task.actualMinutes ?? 0), 0)
     };
   });

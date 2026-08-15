@@ -12,7 +12,6 @@ export interface WeeklyReviewSnapshot {
   completed: number;
   total: number;
   ratio: number;
-  estimatedMinutes: number;
   actualMinutes: number;
   trackedMinutes: number;
   topCategoryName?: string;
@@ -65,8 +64,6 @@ export function getWeeklyReviewSnapshot(state: AppState, now: Date): WeeklyRevie
   const inRange = (date: DateKey) => date >= weekStart && date <= throughDate;
   const fixedRecords = state.fixedRecords.filter((record) => inRange(record.date));
   const scheduledTasks = state.scheduledTasks.filter((task) => inRange(task.scheduledDate) && task.status !== "rescheduled");
-  const estimatedMinutes = fixedRecords.reduce((sum, record) => sum + (record.estimatedMinutes ?? 0), 0)
-    + scheduledTasks.reduce((sum, task) => sum + (task.estimatedMinutes ?? 0), 0);
   const actualMinutes = fixedRecords.reduce((sum, record) => sum + (record.actualMinutes ?? 0), 0)
     + scheduledTasks.reduce((sum, task) => sum + (task.actualMinutes ?? 0), 0);
   const allocation = getTimeAllocation(state, weekStart, throughDate);
@@ -78,7 +75,6 @@ export function getWeeklyReviewSnapshot(state: AppState, now: Date): WeeklyRevie
     completed: period.completed,
     total: period.total,
     ratio: period.ratio,
-    estimatedMinutes,
     actualMinutes,
     trackedMinutes: allocation.totalMinutes,
     topCategoryName: allocation.items[0]?.categoryName

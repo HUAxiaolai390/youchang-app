@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { useAppState } from "../../app/AppStateProvider";
 import { fromDateKey, toDateKey } from "../../domain/date";
-import { formatPlanComparison } from "../../domain/planning";
 import { formatReminderMinutes } from "../../domain/reminders";
 import { formatTaskPriority, normalizeTaskPriority } from "../../domain/priorities";
 import { getTaskStepProgress } from "../../domain/steps";
@@ -49,7 +48,7 @@ function WeekTaskCard({ task, canToggle, canEdit, canMove, onEdit, onMove, onTog
     <li className={`week-task${task.status === "completed" ? " week-task--completed" : ""}`}>
       <div className="week-task__time">
         <strong>{task.plannedStartTime ?? "灵活"}</strong>
-        <span>{task.estimatedMinutes ? `${task.estimatedMinutes} 分` : "未估时"}</span>
+        <span>{task.actualMinutes ? `实际 ${task.actualMinutes} 分` : "未记时"}</span>
       </div>
       <div className="week-task__copy">
         <div>
@@ -59,7 +58,7 @@ function WeekTaskCard({ task, canToggle, canEdit, canMove, onEdit, onMove, onTog
           {task.goalTitle && <span>目标：{task.goalTitle}</span>}
         </div>
         <p>{task.title}</p>
-        <small>{formatPlanComparison(task.estimatedMinutes, task.actualMinutes)}{task.reminderMinutesBefore !== undefined ? ` · ${formatReminderMinutes(task.reminderMinutesBefore)}` : ""}{stepProgress.total ? ` · 步骤 ${stepProgress.completed}/${stepProgress.total}` : ""}</small>
+        {(task.reminderMinutesBefore !== undefined || stepProgress.total > 0) && <small>{task.reminderMinutesBefore !== undefined ? formatReminderMinutes(task.reminderMinutesBefore) : ""}{task.reminderMinutesBefore !== undefined && stepProgress.total ? " · " : ""}{stepProgress.total ? `步骤 ${stepProgress.completed}/${stepProgress.total}` : ""}</small>}
       </div>
       {(canToggle || canEdit || canMove) && <div className="week-task__actions">
         {canToggle && <button
@@ -102,7 +101,6 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
       ...day,
       tasks,
       completed: tasks.filter((task) => task.status === "completed").length,
-      estimatedMinutes: tasks.reduce((sum, task) => sum + (task.estimatedMinutes ?? 0), 0),
       actualMinutes: tasks.reduce((sum, task) => sum + (task.actualMinutes ?? 0), 0)
     };
     return "overdue" in day
@@ -114,7 +112,7 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
   const unfilteredSummaryDays = planView === "month" ? allDays.filter((day) => "inCurrentMonth" in day && day.inCurrentMonth) : allDays;
   const totalTasks = summaryDays.reduce((sum, day) => sum + day.tasks.length, 0);
   const unfilteredTotalTasks = unfilteredSummaryDays.reduce((sum, day) => sum + day.tasks.length, 0);
-  const totalEstimated = summaryDays.reduce((sum, day) => sum + day.estimatedMinutes, 0);
+  const totalActual = summaryDays.reduce((sum, day) => sum + day.actualMinutes, 0);
   const monthTitle = `${monthAnchor.getFullYear()}年${monthAnchor.getMonth() + 1}月`;
   const editingFormValues = useMemo<TaskFormValues | undefined>(() => {
     if (!editingTask) return undefined;
@@ -129,7 +127,6 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
         date: editingTask.date,
         plannedStartTime: template.plannedStartTime,
         reminderMinutesBefore: template.reminderMinutesBefore,
-        estimatedMinutes: template.estimatedMinutes,
         priority: normalizeTaskPriority(template.priority),
         steps: template.steps,
         repeatRule: template.repeatRule
@@ -145,7 +142,6 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
       date: task.scheduledDate,
       plannedStartTime: task.plannedStartTime,
       reminderMinutesBefore: task.reminderMinutesBefore,
-      estimatedMinutes: task.estimatedMinutes,
       priority: normalizeTaskPriority(task.priority),
       steps: task.steps,
       completed: task.status === "completed"
@@ -220,7 +216,6 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
         goalId: values.goalId,
         plannedStartTime: values.plannedStartTime,
         reminderMinutesBefore: values.reminderMinutesBefore,
-        estimatedMinutes: values.estimatedMinutes,
         priority: values.priority,
         steps: values.steps,
         repeatRule: values.repeatRule
@@ -233,7 +228,6 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
         scheduledDate: values.date,
         plannedStartTime: values.plannedStartTime,
         reminderMinutesBefore: values.reminderMinutesBefore,
-        estimatedMinutes: values.estimatedMinutes,
         priority: values.priority,
         steps: values.steps
       } });
@@ -245,7 +239,6 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
           activeFrom: today,
           plannedStartTime: values.plannedStartTime,
           reminderMinutesBefore: values.reminderMinutesBefore,
-          estimatedMinutes: values.estimatedMinutes,
           priority: values.priority,
           steps: values.steps,
           repeatRule: values.repeatRule
@@ -258,7 +251,6 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
           scheduledDate: values.date,
           plannedStartTime: values.plannedStartTime,
           reminderMinutesBefore: values.reminderMinutesBefore,
-          estimatedMinutes: values.estimatedMinutes,
           priority: values.priority,
           steps: values.steps
         } });
@@ -287,7 +279,7 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
           </div>
           <div className="week-overview__summary">
             <span><strong>{totalTasks}</strong> {filtersActive ? `项符合 · 共 ${unfilteredTotalTasks} 项` : "项任务"}</span>
-            <span><strong>{formatTrackedTime(totalEstimated)}</strong> 预计</span>
+            <span><strong>{formatTrackedTime(totalActual)}</strong> 已记录</span>
           </div>
         </div>
       </section>
@@ -381,7 +373,6 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
 
         <div className="week-day-card__metrics" aria-label="当天计划概览">
           <span><strong>{selectedDay.tasks.length}</strong> 项</span>
-          <span><strong>{formatTrackedTime(selectedDay.estimatedMinutes)}</strong> 预计</span>
           <span><strong>{formatTrackedTime(selectedDay.actualMinutes)}</strong> 实际</span>
         </div>
 
@@ -427,7 +418,7 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
                 onClick={() => chooseMoveDate(day.date)}
               >
                 <span>{formatMonthDay(day.date)}</span>
-                <small>{day.tasks.length} 项 · {formatTrackedTime(day.estimatedMinutes)}</small>
+                <small>{day.tasks.length} 项</small>
               </button>
             ))}
           </div>

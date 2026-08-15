@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { formatPlanComparison } from "../../domain/planning";
 import { formatReminderMinutes } from "../../domain/reminders";
 import { formatTaskPriority } from "../../domain/priorities";
 import { getTaskStepProgress } from "../../domain/steps";
@@ -18,7 +17,6 @@ export type TodayTask = {
   editable: boolean;
   plannedStartTime?: TimeKey;
   reminderMinutesBefore?: ReminderMinutesBefore;
-  estimatedMinutes?: number;
   actualMinutes?: number;
   priority?: TaskPriority;
   steps?: TaskStep[];
@@ -70,7 +68,7 @@ export function TaskList({ title, tasks, onToggle, onStepToggle, onEdit, onDelet
                   {task.repeatLabel ? ` · ${task.repeatLabel}` : ""}
                   {task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}
                   {task.reminderMinutesBefore !== undefined ? ` · ${formatReminderMinutes(task.reminderMinutesBefore)}` : ""}
-                  {` · ${formatPlanComparison(task.estimatedMinutes, task.actualMinutes)}`}
+                  {task.actualMinutes ? ` · 实际 ${task.actualMinutes} 分钟` : ""}
                 </span>
               </div>
               <div className="task-item__actions">

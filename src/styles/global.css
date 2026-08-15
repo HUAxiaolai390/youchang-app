@@ -579,7 +579,6 @@ button:focus-visible {
 .task-form__move-date > p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
 .task-form__planning { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .task-form__planning label { display: grid; min-width: 0; gap: 7px; font-size: 14px; font-weight: 700; }
-.task-form__planning .task-form__reminder { grid-column: 1 / -1; }
 .task-form__planning-note { margin: -4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
 .repeat-rule-fields { display: grid; gap: 10px; margin: 0; padding: 13px; border: 1px solid var(--line); border-radius: 15px; background: #f5f1ea; }
 .repeat-rule-fields legend { padding: 0 5px; font-size: 14px; font-weight: 800; }
@@ -704,7 +703,7 @@ button:focus-visible {
 .week-day-card__heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .week-day-card__heading h2 { font-size: 20px; }
 .week-day-card__heading .button:disabled { cursor: not-allowed; opacity: .4; }
-.week-day-card__metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.week-day-card__metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .week-day-card__metrics span { display: grid; gap: 3px; padding: 11px 12px; border-radius: 14px; background: #f3f0ea; color: var(--muted); font-size: 11px; }
 .week-day-card__metrics strong { overflow: hidden; color: var(--ink); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .week-day-card__empty { padding: 28px 12px; text-align: center; }
@@ -943,21 +942,6 @@ button:focus-visible {
 
 .settings-page { display: grid; gap: 18px; }
 .settings-section { display: grid; gap: 15px; padding: 22px; }
-.install-app-panel { overflow: hidden; background: linear-gradient(135deg, rgba(255,253,249,.98), rgba(224,235,215,.88)); }
-.install-app-panel__eyebrow { margin: 0; color: #8f6a3e; font-size: 10px; font-weight: 900; letter-spacing: .15em; }
-.install-app-panel__ready { display: grid; grid-template-columns: 42px minmax(0, 1fr); align-items: center; gap: 11px; padding: 12px; border-radius: 15px; background: rgba(255,255,255,.6); }
-.install-app-panel__ready > span { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 50%; background: #65795c; color: #fff; font-size: 20px; font-weight: 900; }
-.install-app-panel__ready > div { display: grid; gap: 2px; }
-.install-app-panel__ready small { color: var(--muted); font-size: 11px; }
-.install-app-panel__steps { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.install-app-panel__steps li { display: grid; grid-template-columns: 32px minmax(0, 1fr); align-items: center; gap: 10px; padding: 10px; border-radius: 14px; background: rgba(255,255,255,.62); }
-.install-app-panel__steps li > span { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 50%; background: var(--ink); color: var(--surface); font-size: 11px; font-weight: 900; }
-.install-app-panel__steps li > div { display: grid; gap: 2px; }
-.install-app-panel__steps small { color: var(--muted); font-size: 10px; line-height: 1.5; }
-.install-app-panel__guide { padding: 13px; border-radius: 15px; background: rgba(255,255,255,.62); }
-.install-app-panel__guide p { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
-.install-app-panel__guide--warning { border: 1px solid #d8b599; background: #fff6eb; }
-.install-app-panel__message { margin: -4px 0 0; color: #52684b; font-size: 12px; font-weight: 750; }
 .settings-section h2, .settings-section h3 { margin: 0; letter-spacing: -0.03em; }
 .settings-section h2 { font-size: 19px; }
 .settings-section h3 { font-size: 15px; }

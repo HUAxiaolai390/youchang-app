@@ -80,19 +80,19 @@ describe("versioned backups", () => {
     }))).toThrow("备份文件格式无效");
   });
 
-  it("round trips optional task planning and rejects malformed planning", () => {
+  it("round trips an optional task start time and rejects malformed planning", () => {
     const planned = {
       ...state,
       scheduledTasks: [{
         id: "task", title: "阅读", categoryId: "study", categoryNameSnapshot: "学习",
         scheduledDate: "2026-07-31" as const, status: "pending" as const,
-        plannedStartTime: "19:30" as const, estimatedMinutes: 45,
+        plannedStartTime: "19:30" as const,
         createdAt: "2026-07-31T01:00:00.000Z"
       }]
     };
 
     expect(parseBackup(JSON.stringify(planned)).scheduledTasks[0]).toMatchObject({
-      plannedStartTime: "19:30", estimatedMinutes: 45
+      plannedStartTime: "19:30"
     });
     expect(() => parseBackup(JSON.stringify({
       ...planned,

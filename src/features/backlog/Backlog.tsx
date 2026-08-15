@@ -60,7 +60,6 @@ function TaskCard({ task, categoryName, goalName, actionLabel, onComplete, onRes
           原定：{formatDate(task.scheduledDate)} · {categoryName}
           {goalName ? ` · 目标：${goalName}` : ""}
           {task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}
-          {task.estimatedMinutes ? ` · 预计 ${task.estimatedMinutes} 分钟` : ""}
           {task.actualMinutes ? ` · 实际 ${task.actualMinutes} 分钟` : ""}
           {stepProgress.total ? ` · 步骤 ${stepProgress.completed}/${stepProgress.total}` : ""}
         </span>

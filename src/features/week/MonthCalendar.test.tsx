@@ -9,7 +9,6 @@ function day(overrides: Partial<MonthPlanDay>): MonthPlanDay {
     date: "2026-08-11",
     tasks: [],
     completed: 0,
-    estimatedMinutes: 0,
     actualMinutes: 0,
     inCurrentMonth: true,
     overdue: 0,

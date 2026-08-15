@@ -3,17 +3,17 @@ import { createInitialState } from "./defaults";
 import { getWeeklyReviewSnapshot, saveWeeklyReview } from "./weekly-review";
 
 describe("weekly review", () => {
-  it("summarizes current-week progress, estimates, actual time, and top category", () => {
+  it("summarizes current-week progress, actual time, and top category", () => {
     const now = new Date(2026, 7, 12, 9);
     const state = createInitialState(now);
     state.scheduledTasks.push({
       id: "study", title: "复习", categoryId: "study", categoryNameSnapshot: "学习",
       scheduledDate: "2026-08-11", status: "completed", createdAt: now.toISOString(),
-      estimatedMinutes: 60, actualMinutes: 90
+      actualMinutes: 90
     }, {
       id: "exercise", title: "跑步", categoryId: "exercise", categoryNameSnapshot: "运动",
       scheduledDate: "2026-08-12", status: "pending", createdAt: now.toISOString(),
-      estimatedMinutes: 30, actualMinutes: 20
+      actualMinutes: 20
     });
 
     expect(getWeeklyReviewSnapshot(state, now)).toMatchObject({
@@ -22,7 +22,6 @@ describe("weekly review", () => {
       throughDate: "2026-08-12",
       completed: 1,
       total: 2,
-      estimatedMinutes: 90,
       actualMinutes: 110,
       trackedMinutes: 110,
       topCategoryName: "学习"

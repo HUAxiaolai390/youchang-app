@@ -1,7 +1,7 @@
 import { fromDateKey, toDateKey } from "../domain/date";
 import type { AppState, DateKey } from "../domain/types";
 import { maximumActualMinutes } from "../domain/time";
-import { isTimeKey, maximumEstimatedMinutes } from "../domain/planning";
+import { isTimeKey } from "../domain/planning";
 import { isAchievementId } from "../domain/achievements";
 import { isReminderMinutesBefore } from "../domain/reminders";
 import { isTaskPriority } from "../domain/priorities";
@@ -125,12 +125,7 @@ function isScheduledTask(value: unknown): boolean {
 function isOptionalPlanning(value: Record<string, unknown>): boolean {
   return (value.plannedStartTime === undefined || isTimeKey(value.plannedStartTime))
     && (value.reminderMinutesBefore === undefined || isReminderMinutesBefore(value.reminderMinutesBefore))
-    && (value.priority === undefined || isTaskPriority(value.priority))
-    && (value.estimatedMinutes === undefined
-      || (typeof value.estimatedMinutes === "number"
-        && Number.isInteger(value.estimatedMinutes)
-        && value.estimatedMinutes >= 1
-        && value.estimatedMinutes <= maximumEstimatedMinutes));
+    && (value.priority === undefined || isTaskPriority(value.priority));
 }
 
 function isOptionalActualMinutes(value: unknown): boolean {

@@ -7,7 +7,7 @@ import type {
   ScheduledTask
 } from "./types";
 import { isWithinWeek, toDateKey } from "./date";
-import { normalizeEstimatedMinutes, normalizePlannedStartTime } from "./planning";
+import { normalizePlannedStartTime } from "./planning";
 import { normalizeReminderMinutesBefore } from "./reminders";
 import { normalizeTaskPriority } from "./priorities";
 import { getFixedRepeatRule, isFixedTaskDueOnDate, normalizeFixedRepeatRule } from "./repeat";
@@ -27,7 +27,6 @@ export interface AddScheduledTaskInput {
   scheduledDate: DateKey;
   plannedStartTime?: TimeKey;
   reminderMinutesBefore?: ReminderMinutesBefore;
-  estimatedMinutes?: number;
   priority?: TaskPriority;
   steps?: TaskStepInput[];
 }
@@ -41,7 +40,6 @@ export interface AddFixedTaskInput {
   activeFrom: DateKey;
   plannedStartTime?: TimeKey;
   reminderMinutesBefore?: ReminderMinutesBefore;
-  estimatedMinutes?: number;
   repeatRule?: FixedRepeatRule;
   priority?: TaskPriority;
   steps?: TaskStepInput[];
@@ -53,7 +51,6 @@ export interface UpdateFixedTaskInput {
   goalId?: string;
   plannedStartTime?: TimeKey;
   reminderMinutesBefore?: ReminderMinutesBefore;
-  estimatedMinutes?: number;
   repeatRule?: FixedRepeatRule;
   priority?: TaskPriority;
   steps?: TaskStepInput[];
@@ -144,8 +141,7 @@ function createFixedRecord(task: FixedTaskTemplate, date: DateKey, completedAt?:
     plannedStartTime: task.plannedStartTime,
     reminderMinutesBefore: task.reminderMinutesBefore,
     priority: task.priority,
-    steps: resetTaskSteps(task.steps),
-    estimatedMinutes: task.estimatedMinutes
+    steps: resetTaskSteps(task.steps)
   };
 }
 
@@ -162,7 +158,6 @@ export function addFixedTask(state: AppState, input: AddFixedTaskInput, now: Dat
     reminderMinutesBefore: input.plannedStartTime
       ? normalizeReminderMinutesBefore(input.reminderMinutesBefore)
       : undefined,
-    estimatedMinutes: normalizeEstimatedMinutes(input.estimatedMinutes),
     priority: normalizeTaskPriority(input.priority),
     steps: resetTaskSteps(normalizeTaskSteps(input.steps)),
     repeatRule: normalizeFixedRepeatRule(input.repeatRule),
@@ -194,7 +189,6 @@ export function updateFixedTask(
   const reminderMinutesBefore = plannedStartTime
     ? normalizeReminderMinutesBefore(input.reminderMinutesBefore)
     : undefined;
-  const estimatedMinutes = normalizeEstimatedMinutes(input.estimatedMinutes);
   const task = state.fixedTasks.find((item) => item.id === id);
   if (!task) return state;
   const priority = normalizeTaskPriority(input.priority ?? task.priority);
@@ -204,7 +198,7 @@ export function updateFixedTask(
   const normalizedSteps = normalizeTaskSteps(input.steps ?? task.steps);
   const templateSteps = resetTaskSteps(normalizedSteps);
   const repeatRule = normalizeFixedRepeatRule(input.repeatRule ?? getFixedRepeatRule(task));
-  const updatedTask = { ...task, title, ...categorySnapshot(category), goalId, plannedStartTime, reminderMinutesBefore, estimatedMinutes, priority, steps: templateSteps, repeatRule };
+  const updatedTask = { ...task, title, ...categorySnapshot(category), goalId, plannedStartTime, reminderMinutesBefore, priority, steps: templateSteps, repeatRule };
   const fixedTasks = state.fixedTasks.map((item) => item.id === id ? updatedTask : item);
   let fixedRecords = state.fixedRecords.map((record) => {
     if (record.templateId !== id || record.date !== today) return record;
@@ -213,7 +207,7 @@ export function updateFixedTask(
       ...step,
       completed: currentCompletion.get(step.id) ?? step.completed
     }));
-    return { ...record, titleSnapshot: title, ...categorySnapshot(category), goalId, plannedStartTime, reminderMinutesBefore, reminderSentAt: undefined, reminderSnoozedUntil: undefined, estimatedMinutes, priority, steps };
+    return { ...record, titleSnapshot: title, ...categorySnapshot(category), goalId, plannedStartTime, reminderMinutesBefore, reminderSentAt: undefined, reminderSnoozedUntil: undefined, priority, steps };
   });
   const todayRecord = fixedRecords.find((record) => record.templateId === id && record.date === today);
   const previewState = { ...state, fixedTasks, fixedRecords };
@@ -342,7 +336,6 @@ export function addScheduledTask(state: AppState, input: AddScheduledTaskInput, 
     reminderMinutesBefore: input.plannedStartTime
       ? normalizeReminderMinutesBefore(input.reminderMinutesBefore)
       : undefined,
-    estimatedMinutes: normalizeEstimatedMinutes(input.estimatedMinutes),
     priority: normalizeTaskPriority(input.priority),
     steps: normalizeTaskSteps(input.steps),
     status: "pending",
@@ -366,7 +359,6 @@ export function updateScheduledTask(
   const reminderMinutesBefore = plannedStartTime
     ? normalizeReminderMinutesBefore(input.reminderMinutesBefore)
     : undefined;
-  const estimatedMinutes = normalizeEstimatedMinutes(input.estimatedMinutes);
   const priority = normalizeTaskPriority(input.priority ?? task.priority);
   const goalId = Object.prototype.hasOwnProperty.call(input, "goalId")
     ? normalizeGoalId(state, input.goalId)
@@ -385,7 +377,6 @@ export function updateScheduledTask(
           reminderMinutesBefore,
           reminderSentAt: undefined,
           reminderSnoozedUntil: undefined,
-          estimatedMinutes,
           priority,
           steps
         }

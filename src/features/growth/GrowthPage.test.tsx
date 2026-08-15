@@ -149,18 +149,18 @@ describe("GrowthPage", () => {
     state.scheduledTasks.push({
       id: "done", title: "复习数学", categoryId: "study", categoryNameSnapshot: "学习",
       scheduledDate: "2026-08-11", status: "completed", createdAt: new Date().toISOString(),
-      estimatedMinutes: 60, actualMinutes: 80
+      actualMinutes: 80
     }, {
       id: "pending", title: "跑步", categoryId: "exercise", categoryNameSnapshot: "运动",
       scheduledDate: "2026-08-12", status: "pending", createdAt: new Date().toISOString(),
-      estimatedMinutes: 30
     });
     const repository = renderGrowth(state);
 
     const metrics = screen.getByLabelText("本周复盘摘要");
     expect(metrics).toHaveTextContent("1/2");
     expect(metrics).toHaveTextContent("50% 已完成");
-    expect(metrics).toHaveTextContent("1 小时 30 分");
+    expect(metrics).toHaveTextContent("1 小时 20 分");
+    expect(metrics).not.toHaveTextContent("预计");
     expect(metrics).toHaveTextContent("学习");
 
     fireEvent.change(screen.getByLabelText("本周总结"), { target: { value: "数学复习完成得不错" } });

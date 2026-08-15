@@ -126,9 +126,9 @@ export function GrowthPage() {
             <small>{reviewSnapshot.total ? `${Math.round(reviewSnapshot.ratio * 100)}% 已完成` : "还没有任务记录"}</small>
           </article>
           <article>
-            <span>预计 / 实际</span>
-            <strong>{formatTrackedTime(reviewSnapshot.estimatedMinutes)}</strong>
-            <small>实际 {formatTrackedTime(reviewSnapshot.actualMinutes)}</small>
+            <span>任务用时</span>
+            <strong>{formatTrackedTime(reviewSnapshot.actualMinutes)}</strong>
+            <small>来自任务的实际记录</small>
           </article>
           <article>
             <span>主要投入</span>

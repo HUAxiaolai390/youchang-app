@@ -45,7 +45,6 @@ export interface FixedTaskTemplate {
   reminderMinutesBefore?: ReminderMinutesBefore;
   priority?: TaskPriority;
   steps?: TaskStep[];
-  estimatedMinutes?: number;
   repeatRule?: FixedRepeatRule;
   skippedDates?: DateKey[];
   pausedUntil?: DateKey;
@@ -68,7 +67,6 @@ export interface FixedTaskRecord {
   reminderSnoozedUntil?: string;
   priority?: TaskPriority;
   steps?: TaskStep[];
-  estimatedMinutes?: number;
   actualMinutes?: number;
 }
 
@@ -89,7 +87,6 @@ export interface ScheduledTask {
   reminderSnoozedUntil?: string;
   priority?: TaskPriority;
   steps?: TaskStep[];
-  estimatedMinutes?: number;
   actualMinutes?: number;
 }
 

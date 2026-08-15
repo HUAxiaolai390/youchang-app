@@ -37,8 +37,7 @@ function createFixedRecord(
     plannedStartTime: task.plannedStartTime,
     reminderMinutesBefore: task.reminderMinutesBefore,
     priority: task.priority,
-    steps: resetTaskSteps(task.steps),
-    estimatedMinutes: task.estimatedMinutes
+    steps: resetTaskSteps(task.steps)
   };
 }
 
@@ -119,7 +118,6 @@ function rescheduleTaskToDate(
     reminderMinutesBefore: source.reminderMinutesBefore,
     priority: source.priority,
     steps: source.steps?.map((step) => ({ ...step })),
-    estimatedMinutes: source.estimatedMinutes,
     createdAt: now.toISOString()
   };
   const record: RescheduleRecord = {

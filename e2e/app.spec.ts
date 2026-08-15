@@ -146,7 +146,7 @@ test("customizes and remembers the focus timer", async ({ page }) => {
   await expect(page.getByText("0 次", { exact: true })).toBeVisible();
 });
 
-test("plans a timed task and shows it in the weekly view", async ({ page }) => {
+test("plans a timed task without estimated time and shows it in the weekly view", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => window.localStorage.clear());
   await page.reload();
@@ -154,15 +154,15 @@ test("plans a timed task and shows it in the weekly view", async ({ page }) => {
   await page.getByRole("button", { name: "添加任务" }).click();
   await page.getByLabel("任务名称").fill("英语听力训练");
   await page.getByLabel("开始时间（选填）").fill("20:30");
-  await page.getByLabel("预计用时（分钟，选填）").fill("40");
+  await expect(page.getByText(/预计用时/)).toHaveCount(0);
   await page.getByRole("button", { name: "保存任务" }).click();
 
-  await expect(page.getByText(/20:30 · 预计 40 分钟/)).toBeVisible();
+  await expect(page.locator(".task-item__copy").getByText("学习 · 20:30", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "计划" }).click();
   await expect(page.getByRole("heading", { name: "本周安排" })).toBeVisible();
   await expect(page.getByText("英语听力训练", { exact: true })).toBeVisible();
   await expect(page.getByText("20:30", { exact: true })).toBeVisible();
-  await expect(page.getByText("40 分", { exact: true })).toBeVisible();
+  await expect(page.getByText(/预计/)).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });
 
@@ -220,16 +220,13 @@ test("shows progress details for an individual fixed habit", async ({ page }) =>
   await expectNoHorizontalOverflow(page);
 });
 
-test("shows phone installation guidance in settings", async ({ page }) => {
+test("keeps the settings page free of the old phone installation panel", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => window.localStorage.clear());
   await page.reload();
 
   await page.getByRole("button", { name: "设置", exact: true }).click();
-  const installPanel = page.getByRole("region", { name: "安装到手机" });
-  await expect(installPanel).toBeVisible();
-  await expect(installPanel).toContainText("安装后会像普通 App 一样出现在手机桌面");
-  await expect(installPanel).toContainText("电脑和手机暂时不会自动同步");
+  await expect(page.getByRole("region", { name: "安装到手机" })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });
 

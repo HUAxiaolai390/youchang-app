@@ -65,7 +65,6 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
           reminderMinutesBefore: record.reminderMinutesBefore ?? template.reminderMinutesBefore,
           priority: record.priority ?? template.priority,
           steps: record.steps ?? template.steps,
-          estimatedMinutes: record.estimatedMinutes ?? template.estimatedMinutes,
           actualMinutes: record.actualMinutes,
           repeatRule: template.repeatRule,
           repeatLabel: formatFixedRepeatRule(template.repeatRule)
@@ -78,7 +77,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
         categoryName: liveCategoryName(task.categoryId), completed: task.status === "completed", editable: ["pending", "completed"].includes(task.status),
         goalId: task.goalId,
         goalTitle: goalsById.get(task.goalId ?? ""),
-        plannedStartTime: task.plannedStartTime, reminderMinutesBefore: task.reminderMinutesBefore, estimatedMinutes: task.estimatedMinutes,
+        plannedStartTime: task.plannedStartTime, reminderMinutesBefore: task.reminderMinutesBefore,
         priority: task.priority,
         steps: task.steps,
         actualMinutes: task.actualMinutes
@@ -110,7 +109,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
         saved = dispatch({ type: "fixed/update", id: editing.taskId, input: {
           title: values.title, categoryId: values.categoryId,
           goalId: values.goalId,
-          plannedStartTime: values.plannedStartTime, reminderMinutesBefore: values.reminderMinutesBefore, estimatedMinutes: values.estimatedMinutes,
+          plannedStartTime: values.plannedStartTime, reminderMinutesBefore: values.reminderMinutesBefore,
           priority: values.priority,
           steps: values.steps,
           repeatRule: values.repeatRule
@@ -119,7 +118,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
         saved = dispatch({ type: "scheduled/update", id: editing.taskId, input: {
           title: values.title, categoryId: values.categoryId, scheduledDate: values.date,
           goalId: values.goalId,
-          plannedStartTime: values.plannedStartTime, reminderMinutesBefore: values.reminderMinutesBefore, estimatedMinutes: values.estimatedMinutes,
+          plannedStartTime: values.plannedStartTime, reminderMinutesBefore: values.reminderMinutesBefore,
           priority: values.priority,
           steps: values.steps
         } });
@@ -128,7 +127,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
       saved = dispatch({ type: "fixed/add", input: {
         title: values.title, categoryId: values.categoryId, activeFrom: today,
         goalId: values.goalId,
-        plannedStartTime: values.plannedStartTime, reminderMinutesBefore: values.reminderMinutesBefore, estimatedMinutes: values.estimatedMinutes,
+        plannedStartTime: values.plannedStartTime, reminderMinutesBefore: values.reminderMinutesBefore,
         priority: values.priority,
         steps: values.steps,
         repeatRule: values.repeatRule
@@ -137,7 +136,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
       saved = dispatch({ type: "scheduled/add", input: {
         title: values.title, categoryId: values.categoryId, scheduledDate: values.date,
         goalId: values.goalId,
-        plannedStartTime: values.plannedStartTime, reminderMinutesBefore: values.reminderMinutesBefore, estimatedMinutes: values.estimatedMinutes,
+        plannedStartTime: values.plannedStartTime, reminderMinutesBefore: values.reminderMinutesBefore,
         priority: values.priority,
         steps: values.steps
       } });
@@ -186,7 +185,6 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
     date: editing.date,
     plannedStartTime: editing.plannedStartTime,
     reminderMinutesBefore: editing.reminderMinutesBefore,
-    estimatedMinutes: editing.estimatedMinutes,
     priority: editing.priority ?? "medium",
     steps: editing.steps,
     completed: editing.completed,
@@ -196,8 +194,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
   const focusVisible = focusOpen || focusRunning;
   const nextTaskDetails = nextTask ? [
     nextTask.categoryName,
-    nextTask.plannedStartTime ? `${nextTask.plannedStartTime} 开始` : undefined,
-    nextTask.estimatedMinutes ? `预计 ${nextTask.estimatedMinutes} 分钟` : undefined
+    nextTask.plannedStartTime ? `${nextTask.plannedStartTime} 开始` : undefined
   ].filter(Boolean).join(" · ") : "";
   const celebrateFocus = useCallback(() => {
     setCelebrationKey((current) => current + 1);

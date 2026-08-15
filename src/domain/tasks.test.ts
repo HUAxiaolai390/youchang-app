@@ -283,7 +283,7 @@ describe("task and category rules", () => {
     const original = state();
     original.fixedTasks.push({
       id: "exercise", title: "跑步 4KM", categoryId: "exercise", categoryNameSnapshot: "运动",
-      activeFrom: "2026-07-27", estimatedMinutes: 30, order: 0, createdAt: now.toISOString()
+      activeFrom: "2026-07-27", order: 0, createdAt: now.toISOString()
     });
 
     const completed = toggleFixedTaskForDate(original, "exercise", "2026-07-29", now);
@@ -291,7 +291,7 @@ describe("task and category rules", () => {
     expect(completed.fixedRecords).toEqual([
       expect.objectContaining({
         templateId: "exercise", date: "2026-07-29", titleSnapshot: "跑步 4KM",
-        estimatedMinutes: 30, completedAt: now.toISOString()
+        completedAt: now.toISOString()
       })
     ]);
   });

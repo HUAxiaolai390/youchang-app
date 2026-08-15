@@ -6,7 +6,6 @@ import { createInitialState } from "../../domain/defaults";
 import type { AppState, FixedTaskTemplate } from "../../domain/types";
 import type { AppRepository } from "../../storage/repository";
 import { SettingsPage } from "./SettingsPage";
-import { InstallPromptProvider } from "../../components/InstallPromptProvider";
 
 class InMemoryRepository implements AppRepository {
   state: AppState;
@@ -25,7 +24,7 @@ class InMemoryRepository implements AppRepository {
 
 function renderSettings(state = createInitialState(new Date(2026, 6, 31, 9))) {
   const repository = new InMemoryRepository(state);
-  render(<InstallPromptProvider><AppStateProvider repository={repository}><SettingsPage /></AppStateProvider></InstallPromptProvider>);
+  render(<AppStateProvider repository={repository}><SettingsPage /></AppStateProvider>);
   return repository;
 }
 

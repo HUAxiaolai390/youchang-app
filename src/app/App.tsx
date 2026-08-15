@@ -9,7 +9,6 @@ import { PwaUpdatePrompt } from "../components/PwaUpdatePrompt";
 import { BackgroundMusic } from "../components/BackgroundMusic";
 import { getDailyQuote } from "../domain/daily-quotes";
 import { TaskReminderCenter } from "../components/TaskReminderCenter";
-import { InstallPromptProvider } from "../components/InstallPromptProvider";
 import { NativeTaskNotificationSync } from "../components/NativeTaskNotificationSync";
 
 import { useEffect, useState } from "react";
@@ -20,13 +19,7 @@ export function App({ repository }: { repository?: AppRepository }) {
     () => repository ?? createLocalRepository(window.localStorage, () => new Date())
   );
 
-  return (
-    <InstallPromptProvider>
-      <AppStateProvider repository={appRepository}>
-        <AppContents />
-      </AppStateProvider>
-    </InstallPromptProvider>
-  );
+  return <AppStateProvider repository={appRepository}><AppContents /></AppStateProvider>;
 }
 
 function AppContents() {

@@ -3,7 +3,6 @@ import { useAppState } from "../../app/AppStateProvider";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { RepeatRuleFields } from "../../components/RepeatRuleFields";
 import { toDateKey } from "../../domain/date";
-import { maximumEstimatedMinutes } from "../../domain/planning";
 import { formatFixedRepeatRule, getFixedRepeatRule } from "../../domain/repeat";
 import { formatReminderMinutes, normalizeReminderMinutesBefore, reminderMinuteOptions } from "../../domain/reminders";
 import { formatTaskPriority, taskPriorityOptions } from "../../domain/priorities";
@@ -14,7 +13,6 @@ import {
   removeRecoverySnapshot,
   type RecoverySnapshot
 } from "../../storage/repository";
-import { InstallAppPanel } from "../../components/InstallAppPanel";
 import {
   checkExactAlarmPermission,
   checkSystemNotificationPermission,
@@ -103,7 +101,6 @@ export function SettingsPage() {
   const [editingFixedSteps, setEditingFixedSteps] = useState("");
   const [editingFixedStartTime, setEditingFixedStartTime] = useState("");
   const [editingFixedReminderMinutes, setEditingFixedReminderMinutes] = useState("");
-  const [editingFixedEstimatedMinutes, setEditingFixedEstimatedMinutes] = useState("");
   const [editingFixedRepeatRule, setEditingFixedRepeatRule] = useState<FixedRepeatRule>({ type: "daily" });
   const [exceptionFixedId, setExceptionFixedId] = useState<string>();
   const [exceptionDate, setExceptionDate] = useState<DateKey>(() => toDateKey(new Date()));
@@ -194,7 +191,6 @@ export function SettingsPage() {
     setEditingFixedSteps(task.steps?.map((step) => step.title).join("\n") ?? "");
     setEditingFixedStartTime(task.plannedStartTime ?? "");
     setEditingFixedReminderMinutes(task.reminderMinutesBefore?.toString() ?? "");
-    setEditingFixedEstimatedMinutes(task.estimatedMinutes?.toString() ?? "");
     setEditingFixedRepeatRule(getFixedRepeatRule(task));
   }
 
@@ -218,7 +214,6 @@ export function SettingsPage() {
       steps: stepsFromLines(editingFixedSteps, state.fixedTasks.find((task) => task.id === editingFixedId)?.steps),
       plannedStartTime: editingFixedStartTime ? editingFixedStartTime as TimeKey : undefined,
       reminderMinutesBefore: editingFixedStartTime ? normalizeReminderMinutesBefore(editingFixedReminderMinutes) : undefined,
-      estimatedMinutes: editingFixedEstimatedMinutes ? Number(editingFixedEstimatedMinutes) : undefined,
       repeatRule: editingFixedRepeatRule
     } })) {
       setEditingFixedId(undefined);
@@ -319,7 +314,6 @@ export function SettingsPage() {
 
   return (
     <section className="settings-page" aria-label="设置内容">
-      <InstallAppPanel />
       <section className="surface-card settings-section" aria-labelledby="profile-settings-title">
         <h2 id="profile-settings-title">个人设置</h2>
         <form className="settings-form" onSubmit={saveDisplayName}>
@@ -381,7 +375,7 @@ export function SettingsPage() {
           {managedFixedTasks.length === 0 && <li className="settings-muted">还没有固定任务</li>}
           {managedFixedTasks.map((task) => (
             <li key={task.id} className="settings-list__item">
-              <span><strong>{task.title}</strong><small>{formatTaskPriority(task.priority)}优先级 · {categoryName(state.categories, task.categoryId)}{task.goalId ? ` · 目标：${(state.goals ?? []).find((goal) => goal.id === task.goalId)?.title ?? "已删除"}` : ""} · {formatFixedRepeatRule(task.repeatRule)}{task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}{task.reminderMinutesBefore !== undefined ? ` · ${formatReminderMinutes(task.reminderMinutesBefore)}` : ""}{task.estimatedMinutes ? ` · 预计 ${task.estimatedMinutes} 分钟` : ""}{task.pausedUntil && task.pausedUntil >= todayKey ? ` · 暂停至 ${task.pausedUntil}` : ""}{(task.skippedDates ?? []).some((date) => date >= todayKey) ? ` · 已请假 ${(task.skippedDates ?? []).filter((date) => date >= todayKey).length} 天` : ""} · {task.inactiveFrom ? "已停用" : "进行中"}</small></span>
+              <span><strong>{task.title}</strong><small>{formatTaskPriority(task.priority)}优先级 · {categoryName(state.categories, task.categoryId)}{task.goalId ? ` · 目标：${(state.goals ?? []).find((goal) => goal.id === task.goalId)?.title ?? "已删除"}` : ""} · {formatFixedRepeatRule(task.repeatRule)}{task.plannedStartTime ? ` · ${task.plannedStartTime}` : ""}{task.reminderMinutesBefore !== undefined ? ` · ${formatReminderMinutes(task.reminderMinutesBefore)}` : ""}{task.pausedUntil && task.pausedUntil >= todayKey ? ` · 暂停至 ${task.pausedUntil}` : ""}{(task.skippedDates ?? []).some((date) => date >= todayKey) ? ` · 已请假 ${(task.skippedDates ?? []).filter((date) => date >= todayKey).length} 天` : ""} · {task.inactiveFrom ? "已停用" : "进行中"}</small></span>
               <span className="settings-inline-actions">
                 <button type="button" onClick={() => beginEditFixedTask(task)} aria-label={`编辑固定任务：${task.title}`}>编辑</button>
                 {!task.inactiveFrom && <button type="button" onClick={() => { setExceptionFixedId(task.id); setExceptionDate(todayKey); }} aria-label={`请假或暂停：${task.title}`}>请假/暂停</button>}
@@ -443,7 +437,6 @@ export function SettingsPage() {
           <RepeatRuleFields idPrefix="editing-fixed" value={editingFixedRepeatRule} onChange={setEditingFixedRepeatRule} />
           <div className="task-form__planning">
             <label htmlFor="editing-fixed-start-time"><span>编辑开始时间（选填）</span><input id="editing-fixed-start-time" className="field-control" type="time" value={editingFixedStartTime} onChange={(event) => setEditingFixedStartTime(event.target.value)} /></label>
-            <label htmlFor="editing-fixed-estimated-minutes"><span>编辑预计用时（分钟）</span><input id="editing-fixed-estimated-minutes" className="field-control" type="number" min="1" max={maximumEstimatedMinutes} value={editingFixedEstimatedMinutes} onChange={(event) => setEditingFixedEstimatedMinutes(event.target.value)} /></label>
             <label className="task-form__reminder" htmlFor="editing-fixed-reminder"><span>编辑任务提醒</span><select id="editing-fixed-reminder" className="field-control" value={editingFixedReminderMinutes} onChange={(event) => setEditingFixedReminderMinutes(event.target.value)}><option value="">不提醒</option>{reminderMinuteOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
           </div>
           {fixedTaskError && <p className="form-error" role="alert">{fixedTaskError}</p>}
@@ -505,7 +498,7 @@ export function SettingsPage() {
         {clearArmed && <div className="clear-confirmation"><label className="field-label" htmlFor="clear-phrase">确认清空</label><input id="clear-phrase" className="field-control" value={clearPhrase} onChange={(event) => setClearPhrase(event.target.value)} placeholder="请输入“清空”" /><button className="button" type="button" disabled={clearPhrase !== "清空"} onClick={() => setClearDialogOpen(true)}>确认清空</button></div>}
       </section>
 
-      <p className="settings-version">有常 1.8</p>
+      <p className="settings-version">有常 1.9</p>
 
       {fixedTaskToDelete && <ConfirmDialog title="删除固定任务" message={`删除“${fixedTaskToDelete.title}”后将不再生成新任务，已有的完成记录和成长统计会保留。`} confirmLabel="删除固定任务" onCancel={() => setFixedTaskToDelete(undefined)} onConfirm={() => { dispatch({ type: "fixed/delete", id: fixedTaskToDelete.id }); setFixedTaskToDelete(undefined); }} />}
       {categoryToDelete && <ConfirmDialog title="删除自定义分类" message={`删除“${categoryToDelete.name}”后，当前任务会归入“其他”。`} confirmLabel="删除分类" onCancel={() => setCategoryToDelete(undefined)} onConfirm={() => { dispatch({ type: "category/delete", id: categoryToDelete.id }); setCategoryToDelete(undefined); }} />}

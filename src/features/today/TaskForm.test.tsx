@@ -35,7 +35,7 @@ describe("TaskForm", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("保存失败，请立即导出备份");
   });
 
-  it("submits an optional start time and estimated duration", async () => {
+  it("submits an optional start time without an estimated-time field", async () => {
     const state = createInitialState(new Date(2026, 6, 31, 9));
     const onSubmit = vi.fn();
     const user = userEvent.setup();
@@ -43,11 +43,11 @@ describe("TaskForm", () => {
 
     await user.type(screen.getByLabelText("任务名称"), "数学练习");
     await user.type(screen.getByLabelText("开始时间（选填）"), "19:30");
-    await user.type(screen.getByLabelText("预计用时（分钟，选填）"), "45");
+    expect(screen.queryByText(/预计用时/)).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "保存任务" }));
 
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
-      plannedStartTime: "19:30", estimatedMinutes: 45
+      plannedStartTime: "19:30"
     }));
   });
 

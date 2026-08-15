@@ -29,12 +29,12 @@ describe("WeekPage", () => {
       {
         id: "evening", title: "晚间复习", categoryId: "study", categoryNameSnapshot: "学习",
         scheduledDate: "2026-08-05", status: "pending", plannedStartTime: "19:00",
-        estimatedMinutes: 60, actualMinutes: 75, createdAt: new Date(2026, 7, 5, 9).toISOString()
+        actualMinutes: 75, createdAt: new Date(2026, 7, 5, 9).toISOString()
       },
       {
         id: "morning", title: "晨跑", categoryId: "exercise", categoryNameSnapshot: "运动",
         scheduledDate: "2026-08-05", status: "pending", plannedStartTime: "07:00",
-        estimatedMinutes: 30, createdAt: new Date(2026, 7, 5, 9).toISOString()
+        createdAt: new Date(2026, 7, 5, 9).toISOString()
       }
     );
 
@@ -46,7 +46,8 @@ describe("WeekPage", () => {
       expect.stringContaining("晨跑"),
       expect.stringContaining("晚间复习")
     ]);
-    expect(screen.getByText(/预计 60 分钟 · 实际 75 分钟 · 多 15 分钟/)).toBeVisible();
+    expect(screen.getByText("实际 75 分")).toBeVisible();
+    expect(screen.queryByText(/预计/)).not.toBeInTheDocument();
   });
 
   it("filters the weekly plan by priority, category, and completion status", async () => {
@@ -92,7 +93,7 @@ describe("WeekPage", () => {
     state.scheduledTasks.push({
       id: "task", title: "完成报告", categoryId: "work", categoryNameSnapshot: "工作",
       scheduledDate: "2026-08-05", status: "pending", plannedStartTime: "14:00",
-      estimatedMinutes: 90, createdAt: new Date(2026, 7, 5, 9).toISOString()
+      createdAt: new Date(2026, 7, 5, 9).toISOString()
     });
     const { repository, user } = renderWeek(state);
 
@@ -102,7 +103,7 @@ describe("WeekPage", () => {
     expect(screen.getByRole("heading", { name: "8月6日 星期四" })).toBeVisible();
     expect(repository.state.scheduledTasks.find((task) => task.id === "task")?.status).toBe("rescheduled");
     expect(repository.state.scheduledTasks.find((task) => task.sourceTaskId === "task")).toMatchObject({
-      scheduledDate: "2026-08-06", plannedStartTime: "14:00", estimatedMinutes: 90, status: "pending"
+      scheduledDate: "2026-08-06", plannedStartTime: "14:00", status: "pending"
     });
   });
 
@@ -148,11 +149,10 @@ describe("WeekPage", () => {
     await user.click(screen.getByRole("button", { name: "添加到这天" }));
     await user.type(screen.getByLabelText("任务名称"), "英语听力");
     await user.type(screen.getByLabelText("开始时间（选填）"), "20:30");
-    await user.type(screen.getByLabelText("预计用时（分钟，选填）"), "40");
     await user.click(screen.getByRole("button", { name: "保存任务" }));
 
     expect(repository.state.scheduledTasks[0]).toMatchObject({
-      title: "英语听力", scheduledDate: "2026-08-06", plannedStartTime: "20:30", estimatedMinutes: 40
+      title: "英语听力", scheduledDate: "2026-08-06", plannedStartTime: "20:30"
     });
     expect(screen.getByText("英语听力")).toBeVisible();
   });
