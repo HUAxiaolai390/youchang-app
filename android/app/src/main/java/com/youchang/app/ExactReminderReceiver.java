@@ -7,6 +7,8 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.PowerManager;
@@ -76,6 +78,10 @@ public class ExactReminderReceiver extends BroadcastReceiver {
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setAutoCancel(true)
             .setContentIntent(openApp);
+        Bitmap mascot = BitmapFactory.decodeResource(context.getResources(), mascotResource(id, title));
+        if (mascot != null) {
+            notification.setLargeIcon(NotificationCompat.reduceLargeIconSize(context, mascot));
+        }
         if (completeAction != null && snoozeAction != null) {
             notification
                 .addAction(0, "完成", completeAction)
@@ -88,6 +94,17 @@ public class ExactReminderReceiver extends BroadcastReceiver {
         } catch (SecurityException ignored) {
             // Notification permission can be revoked after the alarm is scheduled.
         }
+    }
+
+    private int mascotResource(int notificationId, String title) {
+        if (title.contains("专注完成")) return R.drawable.notification_cat_focus_done;
+        if (title.contains("休息结束")) return R.drawable.notification_cat_break_done;
+        if (title.contains("定时测试")) return R.drawable.notification_cat_task_study;
+
+        int variant = Math.floorMod(notificationId, 3);
+        if (variant == 1) return R.drawable.notification_cat_task_phone;
+        if (variant == 2) return R.drawable.notification_cat_task_balance;
+        return R.drawable.notification_cat_task_study;
     }
 
     private PendingIntent actionIntent(
