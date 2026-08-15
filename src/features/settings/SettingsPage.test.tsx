@@ -232,6 +232,9 @@ describe("SettingsPage", () => {
 
     try {
       await user.click(screen.getByRole("button", { name: "编辑固定任务：晨跑" }));
+      const editDialog = screen.getByRole("dialog", { name: "编辑固定任务" });
+      expect(editDialog).toBeVisible();
+      expect(editDialog.closest(".settings-section")).toBeNull();
       await user.selectOptions(screen.getByLabelText("编辑关联长期目标（选填）"), "health");
       await user.click(screen.getByRole("button", { name: "保存固定任务" }));
 
@@ -260,6 +263,37 @@ describe("SettingsPage", () => {
         plannedStartTime: "21:00",
         reminderMinutesBefore: 30
       });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("deletes a managed fixed task after confirmation while keeping its history", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date(2026, 7, 1, 12));
+    const state = createInitialState(new Date(2026, 7, 1, 12));
+    const task = addManagedFixedTask(state, { title: "晨读" });
+    state.fixedRecords.push({
+      id: "fixed-history",
+      templateId: task.id,
+      titleSnapshot: task.title,
+      categoryId: task.categoryId,
+      categoryNameSnapshot: task.categoryNameSnapshot,
+      date: "2026-07-31",
+      completedAt: "2026-07-31T01:30:00.000Z"
+    });
+    const repository = renderSettings(state);
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    try {
+      await user.click(screen.getByRole("button", { name: "删除固定任务：晨读" }));
+      const dialog = screen.getByRole("dialog", { name: "删除固定任务" });
+      expect(dialog).toHaveTextContent("已有的完成记录和成长统计会保留");
+      await user.click(within(dialog).getByRole("button", { name: "删除固定任务" }));
+
+      expect(repository.load().fixedTasks).toHaveLength(0);
+      expect(repository.load().fixedRecords).toHaveLength(1);
+      expect(screen.queryByText("晨读")).not.toBeInTheDocument();
     } finally {
       vi.useRealTimers();
     }

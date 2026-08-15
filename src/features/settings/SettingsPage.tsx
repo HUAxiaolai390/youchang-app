@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import { useAppState } from "../../app/AppStateProvider";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { RepeatRuleFields } from "../../components/RepeatRuleFields";
@@ -70,6 +70,25 @@ function formatBackupAt(value: string): string {
   }).format(date);
 }
 
+function FixedTaskEditSurface({ children, onCancel }: { children: ReactNode; onCancel(): void }) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const canUseNativeDialog = typeof HTMLDialogElement !== "undefined" && "showModal" in HTMLDialogElement.prototype;
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (canUseNativeDialog && dialog && !dialog.open) dialog.showModal();
+    return () => {
+      if (canUseNativeDialog && dialog?.open) dialog.close();
+    };
+  }, [canUseNativeDialog]);
+
+  if (!canUseNativeDialog) {
+    return <section className="task-form-panel fixed-task-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="fixed-task-edit-title">{children}</section>;
+  }
+
+  return <dialog ref={dialogRef} className="task-form-panel fixed-task-edit-dialog" aria-labelledby="fixed-task-edit-title" onCancel={onCancel}>{children}</dialog>;
+}
+
 export function SettingsPage() {
   const { state, dispatch } = useAppState();
   const [displayName, setDisplayName] = useState(state.settings.displayName);
@@ -95,6 +114,7 @@ export function SettingsPage() {
   );
   const [recoveryToDelete, setRecoveryToDelete] = useState<RecoverySnapshot>();
   const [categoryToDelete, setCategoryToDelete] = useState<Category>();
+  const [fixedTaskToDelete, setFixedTaskToDelete] = useState<FixedTaskTemplate>();
   const [clearPhrase, setClearPhrase] = useState("");
   const [clearArmed, setClearArmed] = useState(false);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
@@ -366,6 +386,7 @@ export function SettingsPage() {
                 <button type="button" onClick={() => beginEditFixedTask(task)} aria-label={`编辑固定任务：${task.title}`}>编辑</button>
                 {!task.inactiveFrom && <button type="button" onClick={() => { setExceptionFixedId(task.id); setExceptionDate(todayKey); }} aria-label={`请假或暂停：${task.title}`}>请假/暂停</button>}
                 <button type="button" onClick={() => dispatch({ type: "fixed/set-active", id: task.id, active: Boolean(task.inactiveFrom) })} aria-label={`${task.inactiveFrom ? "启用" : "停用"}：${task.title}`}>{task.inactiveFrom ? "启用" : "停用"}</button>
+                <button type="button" onClick={() => setFixedTaskToDelete(task)} aria-label={`删除固定任务：${task.title}`}>删除</button>
               </span>
             </li>
           ))}
@@ -393,7 +414,14 @@ export function SettingsPage() {
             <button type="button" onClick={() => setExceptionFixedId(undefined)}>关闭</button>
           </div>
         </section>}
-        {editingFixedId && <form className="settings-form settings-form--edit" onSubmit={saveFixedTask} aria-label="编辑固定任务">
+      </section>
+
+      {editingFixedId && <FixedTaskEditSurface onCancel={() => setEditingFixedId(undefined)}>
+        <form className="settings-form settings-form--edit fixed-task-edit-form" onSubmit={saveFixedTask} aria-label="编辑固定任务">
+          <div className="task-form__heading">
+            <h2 id="fixed-task-edit-title">编辑固定任务</h2>
+            <button type="button" className="task-form__close" aria-label="关闭编辑固定任务" onClick={() => setEditingFixedId(undefined)}>×</button>
+          </div>
           <label className="field-label" htmlFor="editing-fixed-title">编辑固定任务名称</label>
           <input id="editing-fixed-title" className="field-control" value={editingFixedTitle} onChange={(event) => setEditingFixedTitle(event.target.value)} />
           <label className="field-label" htmlFor="editing-fixed-category">编辑固定任务分类</label>
@@ -420,8 +448,8 @@ export function SettingsPage() {
           </div>
           {fixedTaskError && <p className="form-error" role="alert">{fixedTaskError}</p>}
           <div className="settings-inline-actions"><button className="button" type="button" onClick={() => setEditingFixedId(undefined)}>取消编辑</button><button className="button button--primary" type="submit">保存固定任务</button></div>
-        </form>}
-      </section>
+        </form>
+      </FixedTaskEditSurface>}
 
       <section className="surface-card settings-section" aria-labelledby="category-settings-title">
         <h2 id="category-settings-title">自定义分类</h2>
@@ -477,8 +505,9 @@ export function SettingsPage() {
         {clearArmed && <div className="clear-confirmation"><label className="field-label" htmlFor="clear-phrase">确认清空</label><input id="clear-phrase" className="field-control" value={clearPhrase} onChange={(event) => setClearPhrase(event.target.value)} placeholder="请输入“清空”" /><button className="button" type="button" disabled={clearPhrase !== "清空"} onClick={() => setClearDialogOpen(true)}>确认清空</button></div>}
       </section>
 
-      <p className="settings-version">有常 1.7</p>
+      <p className="settings-version">有常 1.8</p>
 
+      {fixedTaskToDelete && <ConfirmDialog title="删除固定任务" message={`删除“${fixedTaskToDelete.title}”后将不再生成新任务，已有的完成记录和成长统计会保留。`} confirmLabel="删除固定任务" onCancel={() => setFixedTaskToDelete(undefined)} onConfirm={() => { dispatch({ type: "fixed/delete", id: fixedTaskToDelete.id }); setFixedTaskToDelete(undefined); }} />}
       {categoryToDelete && <ConfirmDialog title="删除自定义分类" message={`删除“${categoryToDelete.name}”后，当前任务会归入“其他”。`} confirmLabel="删除分类" onCancel={() => setCategoryToDelete(undefined)} onConfirm={() => { dispatch({ type: "category/delete", id: categoryToDelete.id }); setCategoryToDelete(undefined); }} />}
       {recoveryToDelete && <ConfirmDialog title="删除异常数据副本" message="删除后无法恢复。若还没导出，建议先取消并保存一份。" confirmLabel="删除副本" onCancel={() => setRecoveryToDelete(undefined)} onConfirm={() => { removeRecoverySnapshot(window.localStorage, recoveryToDelete.key); setRecoverySnapshots(listRecoverySnapshots(window.localStorage)); setRecoveryToDelete(undefined); }} />}
       {clearDialogOpen && <ConfirmDialog title="确认清空所有数据" message="这会清空本机所有数据，且无法恢复。" confirmLabel="我确认清空" onCancel={() => setClearDialogOpen(false)} onConfirm={() => { dispatch({ type: "data/clear" }); setClearDialogOpen(false); setClearArmed(false); setClearPhrase(""); }} />}

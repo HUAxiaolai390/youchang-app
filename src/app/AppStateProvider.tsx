@@ -107,6 +107,8 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
       return addFixedTask(state, action.input, now);
     case "fixed/update":
       return updateFixedTask(state, action.id, action.input, toDateKey(now));
+    case "fixed/delete":
+      return deleteTask(state, "fixed", action.id);
     case "fixed/toggle":
       return toggleFixedRecord(state, action.recordId, now);
     case "fixed/complete-from-notification": {

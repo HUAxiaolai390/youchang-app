@@ -18,6 +18,7 @@ export type AppAction =
   | { type: "scheduled/move-archived"; id: string; targetDate: DateKey }
   | { type: "fixed/add"; input: AddFixedTaskInput }
   | { type: "fixed/update"; id: string; input: UpdateFixedTaskInput }
+  | { type: "fixed/delete"; id: string }
   | { type: "fixed/toggle"; recordId: string }
   | { type: "fixed/complete-from-notification"; recordId: string; date: DateKey; completedAt: number }
   | { type: "fixed/step-toggle"; recordId: string; stepId: string }
