@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import { useAppState } from "../../app/AppStateProvider";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { HelpCenterDialog } from "../../components/HelpCenterDialog";
 import { RepeatRuleFields } from "../../components/RepeatRuleFields";
 import { toDateKey } from "../../domain/date";
 import { formatFixedRepeatRule, getFixedRepeatRule } from "../../domain/repeat";
@@ -114,6 +115,7 @@ export function SettingsPage() {
   const [clearPhrase, setClearPhrase] = useState("");
   const [clearArmed, setClearArmed] = useState(false);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [helpCenterOpen, setHelpCenterOpen] = useState(false);
   const nativeAndroid = isNativeAndroid();
   const notificationsSupported = supportsSystemNotifications();
   const [notificationPermission, setNotificationPermission] = useState<SystemNotificationPermission>(
@@ -304,6 +306,14 @@ export function SettingsPage() {
 
   return (
     <section className="settings-page" aria-label="设置内容">
+      <section className="surface-card settings-help-entry" aria-labelledby="settings-help-title">
+        <span className="settings-help-entry__icon" aria-hidden="true">?</span>
+        <div>
+          <h2 id="settings-help-title">使用帮助</h2>
+          <p>快速了解任务、优先级、提醒、专注和备份。</p>
+        </div>
+        <button type="button" className="button" onClick={() => setHelpCenterOpen(true)}>打开帮助中心</button>
+      </section>
       <section className="surface-card settings-section" aria-labelledby="reminder-settings-title">
         <div className="settings-section__heading">
           <div>
@@ -485,6 +495,7 @@ export function SettingsPage() {
       {categoryToDelete && <ConfirmDialog title="删除自定义分类" message={`删除“${categoryToDelete.name}”后，当前任务会归入“其他”。`} confirmLabel="删除分类" onCancel={() => setCategoryToDelete(undefined)} onConfirm={() => { dispatch({ type: "category/delete", id: categoryToDelete.id }); setCategoryToDelete(undefined); }} />}
       {recoveryToDelete && <ConfirmDialog title="删除异常数据副本" message="删除后无法恢复。若还没导出，建议先取消并保存一份。" confirmLabel="删除副本" onCancel={() => setRecoveryToDelete(undefined)} onConfirm={() => { removeRecoverySnapshot(window.localStorage, recoveryToDelete.key); setRecoverySnapshots(listRecoverySnapshots(window.localStorage)); setRecoveryToDelete(undefined); }} />}
       {clearDialogOpen && <ConfirmDialog title="确认清空所有数据" message="这会清空本机所有数据，且无法恢复。" confirmLabel="我确认清空" onCancel={() => setClearDialogOpen(false)} onConfirm={() => { dispatch({ type: "data/clear" }); setClearDialogOpen(false); setClearArmed(false); setClearPhrase(""); }} />}
+      {helpCenterOpen && <HelpCenterDialog onClose={() => setHelpCenterOpen(false)} />}
     </section>
   );
 }

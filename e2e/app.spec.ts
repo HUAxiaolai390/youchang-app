@@ -238,6 +238,25 @@ test("keeps the settings page free of duplicate installation and music panels", 
   await expectNoHorizontalOverflow(page);
 });
 
+test("opens the concise help center from settings", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  await page.getByRole("button", { name: "设置", exact: true }).click();
+  await page.getByRole("button", { name: "打开帮助中心" }).click();
+
+  const dialog = page.getByRole("dialog", { name: "使用说明与帮助中心" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText("第一次使用，从“今日”开始")).toBeVisible();
+  await dialog.getByText("高中低优先级怎么选？").click();
+  await expect(dialog.getByText("紧急且重要")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  await dialog.getByRole("button", { name: "知道了" }).click();
+  await expect(dialog).toHaveCount(0);
+});
+
 test("acts on a due task directly from the reminder", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => window.localStorage.clear());

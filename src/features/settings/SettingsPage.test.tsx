@@ -86,6 +86,22 @@ describe("SettingsPage", () => {
     expect(screen.getByText(/已超过 7 天/)).toBeVisible();
   });
 
+  it("opens a concise help center without lengthening the settings page", async () => {
+    renderSettings();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("button", { name: "打开帮助中心" }));
+    const dialog = screen.getByRole("dialog", { name: "使用说明与帮助中心" });
+
+    expect(dialog).toBeVisible();
+    expect(within(dialog).getByText("固定任务", { selector: "strong" })).toBeVisible();
+    expect(within(dialog).getByText(/适合英语单词、锻炼等重复习惯/)).toBeVisible();
+    expect(within(dialog).getByText(/以后再单独制作完整使用手册/)).toBeVisible();
+
+    await user.click(within(dialog).getByRole("button", { name: "知道了" }));
+    expect(screen.queryByRole("dialog", { name: "使用说明与帮助中心" })).not.toBeInTheDocument();
+  });
+
   it("offers a safe way to remove an abnormal-data recovery copy", async () => {
     window.localStorage.setItem("youchang:recovery:2026-08-15T01:00:00.000Z", "{");
     renderSettings();

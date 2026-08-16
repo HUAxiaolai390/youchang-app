@@ -969,6 +969,12 @@ button:focus-visible {
 .time-allocation-row__bar--5 { background: #979084; }
 
 .settings-page { display: grid; gap: 18px; }
+.settings-help-entry { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 15px 18px; }
+.settings-help-entry__icon { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 50%; background: var(--accent-soft); font-size: 20px; font-weight: 900; }
+.settings-help-entry h2, .settings-help-entry p { margin: 0; }
+.settings-help-entry h2 { font-size: 17px; letter-spacing: -.03em; }
+.settings-help-entry p { margin-top: 3px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.settings-help-entry .button { min-height: 40px; padding-inline: 13px; }
 .settings-section { display: grid; gap: 15px; padding: 22px; }
 .settings-section h2, .settings-section h3 { margin: 0; letter-spacing: -0.03em; }
 .settings-section h2 { font-size: 19px; }
@@ -1007,6 +1013,31 @@ button:focus-visible {
 .settings-version { padding: 0 4px 12px; text-align: center; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; clip-path: inset(50%); }
 .settings-inline-actions:has(#backup-file:focus) > label[for="backup-file"] { outline: 3px solid #171717; outline-offset: 3px; }
+.help-center-backdrop { position: fixed; z-index: 31; inset: 0; display: grid; padding: 18px; place-items: center; background: rgba(23,23,23,.48); backdrop-filter: blur(5px); }
+.help-center-dialog { width: min(calc(100% - 32px), 680px); max-height: min(88vh, 780px); margin: auto; overflow: auto; padding: 0; border: 1px solid #d9d1c6; border-radius: 24px; background: #fffdfa; box-shadow: 0 24px 80px rgba(30,24,18,.28); color: var(--ink); }
+.help-center-dialog::backdrop { background: rgba(23,23,23,.48); backdrop-filter: blur(5px); }
+.help-center__header { position: sticky; z-index: 1; top: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 21px 22px 17px; border-bottom: 1px solid var(--line); background: rgba(255,253,250,.96); backdrop-filter: blur(12px); }
+.help-center__header > div { display: grid; gap: 3px; }
+.help-center__header p, .help-center__header h2, .help-center__header span { margin: 0; }
+.help-center__header p { color: #9a6c37; font-size: 10px; font-weight: 900; letter-spacing: .15em; }
+.help-center__header h2 { font-size: 23px; letter-spacing: -.04em; }
+.help-center__header span { color: var(--muted); font-size: 12px; line-height: 1.45; }
+.help-center__header > button { flex: 0 0 auto; width: 38px; height: 38px; border: 0; border-radius: 50%; background: #f0ece5; cursor: pointer; font-size: 24px; line-height: 1; }
+.help-center__start { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 12px; margin: 18px 22px 12px; padding: 14px; border-radius: 16px; background: linear-gradient(135deg, #fff1dc, #f2eadf); }
+.help-center__start > span { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 50%; background: var(--ink); color: var(--surface); font-weight: 900; }
+.help-center__start h3, .help-center__start p { margin: 0; }
+.help-center__start h3 { font-size: 15px; }
+.help-center__start p { margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.help-center__topics { display: grid; gap: 8px; padding: 0 22px 18px; }
+.help-center__topics details { overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.help-center__topics summary { min-height: 48px; padding: 14px 38px 12px 14px; cursor: pointer; font-size: 14px; font-weight: 800; line-height: 1.45; }
+.help-center__topics details > div { display: grid; gap: 7px; padding: 0 14px 14px; color: var(--muted); font-size: 12px; line-height: 1.65; }
+.help-center__topics details > div p { margin: 0; }
+.help-center__topics details > div strong { color: var(--ink); }
+.help-priority-list p { display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: center; gap: 7px; }
+.help-center__footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 22px calc(18px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: #f7f3ec; }
+.help-center__footer p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.help-center__footer .button { flex: 0 0 auto; }
 .pwa-update-prompt { position: fixed; z-index: 30; top: max(16px, env(safe-area-inset-top)); left: 50%; display: flex; width: min(calc(100% - 32px), 560px); min-width: 0; align-items: center; justify-content: space-between; gap: 14px; padding: 13px 14px 13px 17px; transform: translateX(-50%); border: 1px solid #333; border-radius: var(--radius-control); background: var(--ink); box-shadow: 0 10px 30px rgba(23, 23, 23, .24); color: var(--surface); font-size: 14px; }
 .pwa-update-prompt span { min-width: 0; }
 .pwa-update-prompt button { flex: 0 0 auto; min-height: 36px; padding: 0 12px; border: 1px solid color-mix(in srgb, var(--surface) 55%, transparent); border-radius: 999px; background: var(--surface); color: var(--ink); cursor: pointer; font-weight: 700; }
@@ -1022,6 +1053,18 @@ button:focus-visible {
 .task-reminder__snooze-select select { min-height: 34px; padding: 0 7px; border: 1px solid #ded8ce; border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 12px; }
 
 @media (max-width: 479px) {
+  .settings-help-entry { grid-template-columns: 38px minmax(0, 1fr); padding: 14px; }
+  .settings-help-entry__icon { width: 38px; height: 38px; }
+  .settings-help-entry .button { grid-column: 1 / -1; width: 100%; min-height: 44px; }
+  .help-center-backdrop { align-items: end; padding: 0; }
+  .help-center-dialog { width: calc(100% - 16px); max-height: 90dvh; border-radius: 22px 22px 0 0; }
+  .help-center__header { padding: 18px 16px 14px; }
+  .help-center__header h2 { font-size: 20px; }
+  .help-center__start { margin: 14px 16px 10px; }
+  .help-center__topics { padding: 0 16px 14px; }
+  .help-center__topics summary { min-height: 52px; }
+  .help-center__footer { position: sticky; bottom: 0; align-items: stretch; flex-direction: column; padding: 13px 16px calc(14px + env(safe-area-inset-bottom)); }
+  .help-center__footer .button { width: 100%; min-height: 44px; }
   .task-reminder { right: 12px; bottom: calc(82px + env(safe-area-inset-bottom)); grid-template-columns: 34px minmax(0, 1fr); width: calc(100% - 24px); gap: 9px; padding: 12px; border-radius: 17px; }
   .task-reminder__icon { width: 34px; height: 34px; }
   .task-reminder__actions { grid-column: 1 / -1; justify-content: flex-end; }
