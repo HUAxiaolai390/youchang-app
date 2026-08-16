@@ -117,6 +117,7 @@ export interface FocusTimerRuntime {
     phase: FocusTimerPhase;
     remainingSeconds: number;
     deadlineAt?: string;
+    target?: string;
   };
   stopwatch: {
     elapsedSeconds: number;

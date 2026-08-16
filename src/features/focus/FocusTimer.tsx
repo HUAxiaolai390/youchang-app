@@ -71,10 +71,11 @@ export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps
   const [stopwatchRunning, setStopwatchRunning] = useState(initialStopwatchStartedAt !== null);
   const stopwatchStartedAt = useRef<number | null>(initialStopwatchStartedAt);
   const [stopwatchTarget, setStopwatchTarget] = useState(initialRuntime.stopwatch.target);
+  const [countdownTarget, setCountdownTarget] = useState(initialRuntime.countdown.target ?? "");
   const [stopwatchCategoryId, setStopwatchCategoryId] = useState(initialRuntime.stopwatch.categoryId);
   const [stopwatchTitle, setStopwatchTitle] = useState(initialRuntime.stopwatch.title);
 
-  const stopwatchTargets = useMemo(() => {
+  const taskTargets = useMemo(() => {
     const fixed = state.fixedRecords
       .filter((record) => record.date === today)
       .map((record) => ({ value: `fixed:${record.id}`, label: `固定任务 · ${record.titleSnapshot}` }));
@@ -102,6 +103,7 @@ export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps
       countdown: {
         phase,
         remainingSeconds: liveRemainingSeconds,
+        target: countdownTarget,
         ...(deadline.current === null ? {} : { deadlineAt: new Date(deadline.current).toISOString() }),
         ...overrides.countdown
       },
@@ -176,6 +178,10 @@ export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps
       if (next > 0) return;
 
       if (phase === "focus") {
+        const recordedTarget = taskTargets.some((target) => target.value === countdownTarget)
+          ? countdownTarget
+          : undefined;
+        const recordedTask = taskTargets.find((target) => target.value === recordedTarget);
         const nextTimer = createRuntimeSnapshot({
           countdown: {
             phase: "break",
@@ -186,14 +192,17 @@ export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps
         const saved = dispatch({
           type: "focus/session-complete",
           minutes: focus.focusMinutes,
-          timer: nextTimer
+          timer: nextTimer,
+          target: recordedTarget
         });
         deadline.current = null;
         setIsRunning(false);
         setPhase("break");
         setRemainingSeconds(focus.breakMinutes * 60);
         setAnnouncement(saved
-          ? `专注完成，获得 ${getFocusExperience(focus.focusMinutes)} 点经验。现在休息一下吧`
+          ? recordedTask
+            ? `专注完成，${focus.focusMinutes} 分钟已自动记入“${recordedTask.label.replace(/^.+? · /, "")}”。现在休息一下吧`
+            : `专注完成，获得 ${getFocusExperience(focus.focusMinutes)} 点经验。现在休息一下吧`
           : "专注完成，但成长记录保存失败了");
         if (saved) onFocusComplete();
       } else {
@@ -215,7 +224,7 @@ export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps
     tick();
     const timer = window.setInterval(tick, 250);
     return () => window.clearInterval(timer);
-  }, [dispatch, focus.breakMinutes, focus.focusMinutes, isRunning, onFocusComplete, phase]);
+  }, [countdownTarget, dispatch, focus.breakMinutes, focus.focusMinutes, isRunning, onFocusComplete, phase, taskTargets]);
 
   useEffect(() => {
     if (!stopwatchRunning || stopwatchStartedAt.current === null) return;
@@ -420,6 +429,25 @@ export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps
         </div>
       </div>
 
+      {mode === "countdown" && phase === "focus" && <div className="countdown-target" aria-label="倒计时关联任务">
+        <label>
+          <span>本轮专注任务（可选）</span>
+          <select
+            aria-label="本轮专注任务"
+            value={countdownTarget}
+            disabled={isRunning}
+            onChange={(event) => {
+              const target = event.target.value;
+              if (persistRuntime({ countdown: { target } })) setCountdownTarget(target);
+            }}
+          >
+            <option value="">不关联任务</option>
+            {taskTargets.map((target) => <option key={target.value} value={target.value}>{target.label}</option>)}
+          </select>
+        </label>
+        <small>{taskTargets.length > 0 ? "专注结束后，会自动加入该任务的实际用时。" : "今天还没有可关联的任务。"}</small>
+      </div>}
+
       {mode === "stopwatch" && <div className="stopwatch-target" aria-label="正计时记录位置">
         <label>
           <span>记录到</span>
@@ -432,7 +460,7 @@ export function FocusTimer({ onFocusComplete, onRunningChange }: FocusTimerProps
             }}
           >
             <option value="">仅记录到分类</option>
-            {stopwatchTargets.map((target) => <option key={target.value} value={target.value}>{target.label}</option>)}
+            {taskTargets.map((target) => <option key={target.value} value={target.value}>{target.label}</option>)}
           </select>
         </label>
         {!stopwatchTarget && <>

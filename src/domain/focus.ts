@@ -27,7 +27,8 @@ export function createFocusTimerRuntime(
     mode: "countdown",
     countdown: {
       phase: "focus",
-      remainingSeconds: focus.focusMinutes * 60
+      remainingSeconds: focus.focusMinutes * 60,
+      target: ""
     },
     stopwatch: {
       elapsedSeconds: 0,

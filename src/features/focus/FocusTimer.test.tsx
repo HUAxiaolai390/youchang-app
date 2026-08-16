@@ -87,6 +87,29 @@ describe("FocusTimer", () => {
     expect(screen.getByRole("button", { name: "继续休息" })).toBeInTheDocument();
   });
 
+  it("adds a completed countdown to the selected task's actual time", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 5, 9));
+    const state = createInitialState(new Date());
+    state.scheduledTasks.push({
+      id: "reading", title: "阅读", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-05", status: "pending", createdAt: new Date().toISOString()
+    });
+    const { repository, onFocusComplete } = renderTimer(state);
+
+    fireEvent.click(screen.getByText("自定义时长"));
+    fireEvent.change(screen.getByLabelText("专注分钟"), { target: { value: "1" } });
+    fireEvent.click(screen.getByRole("button", { name: "应用设置" }));
+    fireEvent.change(screen.getByLabelText("本轮专注任务"), { target: { value: "scheduled:reading" } });
+    fireEvent.click(screen.getByRole("button", { name: "开始专注" }));
+    act(() => vi.advanceTimersByTime(60_000));
+
+    expect(repository.value.scheduledTasks[0].actualMinutes).toBe(1);
+    expect(repository.value.focus?.completedSessions).toBe(1);
+    expect(screen.getByRole("status")).toHaveTextContent("1 分钟已自动记入“阅读”");
+    expect(onFocusComplete).toHaveBeenCalledTimes(1);
+  });
+
   it("pauses and resets without awarding experience", () => {
     vi.useFakeTimers();
     const { repository } = renderTimer();

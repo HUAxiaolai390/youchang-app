@@ -217,6 +217,7 @@ function hasValidFocusTimer(value: unknown): boolean {
     && countdown.remainingSeconds >= 0
     && countdown.remainingSeconds <= 10_800
     && (countdown.deadlineAt === undefined || isValidTimestamp(countdown.deadlineAt))
+    && (countdown.target === undefined || typeof countdown.target === "string")
     && typeof stopwatch.elapsedSeconds === "number"
     && Number.isSafeInteger(stopwatch.elapsedSeconds)
     && stopwatch.elapsedSeconds >= 0

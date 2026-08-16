@@ -89,7 +89,6 @@ function FixedTaskEditSurface({ children, onCancel }: { children: ReactNode; onC
 
 export function SettingsPage() {
   const { state, dispatch } = useAppState();
-  const [displayName, setDisplayName] = useState(state.settings.displayName);
   const [categoryNameInput, setCategoryNameInput] = useState("");
   const [categoryIconInput, setCategoryIconInput] = useState("分");
   const [fixedTaskError, setFixedTaskError] = useState<string>();
@@ -131,10 +130,6 @@ export function SettingsPage() {
     && (!nativeAndroid || exactAlarmPermission === "granted");
 
   useEffect(() => {
-    setDisplayName(state.settings.displayName);
-  }, [state.settings.displayName]);
-
-  useEffect(() => {
     const fallback = fallbackCategoryId(state.categories);
     setEditingFixedCategoryId((current) => state.categories.some((category) => category.id === current) ? current : fallback);
   }, [state.categories]);
@@ -168,11 +163,6 @@ export function SettingsPage() {
       window.removeEventListener("focus", refreshPermission);
     };
   }, [notificationsSupported, nativeAndroid]);
-
-  function saveDisplayName(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    dispatch({ type: "settings/name", value: displayName.trim() });
-  }
 
   function addCategory(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -314,15 +304,6 @@ export function SettingsPage() {
 
   return (
     <section className="settings-page" aria-label="设置内容">
-      <section className="surface-card settings-section" aria-labelledby="profile-settings-title">
-        <h2 id="profile-settings-title">个人设置</h2>
-        <form className="settings-form" onSubmit={saveDisplayName}>
-          <label className="field-label" htmlFor="display-name">我的称呼</label>
-          <input id="display-name" className="field-control" value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
-          <button className="button button--primary" type="submit">保存称呼</button>
-        </form>
-      </section>
-
       <section className="surface-card settings-section" aria-labelledby="reminder-settings-title">
         <div className="settings-section__heading">
           <div>

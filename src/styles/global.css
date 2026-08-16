@@ -330,6 +330,8 @@ button:focus-visible {
 .time-entry-dialog__field { display: grid; gap: 8px; margin-top: 18px; font-size: 14px; font-weight: 700; }
 .time-entry-dialog__field input { width: 100%; min-height: 46px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--surface); }
 .time-entry-dialog__field small { color: var(--muted); font-size: 12px; font-weight: 400; }
+.display-name-dialog__field { display: grid; gap: 8px; margin-top: 18px; font-size: 14px; font-weight: 700; }
+.display-name-dialog__field input { width: 100%; min-height: 46px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--surface); font: inherit; }
 
 .music-player { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px 18px; align-items: center; padding: 15px 18px; background: rgba(255, 253, 250, .78); backdrop-filter: blur(16px); }
 .music-player__track { display: flex; min-width: 0; align-items: center; gap: 11px; }
@@ -365,6 +367,9 @@ button:focus-visible {
 .today-hero__topline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; font-size: 13px; }
 .today-hero__topline span { color: #7c6c58; font-size: 12px; }
 .today-hero h1 { margin: 6px 0; font-size: clamp(27px, 5vw, 34px); letter-spacing: -0.055em; }
+.today-hero__name-button { min-height: 44px; margin: -7px -8px; padding: 7px 8px; border: 0; border-radius: 12px; background: transparent; color: inherit; cursor: pointer; font: inherit; font-weight: inherit; letter-spacing: inherit; text-align: left; }
+.today-hero__name-button:hover { background: rgba(255,255,255,.38); }
+.today-hero__name-button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 .today-hero__cat-message { line-height: 1.65; }
 .cat-mascot { position: relative; z-index: 1; justify-self: center; width: 148px; padding: 0; border: 0; border-radius: 20px; background: transparent; cursor: pointer; line-height: 0; }
 .cat-mascot:focus-visible { outline: 3px solid #171717; outline-offset: 3px; }
@@ -491,6 +496,11 @@ button:focus-visible {
 .stopwatch-target label { display: grid; min-width: 0; gap: 6px; color: #cfc5b6; font-size: 12px; }
 .stopwatch-target select, .stopwatch-target input { width: 100%; min-width: 0; min-height: 40px; padding: 0 10px; border: 1px solid rgba(255,255,255,.16); border-radius: 11px; background: #34312b; color: #fffaf2; }
 .stopwatch-target option { background: #34312b; color: #fffaf2; }
+.countdown-target { display: grid; gap: 7px; padding: 14px; border: 1px solid rgba(255,255,255,.1); border-radius: 16px; background: rgba(255,255,255,.045); }
+.countdown-target label { display: grid; gap: 6px; color: #cfc5b6; font-size: 12px; }
+.countdown-target select { width: 100%; min-height: 42px; padding: 0 10px; border: 1px solid rgba(255,255,255,.16); border-radius: 11px; background: #34312b; color: #fffaf2; }
+.countdown-target option { background: #34312b; color: #fffaf2; }
+.countdown-target small { color: #a99f91; font-size: 11px; line-height: 1.5; }
 .task-list { border-top: 1px solid var(--line); padding-top: 18px; }
 .task-list__header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
 .task-list__header h2 { margin: 0; font-size: 18px; letter-spacing: -0.03em; }

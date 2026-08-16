@@ -172,8 +172,16 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
       return snoozeTaskReminder(state, action.kind, action.id, action.until);
     case "focus/configure":
       return configureFocus(state, action.focusMinutes, action.breakMinutes, action.timer);
-    case "focus/session-complete":
-      return completeFocusSession(state, action.minutes, action.timer);
+    case "focus/session-complete": {
+      const completed = completeFocusSession(state, action.minutes, action.timer);
+      if (action.target?.startsWith("fixed:")) {
+        return addFixedActualMinutes(completed, action.target.slice(6), action.minutes);
+      }
+      if (action.target?.startsWith("scheduled:")) {
+        return addScheduledActualMinutes(completed, action.target.slice(10), action.minutes);
+      }
+      return completed;
+    }
     case "focus/timer-save":
       return saveFocusTimerRuntime(state, action.timer);
     case "fixed/time-set":

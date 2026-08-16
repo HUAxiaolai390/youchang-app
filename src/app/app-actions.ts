@@ -37,7 +37,7 @@ export type AppAction =
   | { type: "reminder/mark-sent"; kind: "fixed" | "scheduled"; id: string; sentAt: string }
   | { type: "reminder/snooze"; kind: "fixed" | "scheduled"; id: string; until: string }
   | { type: "focus/configure"; focusMinutes: number; breakMinutes: number; timer?: FocusTimerRuntime }
-  | { type: "focus/session-complete"; minutes: number; timer?: FocusTimerRuntime }
+  | { type: "focus/session-complete"; minutes: number; timer?: FocusTimerRuntime; target?: string }
   | { type: "focus/timer-save"; timer: FocusTimerRuntime }
   | { type: "fixed/time-set"; recordId: string; minutes: number }
   | { type: "fixed/time-add"; recordId: string; minutes: number }

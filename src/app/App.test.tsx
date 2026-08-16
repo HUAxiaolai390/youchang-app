@@ -71,7 +71,7 @@ describe("App", () => {
     render(<App />);
     await user.click(screen.getByRole("button", { name: "设置" }));
 
-    expect(screen.getByRole("heading", { name: "个人设置" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "通知权限" })).toBeInTheDocument();
   });
 
   it("shows other as the live label across pages after deleting a custom category", async () => {

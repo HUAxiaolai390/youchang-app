@@ -239,7 +239,8 @@ describe("versioned backups", () => {
           countdown: {
             phase: "focus" as const,
             remainingSeconds: 900,
-            deadlineAt: "2026-08-05T01:15:00.000Z"
+            deadlineAt: "2026-08-05T01:15:00.000Z",
+            target: "scheduled:reading"
           },
           stopwatch: {
             elapsedSeconds: 75,
@@ -253,6 +254,13 @@ describe("versioned backups", () => {
     };
 
     expect(parseBackup(JSON.stringify(timed)).focus?.timer).toEqual(timed.focus.timer);
+    expect(() => parseBackup(JSON.stringify({
+      ...timed,
+      focus: {
+        ...timed.focus,
+        timer: { ...timed.focus.timer, countdown: { ...timed.focus.timer.countdown, target: 123 } }
+      }
+    }))).toThrow("备份文件格式无效");
     expect(() => parseBackup(JSON.stringify({
       ...timed,
       focus: {

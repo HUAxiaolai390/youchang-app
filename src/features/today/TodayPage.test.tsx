@@ -79,6 +79,21 @@ function addTask(state: AppState, id: string, title: string, categoryId: string,
 afterEach(() => vi.useRealTimers());
 
 describe("TodayPage", () => {
+  it("edits the display name from the home greeting", async () => {
+    const state = createInitialState(new Date());
+    state.settings.displayName = "小来";
+    const { user, repository } = renderToday(state);
+
+    await user.click(screen.getByRole("button", { name: /早上好，小来/ }));
+    expect(screen.getByRole("dialog", { name: "修改我的称呼" })).toBeVisible();
+    await user.clear(screen.getByLabelText("我的称呼"));
+    await user.type(screen.getByLabelText("我的称呼"), "小伍");
+    await user.click(screen.getByRole("button", { name: "保存称呼" }));
+
+    expect(screen.getByRole("heading", { name: /早上好，小伍/ })).toBeVisible();
+    expect(repository.load().settings.displayName).toBe("小伍");
+  });
+
   it("always shows three equal medal slots and renders selected unlocked medals", () => {
     const state = createInitialState(new Date());
     addTask(state, "finished", "完成的任务", "study", "completed");

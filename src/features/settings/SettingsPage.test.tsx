@@ -52,15 +52,11 @@ function addManagedFixedTask(state: AppState, overrides: Partial<FixedTaskTempla
 describe("SettingsPage", () => {
   beforeEach(() => window.localStorage.clear());
 
-  it("changes the display name", async () => {
-    const repository = renderSettings();
-    const user = userEvent.setup();
+  it("keeps display-name editing out of the settings page", () => {
+    renderSettings();
 
-    await user.clear(screen.getByLabelText("我的称呼"));
-    await user.type(screen.getByLabelText("我的称呼"), "小伍");
-    await user.click(screen.getByRole("button", { name: "保存称呼" }));
-
-    expect(repository.load().settings.displayName).toBe("小伍");
+    expect(screen.queryByRole("heading", { name: "个人设置" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("我的称呼")).not.toBeInTheDocument();
   });
 
   it("shows the system-notification capability without blocking in-app reminders", () => {
@@ -136,22 +132,6 @@ describe("SettingsPage", () => {
     expect(repository.load().settings.displayName).toBe("");
     await user.click(screen.getByRole("button", { name: "确认导入" }));
     expect(repository.load().settings.displayName).toBe("备份里的我");
-  });
-
-  it("synchronizes the name draft after importing a new display name", async () => {
-    const current = createInitialState(new Date(2026, 6, 31, 9));
-    current.settings.displayName = "旧称呼";
-    const repository = renderSettings(current);
-    const imported = createInitialState(new Date(2026, 6, 30, 9));
-    imported.settings.displayName = "新的称呼";
-    const user = userEvent.setup();
-
-    await user.upload(screen.getByLabelText("导入备份"), backupFile(JSON.stringify(imported)));
-    await user.click(screen.getByRole("button", { name: "确认导入" }));
-
-    expect(screen.getByLabelText("我的称呼")).toHaveValue("新的称呼");
-    await user.click(screen.getByRole("button", { name: "保存称呼" }));
-    expect(repository.load().settings.displayName).toBe("新的称呼");
   });
 
   it("keeps fixed-task creation out of settings", () => {

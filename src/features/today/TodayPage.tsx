@@ -3,6 +3,7 @@ import { useAppState } from "../../app/AppStateProvider";
 import { CatMascot } from "../../components/CatMascot";
 import { AchievementMedal } from "../../components/AchievementMedal";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { DisplayNameDialog } from "../../components/DisplayNameDialog";
 import { TimeEntryDialog } from "../../components/TimeEntryDialog";
 import { TaskReminderOverview } from "../../components/TaskReminderOverview";
 import { achievementTierLabels, getFeaturedAchievements } from "../../domain/achievements";
@@ -34,6 +35,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
   const [deleting, setDeleting] = useState<TodayTask>();
   const [timing, setTiming] = useState<TodayTask>();
   const [habitTask, setHabitTask] = useState<TodayTask>();
+  const [displayNameOpen, setDisplayNameOpen] = useState(false);
   const [celebrationKey, setCelebrationKey] = useState(0);
   const [focusOpen, setFocusOpen] = useState(false);
   const [focusRunning, setFocusRunning] = useState(false);
@@ -210,6 +212,10 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
     focusDrawerRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
   }
 
+  function saveDisplayName(value: string) {
+    if (dispatch({ type: "settings/name", value })) setDisplayNameOpen(false);
+  }
+
   return (
     <div className={`today-page${focusVisible ? " today-page--focus-open" : ""}`}>
       <header className="today-hero surface-card" aria-label="今日概览">
@@ -218,7 +224,12 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
             <p>{formatToday(now)}</p>
             <span>日日有常，步步有长。</span>
           </div>
-          <h1>早上好，{state.settings.displayName || "朋友"}</h1>
+          <h1>
+            <button type="button" className="today-hero__name-button" title="点击修改称呼" onClick={() => setDisplayNameOpen(true)}>
+              早上好，{state.settings.displayName || "朋友"}
+              <span className="visually-hidden">，点击修改称呼</span>
+            </button>
+          </h1>
           <p className="today-hero__cat-message">{getCatMessage(progress)}</p>
         </div>
         <CatMascot baseState={progress.total === 0 ? "sleep" : "idle"} celebrationKey={celebrationKey} />
@@ -310,6 +321,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
       {deleting && <ConfirmDialog title="删除任务？" message={`确定删除“${deleting.title}”吗？`} confirmLabel="删除" onConfirm={confirmDelete} onCancel={() => setDeleting(undefined)} />}
       {timing && <TimeEntryDialog taskTitle={timing.title} currentMinutes={timing.actualMinutes} onSave={saveActualTime} onCancel={() => setTiming(undefined)} />}
       {habitTask && <HabitDetailDialog templateId={habitTask.taskId} onClose={() => setHabitTask(undefined)} />}
+      {displayNameOpen && <DisplayNameDialog currentName={state.settings.displayName} onSave={saveDisplayName} onCancel={() => setDisplayNameOpen(false)} />}
     </div>
   );
 }
