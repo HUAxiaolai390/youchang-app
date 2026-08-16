@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useAppState } from "../../app/AppStateProvider";
+import { TaskCatAnimation } from "../../components/TaskCatAnimation";
 import { fromDateKey, toDateKey } from "../../domain/date";
 import { formatReminderMinutes } from "../../domain/reminders";
 import { formatTaskPriority, normalizeTaskPriority } from "../../domain/priorities";
@@ -70,6 +71,14 @@ function WeekTaskCard({ task, canToggle, canEdit, canMove, onEdit, onMove, onTog
         {canEdit && <button type="button" onClick={() => onEdit(task)} aria-label={`编辑：${task.title}`}>编辑</button>}
         {canMove && <button type="button" className="week-task__move" onClick={() => onMove(task)} aria-label={`改期：${task.title}`}>改到</button>}
       </div>}
+      <TaskCatAnimation
+        className="week-task__cat"
+        taskKey={`${task.kind}:${task.taskId}`}
+        title={task.title}
+        categoryId={task.categoryId}
+        categoryName={task.categoryName}
+        completed={task.status === "completed"}
+      />
     </li>
   );
 }

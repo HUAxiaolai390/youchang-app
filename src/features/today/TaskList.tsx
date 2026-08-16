@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { TaskCatAnimation } from "../../components/TaskCatAnimation";
 import { formatReminderMinutes } from "../../domain/reminders";
 import { formatTaskPriority } from "../../domain/priorities";
 import { getTaskStepProgress } from "../../domain/steps";
@@ -84,6 +85,14 @@ export function TaskList({ title, tasks, onToggle, onStepToggle, onEdit, onDelet
                 {task.editable && <button type="button" onClick={() => onEdit(task)} aria-label={`编辑：${task.title}`}>编辑</button>}
                 <button type="button" onClick={() => onDelete(task)} aria-label={`删除：${task.title}`}>删除</button>
               </div>
+              <TaskCatAnimation
+                className="task-item__cat"
+                taskKey={`${task.kind}:${task.taskId}`}
+                title={task.title}
+                categoryId={task.categoryId}
+                categoryName={task.categoryName}
+                completed={task.completed}
+              />
               {stepProgress.total > 0 && <div className="task-item__step-progress" aria-label={`${task.title}步骤进度：${stepProgress.completed}/${stepProgress.total}`}>
                 <span style={{ width: `${stepProgress.ratio * 100}%` }} />
               </div>}

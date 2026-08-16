@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useAppState } from "../../app/AppStateProvider";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { TaskCatAnimation } from "../../components/TaskCatAnimation";
 import { fromDateKey, toDateKey } from "../../domain/date";
 import { getGoalsProgress, maximumGoals, maximumGoalTitleLength } from "../../domain/goals";
 import { formatTrackedTime } from "../../domain/time";
@@ -111,6 +112,12 @@ export function GoalSection({ now = new Date() }: { now?: Date }) {
               </div>
               <h3>{goal.title}</h3>
               <p>{formatDeadline(goal.deadline)} 截止</p>
+              <TaskCatAnimation
+                className="goal-card__cat"
+                taskKey={`goal:${goal.id}`}
+                title={goal.title}
+                completed={totalTasks > 0 && completedTasks === totalTasks}
+              />
               <div className="goal-card__progress" aria-label={`${goal.title}进度：${completedTasks}/${totalTasks}`}>
                 <span style={{ width: `${ratio * 100}%` }} />
               </div>
