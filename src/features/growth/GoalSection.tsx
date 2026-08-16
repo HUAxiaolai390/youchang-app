@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useAppState } from "../../app/AppStateProvider";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
-import { TaskCatAnimation } from "../../components/TaskCatAnimation";
+import { assignTaskCatVariants, TaskCatAnimation } from "../../components/TaskCatAnimation";
 import { fromDateKey, toDateKey } from "../../domain/date";
 import { getGoalsProgress, maximumGoals, maximumGoalTitleLength } from "../../domain/goals";
 import { formatTrackedTime } from "../../domain/time";
@@ -29,6 +29,10 @@ export function GoalSection({ now = new Date() }: { now?: Date }) {
   const { state, dispatch } = useAppState();
   const goals = state.goals ?? [];
   const progressItems = getGoalsProgress(state, now);
+  const goalCatVariants = assignTaskCatVariants(progressItems.map(({ goal }) => ({
+    taskKey: `goal:${goal.id}`,
+    title: goal.title
+  })));
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Goal>();
   const [deleting, setDeleting] = useState<Goal>();
@@ -101,7 +105,7 @@ export function GoalSection({ now = new Date() }: { now?: Date }) {
         </div>
       ) : (
         <div className="goal-grid">
-          {progressItems.map(({ goal, completedTasks, totalTasks, ratio, actualMinutes, daysRemaining }) => (
+          {progressItems.map(({ goal, completedTasks, totalTasks, ratio, actualMinutes, daysRemaining }, index) => (
             <article className="goal-card" key={goal.id}>
               <div className="goal-card__topline">
                 <span>{deadlineStatus(daysRemaining, completedTasks, totalTasks)}</span>
@@ -117,6 +121,7 @@ export function GoalSection({ now = new Date() }: { now?: Date }) {
                 taskKey={`goal:${goal.id}`}
                 title={goal.title}
                 completed={totalTasks > 0 && completedTasks === totalTasks}
+                variant={goalCatVariants[index]}
               />
               <div className="goal-card__progress" aria-label={`${goal.title}进度：${completedTasks}/${totalTasks}`}>
                 <span style={{ width: `${ratio * 100}%` }} />

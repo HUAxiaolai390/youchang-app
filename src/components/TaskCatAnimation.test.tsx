@@ -1,6 +1,6 @@
 import { render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getTaskCatVariant, TaskCatAnimation } from "./TaskCatAnimation";
+import { assignTaskCatVariants, getTaskCatVariant, TaskCatAnimation } from "./TaskCatAnimation";
 
 function mockMatchMedia(matches: boolean) {
   vi.stubGlobal("matchMedia", vi.fn(() => ({
@@ -34,6 +34,16 @@ describe("TaskCatAnimation", () => {
 
     expect(getTaskCatVariant(input)).toBe(variant);
     expect(["18", "14", "10", "08", "06"]).toContain(variant);
+  });
+
+  it("avoids repeating cats for tasks shown on the same day", () => {
+    const variants = assignTaskCatVariants(Array.from({ length: 10 }, (_, index) => ({
+      taskKey: `study:${index}`,
+      title: `学习任务 ${index + 1}`,
+      categoryId: "study"
+    })));
+
+    expect(new Set(variants).size).toBe(variants.length);
   });
 
   it("renders the animated asset by default", () => {

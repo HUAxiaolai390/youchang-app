@@ -8,7 +8,15 @@ type TaskCatAnimationProps = {
   categoryName?: string;
   completed?: boolean;
   className?: string;
+  variant?: string;
 };
+
+export type TaskCatDescriptor = Pick<TaskCatAnimationProps, "taskKey" | "title" | "categoryId" | "categoryName">;
+
+const allTaskCatVariants = [
+  "02", "03", "04", "05", "06", "08", "09", "10", "11",
+  "12", "13", "14", "15", "16", "17", "18", "19", "20"
+] as const;
 
 const categoryVariantPools: Record<string, readonly string[]> = {
   study: ["02", "11", "20", "16"],
@@ -47,15 +55,40 @@ function normalizeCategory(categoryId?: string, categoryName?: string): string {
   return "other";
 }
 
+function rotateVariants(variants: readonly string[], seed: string): string[] {
+  const start = stableIndex(seed, variants.length);
+  return [...variants.slice(start), ...variants.slice(0, start)];
+}
+
+function getOrderedTaskCatVariants({ taskKey, title, categoryId, categoryName }: TaskCatDescriptor): string[] {
+  const matchedRule = titleVariantRules.find((rule) => rule.pattern.test(title));
+  const categoryVariants = categoryVariantPools[normalizeCategory(categoryId, categoryName)];
+  const seed = `${taskKey}|${title}`;
+  const ordered = [
+    ...(matchedRule ? rotateVariants(matchedRule.variants, seed) : []),
+    ...rotateVariants(categoryVariants, `${seed}|category`),
+    ...rotateVariants(allTaskCatVariants, `${seed}|all`)
+  ];
+  return [...new Set(ordered)];
+}
+
 export function getTaskCatVariant({
   taskKey,
   title,
   categoryId,
   categoryName
-}: Pick<TaskCatAnimationProps, "taskKey" | "title" | "categoryId" | "categoryName">): string {
-  const matchedRule = titleVariantRules.find((rule) => rule.pattern.test(title));
-  const variants = matchedRule?.variants ?? categoryVariantPools[normalizeCategory(categoryId, categoryName)];
-  return variants[stableIndex(`${taskKey}|${title}`, variants.length)];
+}: TaskCatDescriptor): string {
+  return getOrderedTaskCatVariants({ taskKey, title, categoryId, categoryName })[0];
+}
+
+export function assignTaskCatVariants(tasks: readonly TaskCatDescriptor[]): string[] {
+  const usedVariants = new Set<string>();
+  return tasks.map((task) => {
+    const candidates = getOrderedTaskCatVariants(task);
+    const variant = candidates.find((candidate) => !usedVariants.has(candidate)) ?? candidates[0];
+    usedVariants.add(variant);
+    return variant;
+  });
 }
 
 export function TaskCatAnimation({
@@ -64,12 +97,13 @@ export function TaskCatAnimation({
   categoryId,
   categoryName,
   completed = false,
-  className
+  className,
+  variant
 }: TaskCatAnimationProps) {
   const prefersReducedMotion = usePrefersReducedMotion();
-  const variant = getTaskCatVariant({ taskKey, title, categoryId, categoryName });
+  const selectedVariant = variant ?? getTaskCatVariant({ taskKey, title, categoryId, categoryName });
   const extension = prefersReducedMotion ? "png" : "gif";
-  const desiredSource = `/mascot/idle/${variant}.${extension}`;
+  const desiredSource = `/mascot/idle/${selectedVariant}.${extension}`;
   const fallbackSource = `/mascot/idle.${extension}`;
   const [failedSources, setFailedSources] = useState<ReadonlySet<string>>(() => new Set());
   const displayedSource = failedSources.has(desiredSource) ? fallbackSource : desiredSource;
@@ -78,7 +112,7 @@ export function TaskCatAnimation({
     <span
       className={["task-cat-animation", completed ? "task-cat-animation--completed" : "", className ?? ""].filter(Boolean).join(" ")}
       aria-hidden="true"
-      data-task-cat-variant={variant}
+      data-task-cat-variant={selectedVariant}
     >
       <img
         src={displayedSource}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TaskCatAnimation } from "../../components/TaskCatAnimation";
+import { assignTaskCatVariants, TaskCatAnimation } from "../../components/TaskCatAnimation";
 import { formatReminderMinutes } from "../../domain/reminders";
 import { formatTaskPriority } from "../../domain/priorities";
 import { getTaskStepProgress } from "../../domain/steps";
@@ -28,6 +28,7 @@ export type TodayTask = {
 type TaskListProps = {
   title: string;
   tasks: TodayTask[];
+  assignedCatVariants?: ReadonlyMap<string, string>;
   onToggle(task: TodayTask): void;
   onStepToggle(task: TodayTask, stepId: string): void;
   onEdit(task: TodayTask): void;
@@ -36,8 +37,14 @@ type TaskListProps = {
   onHabit?(task: TodayTask): void;
 };
 
-export function TaskList({ title, tasks, onToggle, onStepToggle, onEdit, onDelete, onTime, onHabit }: TaskListProps) {
+export function TaskList({ title, tasks, assignedCatVariants, onToggle, onStepToggle, onEdit, onDelete, onTime, onHabit }: TaskListProps) {
   const [expandedTaskIds, setExpandedTaskIds] = useState<Set<string>>(() => new Set());
+  const fallbackCatVariants = assignTaskCatVariants(tasks.map((task) => ({
+    taskKey: `${task.kind}:${task.taskId}`,
+    title: task.title,
+    categoryId: task.categoryId,
+    categoryName: task.categoryName
+  })));
 
   function toggleExpanded(taskId: string) {
     setExpandedTaskIds((current) => {
@@ -53,7 +60,7 @@ export function TaskList({ title, tasks, onToggle, onStepToggle, onEdit, onDelet
       <div className="task-list__header"><h2 id={`${title}-title`}>{title}</h2><span>{tasks.length} 项</span></div>
       {tasks.length === 0 ? <p className="task-list__empty">暂时没有任务</p> : (
         <ul className="task-list__items">
-          {tasks.map((task) => {
+          {tasks.map((task, index) => {
             const stepProgress = getTaskStepProgress(task.steps);
             const stepsExpanded = expandedTaskIds.has(task.id);
             return <li id={`today-task-${task.kind}-${task.id}`} tabIndex={-1} className={`task-item${task.completed ? " task-item--completed" : ""}`} key={task.id}>
@@ -92,6 +99,7 @@ export function TaskList({ title, tasks, onToggle, onStepToggle, onEdit, onDelet
                 categoryId={task.categoryId}
                 categoryName={task.categoryName}
                 completed={task.completed}
+                variant={assignedCatVariants?.get(`${task.kind}:${task.taskId}`) ?? fallbackCatVariants[index]}
               />
               {stepProgress.total > 0 && <div className="task-item__step-progress" aria-label={`${task.title}步骤进度：${stepProgress.completed}/${stepProgress.total}`}>
                 <span style={{ width: `${stepProgress.ratio * 100}%` }} />

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useAppState } from "../../app/AppStateProvider";
-import { TaskCatAnimation } from "../../components/TaskCatAnimation";
+import { assignTaskCatVariants, TaskCatAnimation } from "../../components/TaskCatAnimation";
 import { fromDateKey, toDateKey } from "../../domain/date";
 import { formatReminderMinutes } from "../../domain/reminders";
 import { formatTaskPriority, normalizeTaskPriority } from "../../domain/priorities";
@@ -35,8 +35,9 @@ function statusLabel(task: WeekPlanTask): string {
   return task.kind === "fixed" ? task.repeatLabel ?? "每天" : "当天任务";
 }
 
-function WeekTaskCard({ task, canToggle, canEdit, canMove, onEdit, onMove, onToggle }: {
+function WeekTaskCard({ task, catVariant, canToggle, canEdit, canMove, onEdit, onMove, onToggle }: {
   task: WeekPlanTask;
+  catVariant: string;
   canToggle: boolean;
   canEdit: boolean;
   canMove: boolean;
@@ -78,6 +79,7 @@ function WeekTaskCard({ task, canToggle, canEdit, canMove, onEdit, onMove, onTog
         categoryId={task.categoryId}
         categoryName={task.categoryName}
         completed={task.status === "completed"}
+        variant={catVariant}
       />
     </li>
   );
@@ -117,6 +119,12 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
       : filteredDay;
   }), [allDays, categoryFilter, priorityFilter, statusFilter, today]);
   const selectedDay = days.find((day) => day.date === selectedDate) ?? days[0];
+  const selectedDayCatVariants = assignTaskCatVariants(selectedDay.tasks.map((task) => ({
+    taskKey: `${task.kind}:${task.taskId}`,
+    title: task.title,
+    categoryId: task.categoryId,
+    categoryName: task.categoryName
+  })));
   const summaryDays = planView === "month" ? days.filter((day) => "inCurrentMonth" in day && day.inCurrentMonth) : days;
   const unfilteredSummaryDays = planView === "month" ? allDays.filter((day) => "inCurrentMonth" in day && day.inCurrentMonth) : allDays;
   const totalTasks = summaryDays.reduce((sum, day) => sum + day.tasks.length, 0);
@@ -395,10 +403,11 @@ export function WeekPage({ now = new Date() }: { now?: Date }) {
           </div>
         ) : (
           <ol className="week-task-list">
-            {selectedDay.tasks.map((task) => (
+            {selectedDay.tasks.map((task, index) => (
               <WeekTaskCard
                 key={task.id}
                 task={task}
+                catVariant={selectedDayCatVariants[index]}
                 canToggle={task.date <= today}
                 canEdit={(task.kind === "fixed" && task.date >= today)
                   || (task.kind === "scheduled" && task.status !== "archived")}

@@ -6,6 +6,7 @@ import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { DisplayNameDialog } from "../../components/DisplayNameDialog";
 import { TimeEntryDialog } from "../../components/TimeEntryDialog";
 import { TaskReminderOverview } from "../../components/TaskReminderOverview";
+import { assignTaskCatVariants } from "../../components/TaskCatAnimation";
 import { achievementTierLabels, getFeaturedAchievements } from "../../domain/achievements";
 import { toDateKey } from "../../domain/date";
 import { getCatMessage, getTodayProgress } from "../../domain/stats";
@@ -103,6 +104,16 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
 
   const fixedTasks = allFixedTasks.filter((task) => filter === "all" || filter === task.categoryId);
   const scheduledTasks = allScheduledTasks.filter((task) => filter === "all" || filter === task.categoryId);
+  const todayCatVariants = useMemo(() => {
+    const tasks = [...allFixedTasks, ...allScheduledTasks];
+    const variants = assignTaskCatVariants(tasks.map((task) => ({
+      taskKey: `${task.kind}:${task.taskId}`,
+      title: task.title,
+      categoryId: task.categoryId,
+      categoryName: task.categoryName
+    })));
+    return new Map(tasks.map((task, index) => [`${task.kind}:${task.taskId}`, variants[index]]));
+  }, [allFixedTasks, allScheduledTasks]);
   const pendingTasks = useMemo(() => [...allFixedTasks, ...allScheduledTasks]
     .filter((task) => !task.completed)
     .sort((first, second) => {
@@ -347,8 +358,8 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
         {state.categories.map((category) => <button key={category.id} type="button" aria-label={`只看${category.name}`} aria-pressed={filter === category.id} onClick={() => setFilter(category.id)}>{category.name}</button>)}
       </section>
       <TaskReminderOverview />
-      <TaskList title="固定任务" tasks={fixedTasks} onToggle={toggle} onStepToggle={toggleStep} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} onHabit={setHabitTask} />
-      <TaskList title="今日安排" tasks={scheduledTasks} onToggle={toggle} onStepToggle={toggleStep} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
+      <TaskList title="固定任务" tasks={fixedTasks} assignedCatVariants={todayCatVariants} onToggle={toggle} onStepToggle={toggleStep} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} onHabit={setHabitTask} />
+      <TaskList title="今日安排" tasks={scheduledTasks} assignedCatVariants={todayCatVariants} onToggle={toggle} onStepToggle={toggleStep} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
       <Backlog now={now} />
       <button type="button" className="add-task-button" aria-label="添加任务" onClick={openNewTask}>＋<span>添加任务</span></button>
       {formOpen && <TaskForm categories={state.categories} goals={state.goals ?? []} today={today} initialValues={formValues} error={error} onSubmit={saveTask} onCancel={closeForm} />}
