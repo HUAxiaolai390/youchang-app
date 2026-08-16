@@ -6,9 +6,10 @@ export const defaultMusicVolume = 0.35;
 
 type BackgroundMusicProps = {
   compact?: boolean;
+  visible?: boolean;
 };
 
-export function BackgroundMusic({ compact = false }: BackgroundMusicProps) {
+export function BackgroundMusic({ compact = false, visible = true }: BackgroundMusicProps) {
   const { state, dispatch } = useAppState();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
@@ -37,35 +38,37 @@ export function BackgroundMusic({ compact = false }: BackgroundMusicProps) {
     }
   }
 
-  return (
-    <section className={`music-player surface-card${compact ? " music-player--compact" : ""}`} aria-label="背景音乐控制">
-      <div className="music-player__track">
-        <span className="music-player__note" aria-hidden="true">♫</span>
-        <span><strong>背景音乐</strong><small>我真的特别想你</small></span>
-      </div>
-      <button
-        type="button"
-        className="button music-player__toggle"
-        onClick={() => void togglePlayback()}
-      >
-        {playing ? "暂停音乐" : "播放音乐"}
-      </button>
-      <div className="music-player__volume">
-        <label className={compact ? "visually-hidden" : undefined} htmlFor="background-music-volume">音量</label>
-        <input
-          id="background-music-volume"
-          type="range"
-          min="0"
-          max="100"
-          step="1"
-          value={volumePercent}
-          onChange={(event) => dispatch({
-            type: "settings/music-volume",
-            value: Number(event.target.value) / 100
-          })}
-        />
-        <output htmlFor="background-music-volume">{volumePercent}%</output>
-      </div>
+  return <>
+    {visible && <section className={`music-player surface-card${compact ? " music-player--compact" : ""}`} aria-label="背景音乐控制">
+        <div className="music-player__track">
+          <span className="music-player__note" aria-hidden="true">♫</span>
+          <span><strong>背景音乐</strong><small>我真的特别想你</small></span>
+        </div>
+        <button
+          type="button"
+          className="button music-player__toggle"
+          onClick={() => void togglePlayback()}
+        >
+          {playing ? "暂停音乐" : "播放音乐"}
+        </button>
+        <div className="music-player__volume">
+          <label className={compact ? "visually-hidden" : undefined} htmlFor="background-music-volume">音量</label>
+          <input
+            id="background-music-volume"
+            type="range"
+            min="0"
+            max="100"
+            step="1"
+            value={volumePercent}
+            onChange={(event) => dispatch({
+              type: "settings/music-volume",
+              value: Number(event.target.value) / 100
+            })}
+          />
+          <output htmlFor="background-music-volume">{volumePercent}%</output>
+        </div>
+        {playbackError && <p className="music-player__error" role="alert">{playbackError}</p>}
+      </section>}
       <audio
         ref={audioRef}
         data-testid="background-music-audio"
@@ -78,7 +81,5 @@ export function BackgroundMusic({ compact = false }: BackgroundMusicProps) {
         onCanPlay={() => setPlaybackError(undefined)}
         onError={() => setPlaybackError("背景音乐加载失败，请刷新后重试")}
       />
-      {playbackError && <p className="music-player__error" role="alert">{playbackError}</p>}
-    </section>
-  );
+    </>;
 }

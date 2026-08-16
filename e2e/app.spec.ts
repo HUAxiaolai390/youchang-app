@@ -220,13 +220,17 @@ test("shows progress details for an individual fixed habit", async ({ page }) =>
   await expectNoHorizontalOverflow(page);
 });
 
-test("keeps the settings page free of the old phone installation panel", async ({ page }) => {
+test("keeps the settings page free of duplicate installation and music panels", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => window.localStorage.clear());
   await page.reload();
 
   await page.getByRole("button", { name: "设置", exact: true }).click();
   await expect(page.getByRole("region", { name: "安装到手机" })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "背景音乐控制" })).toHaveCount(0);
+  await expect(page.getByTestId("background-music-audio")).toHaveCount(1);
+  await page.getByRole("button", { name: "今日", exact: true }).click();
+  await expect(page.getByRole("region", { name: "背景音乐控制" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 

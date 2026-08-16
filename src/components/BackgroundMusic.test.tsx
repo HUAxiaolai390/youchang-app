@@ -79,6 +79,15 @@ describe("BackgroundMusic", () => {
     expect(screen.getByLabelText("音量")).toHaveValue("35");
   });
 
+  it("hides the duplicate controls while keeping the audio player mounted", () => {
+    const state = createInitialState(new Date(2026, 7, 4, 9));
+    const repository = new MemoryRepository(state);
+    render(<AppStateProvider repository={repository}><BackgroundMusic visible={false} /></AppStateProvider>);
+
+    expect(screen.queryByLabelText("背景音乐控制")).not.toBeInTheDocument();
+    expect(screen.getByTestId("background-music-audio")).toBeInTheDocument();
+  });
+
   it("explains when the browser rejects playback", async () => {
     vi.mocked(HTMLMediaElement.prototype.play).mockRejectedValueOnce(new DOMException("blocked"));
     const user = userEvent.setup();
