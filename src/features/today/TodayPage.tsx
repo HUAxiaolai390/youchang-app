@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppState } from "../../app/AppStateProvider";
 import { CatMascot } from "../../components/CatMascot";
 import { AchievementMedal } from "../../components/AchievementMedal";
@@ -25,9 +25,22 @@ function formatToday(date: Date) {
   return new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric", weekday: "long" }).format(date);
 }
 
+function getLocalGreeting(date: Date): string {
+  const hour = date.getHours();
+  if (hour < 5) return "夜深了";
+  if (hour < 11) return "早上好";
+  if (hour < 14) return "中午好";
+  if (hour < 18) return "下午好";
+  return "晚上好";
+}
+
+function taskElementId(task: Pick<TodayTask, "kind" | "id">): string {
+  return `today-task-${task.kind}-${task.id}`;
+}
+
 export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => void }) {
   const { state, dispatch, error } = useAppState();
-  const now = new Date();
+  const [now, setNow] = useState(() => new Date());
   const today = toDateKey(now);
   const [filter, setFilter] = useState<string>("all");
   const [formOpen, setFormOpen] = useState(false);
@@ -36,10 +49,11 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
   const [timing, setTiming] = useState<TodayTask>();
   const [habitTask, setHabitTask] = useState<TodayTask>();
   const [displayNameOpen, setDisplayNameOpen] = useState(false);
+  const [todoOpen, setTodoOpen] = useState(false);
+  const [taskToReveal, setTaskToReveal] = useState<string>();
   const [celebrationKey, setCelebrationKey] = useState(0);
   const [focusOpen, setFocusOpen] = useState(false);
   const [focusRunning, setFocusRunning] = useState(false);
-  const focusDrawerRef = useRef<HTMLElement>(null);
   const progress = getTodayProgress(state, now);
   const todayTime = getTimeAllocation(state, today, today);
   const featuredAchievements = getFeaturedAchievements(state, now);
@@ -89,7 +103,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
 
   const fixedTasks = allFixedTasks.filter((task) => filter === "all" || filter === task.categoryId);
   const scheduledTasks = allScheduledTasks.filter((task) => filter === "all" || filter === task.categoryId);
-  const nextTask = useMemo(() => [...allFixedTasks, ...allScheduledTasks]
+  const pendingTasks = useMemo(() => [...allFixedTasks, ...allScheduledTasks]
     .filter((task) => !task.completed)
     .sort((first, second) => {
       const priorityOrder = taskPriorityRank(first.priority) - taskPriorityRank(second.priority);
@@ -97,7 +111,21 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
       const firstTime = first.plannedStartTime ?? "99:99";
       const secondTime = second.plannedStartTime ?? "99:99";
       return firstTime.localeCompare(secondTime, "zh-CN") || first.title.localeCompare(second.title, "zh-CN");
-    })[0], [allFixedTasks, allScheduledTasks]);
+    }), [allFixedTasks, allScheduledTasks]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!taskToReveal) return;
+    const target = document.getElementById(taskToReveal);
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    target.focus({ preventScroll: true });
+    setTaskToReveal(undefined);
+  }, [filter, taskToReveal]);
 
   function openEdit(task: TodayTask) {
     setEditing({ ...task, date: task.kind === "scheduled" ? today : today });
@@ -194,10 +222,6 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
   } : undefined;
 
   const focusVisible = focusOpen || focusRunning;
-  const nextTaskDetails = nextTask ? [
-    nextTask.categoryName,
-    nextTask.plannedStartTime ? `${nextTask.plannedStartTime} 开始` : undefined
-  ].filter(Boolean).join(" · ") : "";
   const celebrateFocus = useCallback(() => {
     setCelebrationKey((current) => current + 1);
   }, []);
@@ -207,13 +231,14 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
     setFormOpen(true);
   }
 
-  function openFocus() {
-    setFocusOpen(true);
-    focusDrawerRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
-  }
-
   function saveDisplayName(value: string) {
     if (dispatch({ type: "settings/name", value })) setDisplayNameOpen(false);
+  }
+
+  function revealTask(task: TodayTask) {
+    setFilter("all");
+    setTodoOpen(false);
+    setTaskToReveal(taskElementId(task));
   }
 
   return (
@@ -226,8 +251,8 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
           </div>
           <h1>
             <button type="button" className="today-hero__name-button" title="点击修改称呼" onClick={() => setDisplayNameOpen(true)}>
-              早上好，{state.settings.displayName || "朋友"}
-              <span className="visually-hidden">，点击修改称呼</span>
+              <span>{getLocalGreeting(now)}，{state.settings.displayName || "朋友"}</span>
+              <small>修改</small>
             </button>
           </h1>
           <p className="today-hero__cat-message">{getCatMessage(progress)}</p>
@@ -246,25 +271,34 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
             <strong>{formatTrackedTime(todayTime.totalMinutes)}</strong>
           </div>
         </section>
-        <section className={`today-next${nextTask ? " today-next--ready" : ""}`} aria-label="下一项任务">
-          <div>
-            <span className="today-next__label">下一项</span>
-            <strong>{nextTask
-              ? `待办 · ${nextTask.title}`
-              : progress.total > 0
-                ? "今天的任务都完成了"
-                : "今天还没有安排"}</strong>
-            <small>{nextTask
-              ? nextTaskDetails
-              : progress.total > 0
-                ? "做得很好，去成长页看看今天的积累吧"
-                : "先放进一件今天最想完成的小事"}</small>
-          </div>
-          {nextTask
-            ? <button type="button" className="button button--primary" onClick={openFocus}>开始下一项</button>
-            : progress.total === 0
-              ? <button type="button" className="button" onClick={openNewTask}>添加第一项</button>
-              : null}
+        <section className={`today-todo${todoOpen ? " today-todo--open" : ""}`} aria-label="待办清单">
+          <button
+            type="button"
+            className="today-todo__toggle"
+            aria-expanded={todoOpen}
+            onClick={() => setTodoOpen((open) => !open)}
+          >
+            <span className="today-todo__copy">
+              <span className="today-todo__label">待办清单</span>
+              <strong>{pendingTasks.length > 0 ? `${pendingTasks.length} 项未完成` : progress.total > 0 ? "今天的任务都完成了" : "今天还没有安排"}</strong>
+              <small>{pendingTasks.length > 0 ? "点开查看并快速定位任务" : progress.total > 0 ? "今天做得很好" : "先放进一件想完成的小事"}</small>
+            </span>
+            <span className="today-todo__action">{todoOpen ? "收起" : "查看"}</span>
+          </button>
+          {todoOpen && pendingTasks.length > 0 && <ul className="today-todo__list">
+            {pendingTasks.map((task) => (
+              <li key={`${task.kind}-${task.id}`}>
+                <button type="button" onClick={() => revealTask(task)}>
+                  <span>
+                    <strong>{task.title}</strong>
+                    <small>{[task.categoryName, task.plannedStartTime].filter(Boolean).join(" · ")}</small>
+                  </span>
+                  <em>查看任务</em>
+                </button>
+              </li>
+            ))}
+          </ul>}
+          {todoOpen && pendingTasks.length === 0 && progress.total === 0 && <button type="button" className="button today-todo__add" onClick={openNewTask}>添加第一项</button>}
         </section>
       </header>
       <section className="surface-card today-achievements" aria-labelledby="today-achievements-title">
@@ -289,7 +323,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
           })}
         </div>
       </section>
-      <section className={`focus-drawer surface-card${focusVisible ? " focus-drawer--open" : ""}`} ref={focusDrawerRef} aria-label="专注工具">
+      <section className={`focus-drawer surface-card${focusVisible ? " focus-drawer--open" : ""}`} aria-label="专注工具">
         <button
           type="button"
           className="focus-drawer__toggle"

@@ -84,14 +84,23 @@ describe("TodayPage", () => {
     state.settings.displayName = "小来";
     const { user, repository } = renderToday(state);
 
-    await user.click(screen.getByRole("button", { name: /早上好，小来/ }));
+    await user.click(screen.getByRole("button", { name: /小来/ }));
     expect(screen.getByRole("dialog", { name: "修改我的称呼" })).toBeVisible();
     await user.clear(screen.getByLabelText("我的称呼"));
     await user.type(screen.getByLabelText("我的称呼"), "小伍");
     await user.click(screen.getByRole("button", { name: "保存称呼" }));
 
-    expect(screen.getByRole("heading", { name: /早上好，小伍/ })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /小伍/ })).toBeVisible();
     expect(repository.load().settings.displayName).toBe("小伍");
+  });
+
+  it("uses the phone's local time for the greeting", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 5, 15));
+
+    renderToday(createInitialState(new Date()));
+
+    expect(screen.getByRole("heading", { name: /下午好/ })).toBeVisible();
   });
 
   it("always shows three equal medal slots and renders selected unlocked medals", () => {
@@ -106,26 +115,31 @@ describe("TodayPage", () => {
     expect(screen.getAllByText("待展示")).toHaveLength(2);
   });
 
-  it("keeps the timer compact until the user opens it from the next task", async () => {
+  it("opens the pending-task list and jumps to the selected unfinished task", async () => {
     const state = createInitialState(new Date());
     addTask(state, "study-1", "背单词", "study");
     const { user } = renderToday(state);
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value: scrollIntoView });
 
     const drawerToggle = screen.getByRole("button", { name: /专注计时/ });
     expect(drawerToggle).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByRole("region", { name: "专注计时器" })).not.toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "下一项任务" })).toHaveTextContent("待办 · 背单词");
+    expect(screen.getByRole("region", { name: "待办清单" })).toHaveTextContent("1 项未完成");
 
-    await user.click(screen.getByRole("button", { name: "开始下一项" }));
+    await user.click(screen.getByRole("button", { name: /待办清单.*1 项未完成/ }));
+    await user.click(screen.getByRole("button", { name: /背单词.*查看任务/ }));
 
-    expect(drawerToggle).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByRole("region", { name: "专注计时器" })).toBeVisible();
+    const taskItem = screen.getByRole("checkbox", { name: "完成：背单词" }).closest("li");
+    expect(drawerToggle).toHaveAttribute("aria-expanded", "false");
+    expect(taskItem).toHaveFocus();
+    expect(scrollIntoView).toHaveBeenCalled();
   });
 
   it("offers to add the first task from the empty overview", async () => {
     const { user } = renderToday();
 
-    expect(screen.getByRole("region", { name: "下一项任务" })).toHaveTextContent("今天还没有安排");
+    expect(screen.getByRole("region", { name: "待办清单" })).toHaveTextContent("今天还没有安排");
+    await user.click(screen.getByRole("button", { name: /待办清单.*今天还没有安排/ }));
     await user.click(screen.getByRole("button", { name: "添加第一项" }));
 
     expect(screen.getByRole("dialog", { name: "添加任务" })).toBeInTheDocument();
@@ -263,16 +277,18 @@ describe("TodayPage", () => {
     });
   });
 
-  it("recommends a high-priority task before lower-priority tasks", () => {
+  it("puts a high-priority task first in the pending-task list", async () => {
     const state = createInitialState(new Date());
     addTask(state, "task-1", "收拾书桌", "life");
     addTask(state, "task-2", "准备考试", "study");
     state.scheduledTasks[0]!.priority = "low";
     state.scheduledTasks[1]!.priority = "high";
-    renderToday(state);
+    const { user } = renderToday(state);
 
-    expect(screen.getByRole("region", { name: "下一项任务" })).toHaveTextContent("准备考试");
-    expect(screen.getByText("准备考试", { exact: true })).toBeVisible();
+    await user.click(screen.getByRole("button", { name: /待办清单.*2 项未完成/ }));
+    const taskButtons = screen.getAllByRole("button", { name: /查看任务/ });
+    expect(taskButtons[0]).toHaveTextContent("准备考试");
+    expect(taskButtons[1]).toHaveTextContent("收拾书桌");
   });
 
   it("expands task steps, toggles one, and updates progress", async () => {

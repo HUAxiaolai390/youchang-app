@@ -361,13 +361,15 @@ button:focus-visible {
 .today-page { display: grid; grid-template-columns: minmax(250px, .7fr) minmax(0, 1.3fr); gap: 14px; align-items: start; }
 .today-page > * { grid-column: 1 / -1; }
 .today-hero { position: relative; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(250px, .85fr); gap: 16px 20px; overflow: hidden; align-items: center; padding: 20px; background: linear-gradient(135deg, #fffaf3 0%, #fae4c5 100%); }
-.today-hero::before { position: absolute; right: 108px; top: -54px; width: 160px; height: 160px; border-radius: 50%; background: rgba(255,255,255,.3); content: ""; }
-.today-hero__copy { min-width: 0; }
+.today-hero::before { position: absolute; right: 108px; top: -54px; width: 160px; height: 160px; border-radius: 50%; background: rgba(255,255,255,.3); pointer-events: none; content: ""; }
+.today-hero__copy { position: relative; z-index: 1; min-width: 0; }
 .today-hero p { margin: 0; color: var(--muted); }
 .today-hero__topline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; font-size: 13px; }
 .today-hero__topline span { color: #7c6c58; font-size: 12px; }
 .today-hero h1 { margin: 6px 0; font-size: clamp(27px, 5vw, 34px); letter-spacing: -0.055em; }
-.today-hero__name-button { min-height: 44px; margin: -7px -8px; padding: 7px 8px; border: 0; border-radius: 12px; background: transparent; color: inherit; cursor: pointer; font: inherit; font-weight: inherit; letter-spacing: inherit; text-align: left; }
+.today-hero__name-button { display: inline-flex; max-width: 100%; min-height: 44px; margin: -7px -8px; align-items: center; gap: 9px; padding: 7px 8px; border: 0; border-radius: 12px; background: transparent; color: inherit; cursor: pointer; font: inherit; font-weight: inherit; letter-spacing: inherit; text-align: left; }
+.today-hero__name-button > span { min-width: 0; overflow-wrap: anywhere; }
+.today-hero__name-button > small { flex: 0 0 auto; padding: 4px 7px; border: 1px solid rgba(74,64,51,.16); border-radius: 999px; color: #786a58; font-size: 10px; font-weight: 700; letter-spacing: 0; }
 .today-hero__name-button:hover { background: rgba(255,255,255,.38); }
 .today-hero__name-button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 .today-hero__cat-message { line-height: 1.65; }
@@ -383,12 +385,21 @@ button:focus-visible {
 .today-hero__metric--time strong { font-size: 14px; }
 .today-hero__bar { height: 7px; overflow: hidden; border-radius: 999px; background: rgba(113,101,83,.16); }
 .today-hero__bar span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #66745d, #9dad8f); transition: width 180ms ease; }
-.today-next { position: relative; z-index: 1; grid-column: 2; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 67px; padding: 11px 12px; border: 1px solid rgba(74,64,51,.1); border-radius: 16px; background: rgba(255,253,249,.76); }
-.today-next > div { display: grid; min-width: 0; gap: 2px; }
-.today-next__label { color: #7a6b58; font-size: 10px; font-weight: 800; letter-spacing: .12em; }
-.today-next strong { overflow: hidden; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
-.today-next small { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.today-next .button { min-height: 36px; padding: 0 13px; font-size: 12px; font-weight: 700; }
+.today-todo { position: relative; z-index: 1; grid-column: 2; min-width: 0; overflow: hidden; border: 1px solid rgba(74,64,51,.1); border-radius: 16px; background: rgba(255,253,249,.76); }
+.today-todo__toggle { display: grid; width: 100%; min-height: 67px; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 11px 12px; border: 0; background: transparent; color: var(--ink); cursor: pointer; text-align: left; }
+.today-todo__toggle:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }
+.today-todo__copy { display: grid; min-width: 0; gap: 2px; }
+.today-todo__label { color: #7a6b58; font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+.today-todo__copy strong { overflow: hidden; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+.today-todo__copy small { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.today-todo__action { padding: 7px 10px; border-radius: 999px; background: var(--ink); color: var(--surface); font-size: 11px; font-weight: 800; }
+.today-todo__list { display: grid; max-height: 190px; gap: 5px; margin: 0; overflow: auto; padding: 0 9px 9px; list-style: none; }
+.today-todo__list li button { display: grid; width: 100%; min-height: 50px; grid-template-columns: minmax(0, 1fr) auto; gap: 9px; align-items: center; padding: 8px 10px; border: 1px solid rgba(74,64,51,.09); border-radius: 12px; background: rgba(255,255,255,.58); color: var(--ink); cursor: pointer; text-align: left; }
+.today-todo__list li button > span { display: grid; min-width: 0; gap: 2px; }
+.today-todo__list strong { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.today-todo__list small { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.today-todo__list em { color: #786a58; font-size: 10px; font-style: normal; font-weight: 700; }
+.today-todo__add { margin: 0 9px 9px; }
 .task-priority-tag { display: inline-grid; width: 22px; height: 22px; margin-right: 6px; place-items: center; border-radius: 7px; background: #eee9e1; color: #625b52; font-size: 10px; font-weight: 900; vertical-align: 1px; }
 .task-priority-tag--high { background: #f1ddd2; color: #8b4932; }
 .task-priority-tag--medium { background: #f2e7c8; color: #826520; }
@@ -508,6 +519,7 @@ button:focus-visible {
 .task-list__empty { margin: 0; padding: 17px 0; }
 .task-list__items { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
 .task-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 9px 12px; min-height: 66px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 17px; background: var(--surface); }
+.task-item:focus { outline: 3px solid #9f7a49; outline-offset: 3px; }
 .task-item__check input { position: absolute; opacity: 0; }
 .task-item__check span { display: block; width: 22px; height: 22px; border: 1.5px solid var(--ink); border-radius: 50%; cursor: pointer; }
 .task-item__check input:checked + span { background: var(--ink); box-shadow: inset 0 0 0 5px var(--surface); }
@@ -1077,9 +1089,10 @@ button:focus-visible {
   .today-hero__progress { grid-column: 1 / -1; grid-template-columns: auto minmax(38px, 1fr) auto; gap: 8px; padding: 9px 10px; }
   .today-hero__metric strong { font-size: 17px; }
   .today-hero__metric--time strong { font-size: 12px; }
-  .today-next { grid-column: 1 / -1; gap: 8px; padding: 10px; }
-  .today-next strong { font-size: 14px; }
-  .today-next .button { padding: 0 10px; }
+  .today-todo { grid-column: 1 / -1; }
+  .today-todo__toggle { gap: 8px; padding: 10px; }
+  .today-todo__copy strong { font-size: 14px; }
+  .today-todo__list { max-height: 230px; }
   .reminder-overview__toggle { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; min-height: 62px; padding: 9px 12px; }
   .reminder-overview__icon { width: 34px; height: 34px; font-size: 19px; }
   .reminder-overview__counts { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }

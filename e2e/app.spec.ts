@@ -493,7 +493,9 @@ test("sets task priorities and recommends the high-priority task first", async (
   const lowTask = page.getByRole("checkbox", { name: "完成：整理书桌" }).locator("xpath=ancestor::li[1]");
   await expect(highTask).toContainText("高");
   await expect(lowTask).toContainText("低");
-  await expect(page.getByRole("region", { name: "下一项任务" })).toContainText("完成数学作业");
+  const todoList = page.getByRole("region", { name: "待办清单" });
+  await todoList.getByRole("button", { name: /待办清单/ }).click();
+  await expect(todoList.getByRole("button", { name: /完成数学作业.*查看任务/ })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 

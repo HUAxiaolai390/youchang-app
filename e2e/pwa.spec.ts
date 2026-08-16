@@ -52,5 +52,5 @@ test("opens after the network is disabled", async ({ page, context }) => {
   await expectOfflineCachedAsset(page, "/audio/background.mp3");
 
   await page.reload();
-  await expect(page.getByRole("heading", { name: /早上好/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /(早上好|中午好|下午好|晚上好|夜深了)/ })).toBeVisible();
 });

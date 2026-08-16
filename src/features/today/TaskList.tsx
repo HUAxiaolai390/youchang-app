@@ -55,7 +55,7 @@ export function TaskList({ title, tasks, onToggle, onStepToggle, onEdit, onDelet
           {tasks.map((task) => {
             const stepProgress = getTaskStepProgress(task.steps);
             const stepsExpanded = expandedTaskIds.has(task.id);
-            return <li className={`task-item${task.completed ? " task-item--completed" : ""}`} key={task.id}>
+            return <li id={`today-task-${task.kind}-${task.id}`} tabIndex={-1} className={`task-item${task.completed ? " task-item--completed" : ""}`} key={task.id}>
               <label className="task-item__check">
                 <input type="checkbox" checked={task.completed} onChange={() => onToggle(task)} aria-label={`完成：${task.title}`} />
                 <span aria-hidden="true" />
