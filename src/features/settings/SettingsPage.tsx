@@ -451,7 +451,7 @@ export function SettingsPage() {
           <span className={`notification-status notification-status--${backupDue ? "off" : "on"}`}>{backupDue ? "建议备份" : "已备份"}</span>
         </div>
         <p className="settings-muted">{lastBackupAt ? `上次备份：${formatBackupAt(lastBackupAt)}${backupDue ? "，已超过 7 天" : ""}` : "还没有备份记录，建议现在导出一份。"}</p>
-        <div className="settings-inline-actions"><button type="button" className="button" onClick={exportBackup}>导出备份</button><label className="button" htmlFor="backup-file">导入备份</label><input id="backup-file" className="visually-hidden" type="file" accept="application/json,.json" onChange={importBackup} /></div>
+        <div className="settings-inline-actions"><button type="button" className="button" onClick={exportBackup}>导出备份</button><label className="button backup-import-button" htmlFor="backup-file">导入备份</label><input id="backup-file" className="visually-hidden" type="file" accept="application/json,.json" onChange={importBackup} /></div>
         {backupError && <p className="form-error" role="alert">{backupError}</p>}
         {pendingBackup && <div className="backup-preview" role="status"><p>{backupSummary(pendingBackup)}</p><div className="settings-inline-actions"><button className="button" type="button" onClick={() => setPendingBackup(undefined)}>取消导入</button><button className="button button--primary" type="button" onClick={confirmImport}>确认导入</button></div></div>}
         {recoverySnapshots.length > 0 && (

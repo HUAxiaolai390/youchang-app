@@ -228,6 +228,10 @@ test("keeps the settings page free of duplicate installation and music panels", 
   await page.getByRole("button", { name: "设置", exact: true }).click();
   await expect(page.getByRole("region", { name: "安装到手机" })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "背景音乐控制" })).toHaveCount(0);
+  const importBackupButton = page.locator('label[for="backup-file"]');
+  await expect(importBackupButton).toHaveCSS("display", "flex");
+  await expect(importBackupButton).toHaveCSS("align-items", "center");
+  await expect(importBackupButton).toHaveCSS("justify-content", "center");
   await expect(page.getByTestId("background-music-audio")).toHaveCount(1);
   await page.getByRole("button", { name: "今日", exact: true }).click();
   await expect(page.getByRole("region", { name: "背景音乐控制" })).toBeVisible();

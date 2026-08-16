@@ -988,6 +988,7 @@ button:focus-visible {
 .settings-inline-actions > button, .settings-list__item button { border: 0; background: transparent; color: var(--ink); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .settings-inline-actions .button { border: 1px solid var(--line); text-decoration: none; }
 .settings-inline-actions .button--primary { border-color: var(--ink); background: var(--ink); color: var(--surface); }
+.settings-inline-actions .backup-import-button { display: inline-flex; align-items: center; justify-content: center; line-height: 1.2; }
 .settings-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .settings-list__item { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 47px; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .settings-list__item > span:first-child { display: grid; gap: 3px; }
