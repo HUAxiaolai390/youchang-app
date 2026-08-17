@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { toDateKey } from "../domain/date";
 import { createInitialState } from "../domain/defaults";
 import type { AppState } from "../domain/types";
@@ -44,6 +44,48 @@ describe("App", () => {
     expect(document.querySelector('.daily-quote__en[lang="en"]')).toHaveTextContent(/^“.+”$/);
     expect(document.querySelector('.daily-quote footer [lang="en"]')).not.toBeEmptyDOMElement();
     expect(screen.getByText("累计完成 0 项")).toBeInTheDocument();
+  });
+
+  it("keeps long-term goal management easy to find from the growth header", async () => {
+    const user = userEvent.setup();
+
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "成长" }));
+    await user.click(screen.getByRole("button", { name: "管理长期目标" }));
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: "长期目标" })).toHaveFocus());
+    expect(screen.getByRole("button", { name: "新增目标" })).toBeVisible();
+  });
+
+  it("recalculates the heatmap from the latest record after a past task is completed", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date(2026, 7, 18, 9));
+    const state = createInitialState(new Date(2026, 7, 18, 9));
+    state.scheduledTasks.push({
+      id: "forgotten-yesterday",
+      title: "昨晚完成的复习",
+      categoryId: "study",
+      categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-17",
+      status: "backlog",
+      createdAt: "2026-08-17T10:00:00.000Z"
+    });
+    const repository = memoryRepository(state);
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    try {
+      render(<App repository={repository} />);
+      await user.click(screen.getByRole("button", { name: "计划" }));
+      await user.click(screen.getByRole("button", { name: /星期一 8月17日/ }));
+      await user.click(screen.getByRole("button", { name: "补记完成：昨晚完成的复习" }));
+      await user.click(screen.getByRole("button", { name: "成长" }));
+
+      expect(screen.getByLabelText(/8月17日，完成 1\/1 项/)).toBeVisible();
+      expect(screen.getByText("1 天活跃")).toBeVisible();
+      expect(screen.getByText(/补记往日完成后立即更新/)).toBeVisible();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("opens medal management from the home page", async () => {

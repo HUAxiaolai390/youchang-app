@@ -25,7 +25,7 @@ export function App({ repository }: { repository?: AppRepository }) {
 function AppContents() {
   const { dispatch, error } = useAppState();
   const [activePage, setActivePage] = useState<PageKey>("today");
-  const [growthDestination, setGrowthDestination] = useState<"achievements" | null>(null);
+  const [growthDestination, setGrowthDestination] = useState<"goals" | "achievements" | null>(null);
   const [dailyQuote, setDailyQuote] = useState(() => getDailyQuote(new Date()));
 
   useEffect(() => {
@@ -53,10 +53,11 @@ function AppContents() {
   }, []);
 
   useEffect(() => {
-    if (activePage !== "growth" || growthDestination !== "achievements") return;
+    if (activePage !== "growth" || !growthDestination) return;
 
     const frame = window.requestAnimationFrame(() => {
-      const heading = document.getElementById("achievement-wall-title");
+      const headingId = growthDestination === "goals" ? "goal-section-title" : "achievement-wall-title";
+      const heading = document.getElementById(headingId);
       heading?.focus({ preventScroll: true });
       heading?.scrollIntoView?.({ behavior: "auto", block: "start" });
       setGrowthDestination(null);
@@ -67,6 +68,11 @@ function AppContents() {
 
   function openAchievementManagement() {
     setGrowthDestination("achievements");
+    setActivePage("growth");
+  }
+
+  function openGoalManagement() {
+    setGrowthDestination("goals");
     setActivePage("growth");
   }
 
@@ -85,7 +91,10 @@ function AppContents() {
           <section className="surface-card page-intro page-intro--quote" aria-labelledby="page-title">
             <div className="daily-quote__heading">
               <h2 id="page-title">{page.title}</h2>
-              <span>每日一句 · Daily Quote</span>
+              <div className="daily-quote__actions">
+                <span>每日一句 · Daily Quote</span>
+                <button type="button" className="growth-goal-shortcut" onClick={openGoalManagement}>管理长期目标</button>
+              </div>
             </div>
             <blockquote className="daily-quote">
               <p className="daily-quote__zh">“{dailyQuote.zh}”</p>

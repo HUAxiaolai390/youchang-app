@@ -182,13 +182,13 @@ export function GrowthPage() {
         <div className="growth-card__heading">
           <div>
             <h2 id="activity-heatmap-title">坚持热力图</h2>
-            <span>近 12 周任务完成情况</span>
+            <span>按当前最新记录统计 · 补记往日完成后立即更新</span>
           </div>
           <strong>{weekStat.activeDays} 天活跃</strong>
         </div>
         <div className="activity-heatmap-scroll">
           <div className="activity-heatmap-weekdays" aria-hidden="true"><span>一</span><span>三</span><span>五</span><span>日</span></div>
-          <div className="activity-heatmap" role="img" aria-label="近十二周任务完成热力图">
+          <div className="activity-heatmap" role="img" aria-live="polite" aria-label="近十二周任务完成热力图">
             {heatmap.map((day) => (
               <span
                 key={day.date}

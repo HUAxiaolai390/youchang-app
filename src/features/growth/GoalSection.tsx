@@ -76,7 +76,7 @@ export function GoalSection({ now = new Date() }: { now?: Date }) {
       <div className="goal-section__heading">
         <div>
           <p>LONG-TERM GOALS</p>
-          <h2 id="goal-section-title">长期目标</h2>
+          <h2 id="goal-section-title" tabIndex={-1}>长期目标</h2>
           <span>把每天的任务，连接到真正想完成的事。</span>
         </div>
         <button type="button" className="button button--primary" onClick={openCreate} disabled={goals.length >= maximumGoals}>新增目标</button>

@@ -164,7 +164,8 @@ button:focus-visible {
   gap: 14px;
 }
 
-.daily-quote__heading > span {
+.daily-quote__actions { display: flex; align-items: center; gap: 8px; }
+.daily-quote__actions > span {
   padding: 6px 10px;
   border: 1px solid rgba(170, 120, 66, .2);
   border-radius: 999px;
@@ -465,6 +466,9 @@ button:focus-visible {
   .today-page--focus-open .today-achievements { grid-row: 3; grid-column: 1 / -1; }
   .today-page--focus-open .category-filter { grid-row: 4; }
 }
+.growth-goal-shortcut { min-height: 34px; padding: 6px 10px; border: 1px solid rgba(170, 120, 66, .28); border-radius: 999px; background: #27231e; color: #fffaf1; cursor: pointer; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.growth-goal-shortcut:hover { background: #3b332b; }
+.growth-goal-shortcut:focus-visible { outline: 3px solid #171717; outline-offset: 2px; }
 
 .focus-card { display: grid; gap: 18px; overflow: hidden; padding: 22px; border-color: #38342d; background: linear-gradient(145deg, #292720, #1d1b18); box-shadow: 0 18px 44px rgba(35, 30, 23, .2); color: #fffaf2; }
 .focus-card__heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
@@ -1080,7 +1084,9 @@ button:focus-visible {
   .page-intro { padding: 20px; }
   .page-intro--quote { gap: 16px; }
   .daily-quote__heading { align-items: flex-start; }
-  .daily-quote__heading > span { padding: 5px 8px; font-size: 10px; }
+  .daily-quote__actions { align-items: flex-end; flex-direction: column; }
+  .daily-quote__actions > span { padding: 5px 8px; font-size: 10px; }
+  .growth-goal-shortcut { min-height: 44px; }
   .page-intro .daily-quote__zh { font-size: 19px; line-height: 1.5; }
   .page-intro .daily-quote__en { font-size: 13px; }
   .daily-quote footer { flex-wrap: wrap; gap: 3px 7px; }

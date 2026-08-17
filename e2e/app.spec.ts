@@ -343,6 +343,8 @@ test("creates a long-term goal and tracks a linked task", async ({ page }) => {
   await page.reload();
 
   await page.getByRole("button", { name: "成长", exact: true }).click();
+  await page.getByRole("button", { name: "管理长期目标" }).click();
+  await expect(page.getByRole("heading", { name: "长期目标" })).toBeFocused();
   await page.getByRole("button", { name: "新增目标" }).click();
   await page.getByLabel("目标名称").fill("通过英语六级");
   await page.getByLabel("目标截止日期").fill("2026-12-20");
