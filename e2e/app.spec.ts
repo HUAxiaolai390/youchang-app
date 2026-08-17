@@ -40,6 +40,20 @@ async function expectMascotInsideViewport(page: Page) {
   return mascot;
 }
 
+test("finishes startup updating before showing the app", async ({ page }) => {
+  await page.goto("/");
+
+  const startup = page.getByRole("main", { name: "有常 APP" });
+  await expect(startup).toBeVisible();
+  await expect(startup.getByRole("progressbar", { name: "应用加载进度" })).toBeVisible();
+  await expect(startup.locator('img[src="/mascot/idle/18.gif"]')).toBeVisible();
+
+  await expect(page.getByRole("heading", { name: "有常", exact: true })).toBeVisible();
+  await expect(startup).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "刷新应用" })).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+});
+
 test("keeps frequent task actions finger-sized on a phone", async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 999) >= 480, "手机端点击区域检查");
   await page.goto("/");

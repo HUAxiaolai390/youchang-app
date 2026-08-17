@@ -5,7 +5,6 @@ import { TodayPage } from "../features/today/TodayPage";
 import { GrowthPage } from "../features/growth/GrowthPage";
 import { SettingsPage } from "../features/settings/SettingsPage";
 import { WeekPage } from "../features/week/WeekPage";
-import { PwaUpdatePrompt } from "../components/PwaUpdatePrompt";
 import { BackgroundMusic } from "../components/BackgroundMusic";
 import { getDailyQuote } from "../domain/daily-quotes";
 import { TaskReminderCenter } from "../components/TaskReminderCenter";
@@ -125,7 +124,6 @@ function AppContents() {
       </AppShell>
       <NativeTaskNotificationSync />
       <TaskReminderCenter onOpenTask={() => setActivePage("today")} />
-      <PwaUpdatePrompt />
     </>
   );
 }
