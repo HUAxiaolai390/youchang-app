@@ -45,6 +45,7 @@ test("finishes startup updating before showing the app", async ({ page }) => {
 
   const startup = page.getByRole("main", { name: "有常 APP" });
   await expect(startup).toBeVisible();
+  await expect(startup.getByRole("img", { name: "有常猫爪图标" })).toHaveAttribute("src", "/pwa-192x192.png");
   const progress = startup.getByRole("progressbar", { name: "应用加载进度" });
   await expect(progress).toBeVisible();
   await expect(startup.locator('img[src="/mascot/idle/18.gif"]')).toBeVisible();

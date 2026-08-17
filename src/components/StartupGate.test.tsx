@@ -34,6 +34,7 @@ describe("StartupGate", () => {
     render(<StartupGate minimumVisibleMs={1000}><p>应用首页</p></StartupGate>);
 
     expect(screen.getByRole("heading", { name: "有常 APP" })).toBeVisible();
+    expect(screen.getByRole("img", { name: "有常猫爪图标" })).toHaveAttribute("src", "/pwa-192x192.png");
     expect(screen.getByRole("progressbar", { name: "应用加载进度" })).toHaveAttribute("aria-valuenow", "8");
     expect(document.querySelector(".startup-progress__cat")).toHaveAttribute("src", "/mascot/idle/18.gif");
     expect(screen.queryByText("应用首页")).not.toBeInTheDocument();

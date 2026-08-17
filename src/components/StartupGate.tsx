@@ -142,7 +142,7 @@ export function StartupGate({ children, minimumVisibleMs = 1200 }: StartupGatePr
       <div className="startup-screen__glow startup-screen__glow--two" aria-hidden="true" />
       <section className="startup-card">
         <div className="startup-brand">
-          <span className="startup-brand__mark" aria-hidden="true">有</span>
+          <img className="startup-brand__mark" src="/pwa-192x192.png" alt="有常猫爪图标" />
           <div>
             <p>日日有常 · 步步有长</p>
             <h1 id="startup-title">有常 APP</h1>
