@@ -45,8 +45,21 @@ test("finishes startup updating before showing the app", async ({ page }) => {
 
   const startup = page.getByRole("main", { name: "有常 APP" });
   await expect(startup).toBeVisible();
-  await expect(startup.getByRole("progressbar", { name: "应用加载进度" })).toBeVisible();
+  const progress = startup.getByRole("progressbar", { name: "应用加载进度" });
+  await expect(progress).toBeVisible();
   await expect(startup.locator('img[src="/mascot/idle/18.gif"]')).toBeVisible();
+  const layout = await startup.evaluate((element) => {
+    const title = element.querySelector("h1")!;
+    const progressbar = element.querySelector('[role="progressbar"]')!;
+    const progressBounds = progressbar.getBoundingClientRect();
+    return {
+      titleSize: Number.parseFloat(window.getComputedStyle(title).fontSize),
+      progressTop: progressBounds.top,
+      viewportHeight: window.innerHeight
+    };
+  });
+  expect(layout.titleSize).toBeGreaterThanOrEqual(49);
+  expect(layout.progressTop).toBeGreaterThan(layout.viewportHeight * .68);
 
   await expect(page.getByRole("heading", { name: "有常", exact: true })).toBeVisible();
   await expect(startup).toHaveCount(0);
