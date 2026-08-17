@@ -63,6 +63,7 @@ test("finishes startup updating before showing the app", async ({ page }) => {
   expect(layout.progressTop).toBeGreaterThan(layout.viewportHeight * .68);
 
   await expect(page.getByRole("heading", { name: "有常", exact: true })).toBeVisible();
+  await expect(page.locator(".app-shell__mark")).toHaveAttribute("src", "/pwa-192x192.png");
   await expect(startup).toHaveCount(0);
   await expect(page.getByRole("button", { name: "刷新应用" })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);

@@ -36,7 +36,7 @@ export function AppShell({ activePage, onNavigate, children }: AppShellProps) {
     <div className="app-shell">
       <div className="app-shell__content">
         <header className="app-shell__masthead">
-          <span className="app-shell__mark" aria-hidden="true">有</span>
+          <img className="app-shell__mark" src="/pwa-192x192.png" alt="" aria-hidden="true" />
           <h1 className="app-shell__brand">有常</h1>
         </header>
         <main className="app-shell__main">{children}</main>

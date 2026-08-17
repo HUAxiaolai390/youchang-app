@@ -78,16 +78,13 @@ button:focus-visible {
 }
 
 .app-shell__mark {
-  display: grid;
+  display: block;
   width: 38px;
   height: 38px;
-  place-items: center;
+  flex: 0 0 auto;
+  object-fit: cover;
   border-radius: 13px;
-  background: linear-gradient(145deg, #2c2922, #151411);
-  color: var(--surface);
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1;
+  box-shadow: 0 5px 12px rgba(36, 33, 29, .14);
 }
 
 .app-shell__brand {
