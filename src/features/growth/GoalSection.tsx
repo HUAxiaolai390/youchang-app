@@ -19,7 +19,7 @@ function formatDeadline(deadline: DateKey): string {
 }
 
 function deadlineStatus(daysRemaining: number, completed: number, total: number): string {
-  if (total > 0 && completed === total) return "当前任务已完成";
+  if (total > 0 && completed === total) return "当前关联任务均已完成";
   if (daysRemaining < 0) return `已截止 ${Math.abs(daysRemaining)} 天`;
   if (daysRemaining === 0) return "今天截止";
   return `还剩 ${daysRemaining} 天`;
@@ -127,7 +127,7 @@ export function GoalSection({ now = new Date() }: { now?: Date }) {
                 <span style={{ width: `${ratio * 100}%` }} />
               </div>
               <div className="goal-card__metrics">
-                <span><strong>{completedTasks}/{totalTasks}</strong>{totalTasks ? "关联任务已完成" : "尚未关联任务"}</span>
+                <span><strong>{completedTasks}/{totalTasks}</strong>{totalTasks ? "关联任务进度" : "尚未关联任务"}</span>
                 <span><strong>{formatTrackedTime(actualMinutes)}</strong>累计投入</span>
               </div>
             </article>

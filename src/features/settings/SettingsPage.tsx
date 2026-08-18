@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useAppState } from "../../app/AppStateProvider";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { HelpCenterDialog } from "../../components/HelpCenterDialog";
@@ -89,22 +90,36 @@ function FixedTaskEditSurface({ children, onCancel }: { children: ReactNode; onC
 }
 
 function FixedTaskExceptionSurface({ children, onCancel }: { children: ReactNode; onCancel(): void }) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const canUseNativeDialog = typeof HTMLDialogElement !== "undefined" && "showModal" in HTMLDialogElement.prototype;
+  const dialogRef = useRef<HTMLElement>(null);
+  const onCancelRef = useRef(onCancel);
+  onCancelRef.current = onCancel;
 
   useEffect(() => {
-    const dialog = dialogRef.current;
-    if (canUseNativeDialog && dialog && !dialog.open) dialog.showModal();
-    return () => {
-      if (canUseNativeDialog && dialog?.open) dialog.close();
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    dialogRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onCancelRef.current();
     };
-  }, [canUseNativeDialog]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previouslyFocused?.focus();
+    };
+  }, []);
 
-  if (!canUseNativeDialog) {
-    return <section className="task-form-panel fixed-task-exception-dialog" role="dialog" aria-modal="true" aria-labelledby="fixed-task-exception-title">{children}</section>;
-  }
-
-  return <dialog ref={dialogRef} className="task-form-panel fixed-task-exception-dialog" aria-labelledby="fixed-task-exception-title" onCancel={onCancel}>{children}</dialog>;
+  return createPortal(
+    <div className="settings-modal-backdrop" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) onCancel();
+    }}>
+      <section ref={dialogRef} tabIndex={-1} className="settings-modal-dialog fixed-task-exception-dialog" role="dialog" aria-modal="true" aria-labelledby="fixed-task-exception-title">
+        {children}
+      </section>
+    </div>,
+    document.body
+  );
 }
 
 export function SettingsPage() {

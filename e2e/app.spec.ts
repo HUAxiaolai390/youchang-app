@@ -286,6 +286,8 @@ test("keeps category management collapsed and opens fixed-task leave in a dialog
   await page.getByRole("button", { name: "请假或暂停：每日拉伸" }).click();
   const dialog = page.getByRole("dialog", { name: "请假或暂停" });
   await expect(dialog).toBeVisible();
+  await expect(page.locator(".settings-modal-backdrop")).toBeVisible();
+  expect(await dialog.evaluate((element) => element.parentElement?.classList.contains("settings-modal-backdrop"))).toBe(true);
   await expect(dialog.getByText("每日拉伸")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await dialog.getByRole("button", { name: "关闭请假或暂停" }).click();

@@ -55,6 +55,7 @@ describe("GoalSection", () => {
     renderGoals(state);
 
     expect(screen.getByLabelText("通过英语六级进度：1/2")).toBeVisible();
+    expect(screen.getByText("关联任务进度")).toBeVisible();
     expect(screen.getByText("1 小时")).toBeVisible();
   });
 });
