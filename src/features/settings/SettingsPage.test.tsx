@@ -189,6 +189,9 @@ describe("SettingsPage", () => {
     const repository = renderSettings(state);
     const user = userEvent.setup();
 
+    const categoryManagement = screen.getByText("分类管理").closest("details");
+    expect(categoryManagement).not.toHaveAttribute("open");
+    await user.click(screen.getByText("分类管理"));
     await user.click(screen.getByRole("button", { name: "删除分类：阅读" }));
     await user.click(screen.getByRole("button", { name: "删除分类" }));
 
@@ -308,6 +311,7 @@ describe("SettingsPage", () => {
     try {
       expect(repository.load().fixedTasks[0].repeatRule).toEqual({ type: "weekly-count", timesPerWeek: 2 });
       await user.click(screen.getByRole("button", { name: "请假或暂停：每周跑步" }));
+      expect(screen.getByRole("dialog", { name: "请假或暂停" }).closest(".settings-section")).toBeNull();
       await user.click(screen.getByRole("button", { name: "仅请假这一天" }));
       expect(repository.load().fixedTasks[0].skippedDates).toEqual(["2026-08-03"]);
       expect(repository.load().fixedRecords).toHaveLength(0);

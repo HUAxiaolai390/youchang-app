@@ -88,6 +88,25 @@ function FixedTaskEditSurface({ children, onCancel }: { children: ReactNode; onC
   return <dialog ref={dialogRef} className="task-form-panel fixed-task-edit-dialog" aria-labelledby="fixed-task-edit-title" onCancel={onCancel}>{children}</dialog>;
 }
 
+function FixedTaskExceptionSurface({ children, onCancel }: { children: ReactNode; onCancel(): void }) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const canUseNativeDialog = typeof HTMLDialogElement !== "undefined" && "showModal" in HTMLDialogElement.prototype;
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (canUseNativeDialog && dialog && !dialog.open) dialog.showModal();
+    return () => {
+      if (canUseNativeDialog && dialog?.open) dialog.close();
+    };
+  }, [canUseNativeDialog]);
+
+  if (!canUseNativeDialog) {
+    return <section className="task-form-panel fixed-task-exception-dialog" role="dialog" aria-modal="true" aria-labelledby="fixed-task-exception-title">{children}</section>;
+  }
+
+  return <dialog ref={dialogRef} className="task-form-panel fixed-task-exception-dialog" aria-labelledby="fixed-task-exception-title" onCancel={onCancel}>{children}</dialog>;
+}
+
 export function SettingsPage() {
   const { state, dispatch } = useAppState();
   const [categoryNameInput, setCategoryNameInput] = useState("");
@@ -376,14 +395,21 @@ export function SettingsPage() {
             </li>
           ))}
         </ul>
-        {exceptionTask && <section className="settings-form settings-form--edit fixed-exception-panel" aria-label={`为“${exceptionTask.title}”设置请假或暂停`}>
-          <div>
-            <h3>{exceptionTask.title}</h3>
-            <p className="settings-muted">请假当天不会生成任务，也不会算作未完成；临时暂停会在所选日期之后自动恢复。</p>
+      </section>
+
+      {exceptionTask && <FixedTaskExceptionSurface onCancel={() => setExceptionFixedId(undefined)}>
+        <section className="settings-form fixed-exception-panel">
+          <div className="task-form__heading">
+            <div>
+              <h2 id="fixed-task-exception-title">请假或暂停</h2>
+              <p className="settings-muted">{exceptionTask.title}</p>
+            </div>
+            <button type="button" className="task-form__close" aria-label="关闭请假或暂停" onClick={() => setExceptionFixedId(undefined)}>×</button>
           </div>
+          <p className="settings-muted">请假当天不会生成任务，也不会算作未完成；临时暂停会在所选日期之后自动恢复。</p>
           <label className="field-label" htmlFor="fixed-exception-date">选择日期</label>
           <input id="fixed-exception-date" className="field-control" type="date" min={todayKey} value={exceptionDate} onChange={(event) => setExceptionDate(event.target.value as DateKey)} />
-          <div className="settings-inline-actions">
+          <div className="settings-inline-actions fixed-exception-actions">
             <button className="button" type="button" onClick={() => {
               dispatch({ type: "fixed/toggle-skip-date", id: exceptionTask.id, date: exceptionDate });
               setExceptionFixedId(undefined);
@@ -396,10 +422,9 @@ export function SettingsPage() {
               dispatch({ type: "fixed/set-paused-until", id: exceptionTask.id });
               setExceptionFixedId(undefined);
             }}>取消临时暂停</button>}
-            <button type="button" onClick={() => setExceptionFixedId(undefined)}>关闭</button>
           </div>
-        </section>}
-      </section>
+        </section>
+      </FixedTaskExceptionSurface>}
 
       {editingFixedId && <FixedTaskEditSurface onCancel={() => setEditingFixedId(undefined)}>
         <form className="settings-form settings-form--edit fixed-task-edit-form" onSubmit={saveFixedTask} aria-label="编辑固定任务">
@@ -435,25 +460,33 @@ export function SettingsPage() {
         </form>
       </FixedTaskEditSurface>}
 
-      <section className="surface-card settings-section" aria-labelledby="category-settings-title">
-        <h2 id="category-settings-title">自定义分类</h2>
-        <form className="settings-form settings-form--category" onSubmit={addCategory}>
-          <label className="field-label" htmlFor="category-name">新分类名称</label>
-          <input id="category-name" className="field-control" value={categoryNameInput} onChange={(event) => setCategoryNameInput(event.target.value)} />
-          <label className="field-label" htmlFor="category-icon">新分类图标</label>
-          <input id="category-icon" className="field-control" value={categoryIconInput} onChange={(event) => setCategoryIconInput(event.target.value)} maxLength={2} />
-          <button className="button" type="submit">添加分类</button>
-        </form>
-        <p className="settings-muted">内置分类不能删除；删除自定义分类后，当前任务会归入“其他”。</p>
-        <ul className="settings-list" aria-label="自定义分类列表">
-          {customCategories.length === 0 && <li className="settings-muted">还没有自定义分类</li>}
-          {customCategories.map((category) => <li key={category.id} className="settings-list__item"><span>{category.icon} {category.name}</span><button type="button" onClick={() => setCategoryToDelete(category)} aria-label={`删除分类：${category.name}`}>删除</button></li>)}
-        </ul>
-        {categoryHistory.length > 0 && <section className="settings-history" aria-labelledby="category-history-title">
-          <h3 id="category-history-title">历史分类记录</h3>
-          <ul>{categoryHistory.map((task) => <li key={task.id}>{task.label}：{task.title}（{categoryName(state.categories, task.categoryId)}）<small>原分类：{task.originalCategory}</small></li>)}</ul>
-        </section>}
-      </section>
+      <details className="surface-card settings-section settings-disclosure">
+        <summary className="settings-disclosure__summary">
+          <span>
+            <strong id="category-settings-title">分类管理</strong>
+            <small>内置 {state.categories.length - customCategories.length} 类 · 自定义 {customCategories.length} 类</small>
+          </span>
+          <span className="settings-disclosure__action">展开</span>
+        </summary>
+        <div className="settings-disclosure__content" aria-labelledby="category-settings-title">
+          <form className="settings-form settings-form--category" onSubmit={addCategory}>
+            <label className="field-label" htmlFor="category-name">新分类名称</label>
+            <input id="category-name" className="field-control" value={categoryNameInput} onChange={(event) => setCategoryNameInput(event.target.value)} />
+            <label className="field-label" htmlFor="category-icon">新分类图标</label>
+            <input id="category-icon" className="field-control" value={categoryIconInput} onChange={(event) => setCategoryIconInput(event.target.value)} maxLength={2} />
+            <button className="button" type="submit">添加分类</button>
+          </form>
+          <p className="settings-muted">内置分类不能删除；删除自定义分类后，当前任务会归入“其他”。</p>
+          <ul className="settings-list" aria-label="自定义分类列表">
+            {customCategories.length === 0 && <li className="settings-muted">还没有自定义分类</li>}
+            {customCategories.map((category) => <li key={category.id} className="settings-list__item"><span>{category.icon} {category.name}</span><button type="button" onClick={() => setCategoryToDelete(category)} aria-label={`删除分类：${category.name}`}>删除</button></li>)}
+          </ul>
+          {categoryHistory.length > 0 && <section className="settings-history" aria-labelledby="category-history-title">
+            <h3 id="category-history-title">历史分类记录</h3>
+            <ul>{categoryHistory.map((task) => <li key={task.id}>{task.label}：{task.title}（{categoryName(state.categories, task.categoryId)}）<small>原分类：{task.originalCategory}</small></li>)}</ul>
+          </section>}
+        </div>
+      </details>
 
       <section className="surface-card settings-section" aria-labelledby="backup-settings-title">
         <div className="settings-section__heading">

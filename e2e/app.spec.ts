@@ -267,6 +267,31 @@ test("keeps the settings page free of duplicate installation and music panels", 
   await expectNoHorizontalOverflow(page);
 });
 
+test("keeps category management collapsed and opens fixed-task leave in a dialog", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  await page.getByRole("button", { name: "添加任务", exact: true }).click();
+  await page.getByLabel("任务名称").fill("每日拉伸");
+  await page.getByRole("radio", { name: "固定任务" }).check();
+  await page.getByRole("button", { name: "保存任务" }).click();
+  await page.getByRole("button", { name: "设置", exact: true }).click();
+
+  const categoryManagement = page.locator("details.settings-disclosure");
+  await expect(categoryManagement).not.toHaveAttribute("open", "");
+  await categoryManagement.locator("summary").click();
+  await expect(categoryManagement).toHaveAttribute("open", "");
+
+  await page.getByRole("button", { name: "请假或暂停：每日拉伸" }).click();
+  const dialog = page.getByRole("dialog", { name: "请假或暂停" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText("每日拉伸")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await dialog.getByRole("button", { name: "关闭请假或暂停" }).click();
+  await expect(dialog).toHaveCount(0);
+});
+
 test("opens the concise help center from settings", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => window.localStorage.clear());
