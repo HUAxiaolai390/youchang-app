@@ -822,8 +822,6 @@ button:focus-visible {
 .goal-card h3 { grid-column: 1; margin: 0; overflow-wrap: anywhere; font-size: 17px; }
 .goal-card > p { grid-column: 1; margin: -3px 0 0; color: var(--muted); font-size: 11px; }
 .goal-card__cat { grid-row: 2 / 4; grid-column: 2; align-self: center; justify-self: end; }
-.goal-card__progress { grid-column: 1 / -1; overflow: hidden; height: 7px; border-radius: 999px; background: #e2dfd7; }
-.goal-card__progress > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #76866c, #a6b59b); transition: width .2s ease; }
 .goal-card__metrics { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
 .goal-card__metrics > span { display: grid; gap: 2px; padding: 8px 9px; border-radius: 11px; background: rgba(255,255,255,.65); color: var(--muted); font-size: 10px; }
 .goal-card__metrics strong { overflow: hidden; color: var(--ink); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }

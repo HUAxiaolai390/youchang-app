@@ -454,9 +454,9 @@ export function SettingsPage() {
             {state.categories.length === 0 && <option value="">暂无可用分类</option>}
             {state.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
           </select>
-          <label className="field-label" htmlFor="editing-fixed-goal">编辑关联长期目标（选填）</label>
+          <label className="field-label" htmlFor="editing-fixed-goal">编辑用于推进的长期目标（选填）</label>
           <select id="editing-fixed-goal" className="field-control" value={editingFixedGoalId} onChange={(event) => setEditingFixedGoalId(event.target.value)}>
-            <option value="">不关联目标</option>
+            <option value="">暂不选择目标</option>
             {(state.goals ?? []).map((goal) => <option key={goal.id} value={goal.id}>{goal.title}</option>)}
           </select>
           <label className="field-label" htmlFor="editing-fixed-priority">编辑固定任务优先级</label>

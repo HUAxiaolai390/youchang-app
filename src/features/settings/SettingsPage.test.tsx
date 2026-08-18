@@ -233,7 +233,7 @@ describe("SettingsPage", () => {
       const editDialog = screen.getByRole("dialog", { name: "编辑固定任务" });
       expect(editDialog).toBeVisible();
       expect(editDialog.closest(".settings-section")).toBeNull();
-      await user.selectOptions(screen.getByLabelText("编辑关联长期目标（选填）"), "health");
+      await user.selectOptions(screen.getByLabelText("编辑用于推进的长期目标（选填）"), "health");
       await user.click(screen.getByRole("button", { name: "保存固定任务" }));
 
       expect(repository.load().fixedTasks[0]).toMatchObject({ goalId: "health" });

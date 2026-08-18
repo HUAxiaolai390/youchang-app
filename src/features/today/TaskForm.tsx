@@ -171,14 +171,14 @@ export function TaskForm({ categories, goals = [], today, defaultDate, initialVa
             ))}
           </div>
         </fieldset>
-        <label className="field-label" htmlFor="task-goal">关联长期目标（选填）</label>
+        <label className="field-label" htmlFor="task-goal">用于推进哪个长期目标（选填）</label>
         <select
           id="task-goal"
           className="field-control"
           value={values.goalId ?? ""}
           onChange={(event) => setValues((current) => ({ ...current, goalId: event.target.value || undefined }))}
         >
-          <option value="">不关联目标</option>
+          <option value="">暂不选择目标</option>
           {goals.map((goal) => <option key={goal.id} value={goal.id}>{goal.title}</option>)}
         </select>
         {goals.length === 0 && <p className="task-form__kind-note">可以先到“成长”页创建长期目标。</p>}

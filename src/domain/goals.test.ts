@@ -45,7 +45,27 @@ describe("long-term goals", () => {
       totalTasks: 2,
       ratio: 0.5,
       actualMinutes: 60,
+      latestActionDate: "2026-08-11",
+      recentStreakDays: 1,
       daysRemaining: 20
+    });
+  });
+
+  it("tracks the latest action date and most recent streak", () => {
+    const now = new Date(2026, 7, 11, 9);
+    const state = createInitialState(now);
+    state.goals = [{ id: "exam", title: "通过计算机三级", deadline: "2026-09-30", createdAt: now.toISOString() }];
+    state.scheduledTasks.push(
+      { id: "day-1", title: "刷题", categoryId: "study", categoryNameSnapshot: "学习", goalId: "exam", scheduledDate: "2026-08-09", status: "completed", createdAt: now.toISOString() },
+      { id: "day-2", title: "刷题", categoryId: "study", categoryNameSnapshot: "学习", goalId: "exam", scheduledDate: "2026-08-10", status: "completed", createdAt: now.toISOString() },
+      { id: "day-3", title: "错题复盘", categoryId: "study", categoryNameSnapshot: "学习", goalId: "exam", scheduledDate: "2026-08-11", status: "pending", actualMinutes: 20, createdAt: now.toISOString() }
+    );
+
+    expect(getGoalProgress(state, state.goals[0], now)).toMatchObject({
+      completedTasks: 2,
+      latestActionDate: "2026-08-11",
+      recentStreakDays: 3,
+      actualMinutes: 20
     });
   });
 

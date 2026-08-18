@@ -59,7 +59,7 @@ describe("TaskForm", () => {
     render(<TaskForm categories={state.categories} goals={state.goals} today="2026-07-31" onCancel={() => {}} onSubmit={onSubmit} />);
 
     await user.type(screen.getByLabelText("任务名称"), "英语听力训练");
-    await user.selectOptions(screen.getByLabelText("关联长期目标（选填）"), "exam");
+    await user.selectOptions(screen.getByLabelText("用于推进哪个长期目标（选填）"), "exam");
     await user.click(screen.getByRole("button", { name: "保存任务" }));
 
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ goalId: "exam" }));

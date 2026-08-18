@@ -10,8 +10,22 @@ export type GoalProgress = {
   totalTasks: number;
   ratio: number;
   actualMinutes: number;
+  latestActionDate?: DateKey;
+  recentStreakDays: number;
   daysRemaining: number;
 };
+
+function countRecentStreak(dates: DateKey[]): number {
+  if (dates.length === 0) return 0;
+  let streak = 1;
+  let cursor = fromDateKey(dates[dates.length - 1]);
+  for (let index = dates.length - 2; index >= 0; index -= 1) {
+    cursor.setDate(cursor.getDate() - 1);
+    if (dates[index] !== toDateKey(cursor)) break;
+    streak += 1;
+  }
+  return streak;
+}
 
 function normalizeTitle(value: string): string {
   const title = value.trim();
@@ -77,22 +91,33 @@ export function normalizeGoalId(state: AppState, value: unknown): string | undef
 }
 
 export function getGoalProgress(state: AppState, goal: Goal, now: Date): GoalProgress {
-  const fixedRecords = state.fixedRecords.filter((record) => record.goalId === goal.id && record.date <= toDateKey(now));
+  const today = toDateKey(now);
+  const fixedRecords = state.fixedRecords.filter((record) => record.goalId === goal.id && record.date <= today);
   const scheduledTasks = state.scheduledTasks.filter((task) => task.goalId === goal.id && task.status !== "rescheduled");
   const completedTasks = fixedRecords.filter((record) => Boolean(record.completedAt)).length
     + scheduledTasks.filter((task) => task.status === "completed").length;
   const totalTasks = fixedRecords.length + scheduledTasks.length;
   const actualMinutes = fixedRecords.reduce((sum, record) => sum + (record.actualMinutes ?? 0), 0)
     + scheduledTasks.reduce((sum, task) => sum + (task.actualMinutes ?? 0), 0);
-  const today = fromDateKey(toDateKey(now));
+  const actionDates = [...new Set([
+    ...fixedRecords
+      .filter((record) => Boolean(record.completedAt) || (record.actualMinutes ?? 0) > 0)
+      .map((record) => record.date),
+    ...scheduledTasks
+      .filter((task) => task.scheduledDate <= today && (task.status === "completed" || (task.actualMinutes ?? 0) > 0))
+      .map((task) => task.scheduledDate)
+  ])].sort();
+  const todayDate = fromDateKey(today);
   const deadline = fromDateKey(goal.deadline);
-  const daysRemaining = Math.round((deadline.getTime() - today.getTime()) / 86_400_000);
+  const daysRemaining = Math.round((deadline.getTime() - todayDate.getTime()) / 86_400_000);
   return {
     goal,
     completedTasks,
     totalTasks,
     ratio: totalTasks ? completedTasks / totalTasks : 0,
     actualMinutes,
+    latestActionDate: actionDates.at(-1),
+    recentStreakDays: countRecentStreak(actionDates),
     daysRemaining
   };
 }

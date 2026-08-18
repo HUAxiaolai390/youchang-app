@@ -18,11 +18,20 @@ function formatDeadline(deadline: DateKey): string {
     .format(fromDateKey(deadline));
 }
 
-function deadlineStatus(daysRemaining: number, completed: number, total: number): string {
-  if (total > 0 && completed === total) return "当前关联任务均已完成";
+function deadlineStatus(daysRemaining: number): string {
   if (daysRemaining < 0) return `已截止 ${Math.abs(daysRemaining)} 天`;
   if (daysRemaining === 0) return "今天截止";
   return `还剩 ${daysRemaining} 天`;
+}
+
+function formatLatestAction(value: DateKey | undefined, now: Date): string {
+  if (!value) return "尚未开始";
+  const today = toDateKey(now);
+  if (value === today) return "今天";
+  const yesterday = fromDateKey(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (value === toDateKey(yesterday)) return "昨天";
+  return new Intl.DateTimeFormat("zh-CN", { month: "numeric", day: "numeric" }).format(fromDateKey(value));
 }
 
 export function GoalSection({ now = new Date() }: { now?: Date }) {
@@ -105,10 +114,10 @@ export function GoalSection({ now = new Date() }: { now?: Date }) {
         </div>
       ) : (
         <div className="goal-grid">
-          {progressItems.map(({ goal, completedTasks, totalTasks, ratio, actualMinutes, daysRemaining }, index) => (
+          {progressItems.map(({ goal, completedTasks, actualMinutes, latestActionDate, recentStreakDays, daysRemaining }, index) => (
             <article className="goal-card" key={goal.id}>
               <div className="goal-card__topline">
-                <span>{deadlineStatus(daysRemaining, completedTasks, totalTasks)}</span>
+                <span>{deadlineStatus(daysRemaining)}</span>
                 <div>
                   <button type="button" onClick={() => openEdit(goal)} aria-label={`编辑目标：${goal.title}`}>编辑</button>
                   <button type="button" onClick={() => setDeleting(goal)} aria-label={`删除目标：${goal.title}`}>删除</button>
@@ -120,15 +129,14 @@ export function GoalSection({ now = new Date() }: { now?: Date }) {
                 className="goal-card__cat"
                 taskKey={`goal:${goal.id}`}
                 title={goal.title}
-                completed={totalTasks > 0 && completedTasks === totalTasks}
+                completed={completedTasks > 0}
                 variant={goalCatVariants[index]}
               />
-              <div className="goal-card__progress" aria-label={`${goal.title}进度：${completedTasks}/${totalTasks}`}>
-                <span style={{ width: `${ratio * 100}%` }} />
-              </div>
-              <div className="goal-card__metrics">
-                <span><strong>{completedTasks}/{totalTasks}</strong>{totalTasks ? "关联任务进度" : "尚未关联任务"}</span>
+              <div className="goal-card__metrics" aria-label={`${goal.title}目标投入记录`}>
+                <span><strong>{completedTasks} 项</strong>已完成行动</span>
                 <span><strong>{formatTrackedTime(actualMinutes)}</strong>累计投入</span>
+                <span><strong>{formatLatestAction(latestActionDate, now)}</strong>最近推进</span>
+                <span><strong>{recentStreakDays} 天</strong>最近连续</span>
               </div>
             </article>
           ))}

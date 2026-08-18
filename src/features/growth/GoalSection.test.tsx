@@ -54,8 +54,10 @@ describe("GoalSection", () => {
 
     renderGoals(state);
 
-    expect(screen.getByLabelText("通过英语六级进度：1/2")).toBeVisible();
-    expect(screen.getByText("关联任务进度")).toBeVisible();
+    expect(screen.getByLabelText("通过英语六级目标投入记录")).toHaveTextContent("已完成行动");
+    expect(screen.getByLabelText("通过英语六级目标投入记录")).toHaveTextContent("最近推进");
+    expect(screen.getByText("1 项")).toBeVisible();
+    expect(screen.getByText("今天")).toBeVisible();
     expect(screen.getByText("1 小时")).toBeVisible();
   });
 });

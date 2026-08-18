@@ -410,7 +410,7 @@ test("creates a long-term goal and tracks a linked task", async ({ page }) => {
   await page.getByRole("button", { name: "今日", exact: true }).click();
   await page.getByRole("button", { name: "添加任务", exact: true }).click();
   await page.getByLabel("任务名称").fill("英语听力训练");
-  await page.getByLabel("关联长期目标（选填）").selectOption({ label: "通过英语六级" });
+  await page.getByLabel("用于推进哪个长期目标（选填）").selectOption({ label: "通过英语六级" });
   await page.getByRole("button", { name: "保存任务" }).click();
   await expect(page.getByText(/目标：通过英语六级/)).toBeVisible();
   await page.getByRole("button", { name: "记录用时：英语听力训练" }).click();
@@ -419,10 +419,14 @@ test("creates a long-term goal and tracks a linked task", async ({ page }) => {
   await page.getByRole("checkbox", { name: "完成：英语听力训练" }).check();
 
   await page.getByRole("button", { name: "成长", exact: true }).click();
-  await expect(page.getByLabel("通过英语六级进度：1/1")).toBeVisible();
+  await expect(page.getByLabel("通过英语六级目标投入记录")).toBeVisible();
   const goalCard = page.getByRole("heading", { name: "通过英语六级" }).locator("xpath=ancestor::article[1]");
+  await expect(goalCard).toContainText("已完成行动");
+  await expect(goalCard).toContainText("最近推进");
+  await expect(goalCard).toContainText("最近连续");
   await expect(goalCard).toContainText("40 分钟");
-  await expect(goalCard).toContainText("当前任务已完成");
+  await expect(goalCard).toContainText("1 项");
+  await expect(goalCard).toContainText("今天");
   await expectNoHorizontalOverflow(page);
 });
 
