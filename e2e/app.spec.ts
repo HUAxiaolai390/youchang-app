@@ -521,13 +521,26 @@ test("records manual and stopwatch time into the allocation", async ({ page }) =
   await page.waitForTimeout(1_100);
   await page.getByRole("button", { name: "完成并记录" }).click();
   await expect(page.getByText(/实际 46 分钟/)).toBeVisible();
+
+  await page.getByRole("button", { name: "添加任务", exact: true }).click();
+  await page.getByLabel("任务名称").fill("备战 CMC");
+  await page.getByRole("button", { name: "保存任务" }).click();
+  await page.getByRole("button", { name: "记录用时：备战 CMC" }).click();
+  await page.getByLabel("实际用时（分钟）").fill("30");
+  await page.getByRole("button", { name: "保存用时" }).click();
+  await expectNoHorizontalOverflow(page);
+
+  await expect(page.getByLabel("任务时间饼图，共 1 小时 16 分")).toBeVisible();
+  const readingAllocation = page.getByLabel("论文阅读 46 分钟，占 61%");
+  const cmcAllocation = page.getByLabel("备战 CMC 30 分钟，占 39%");
+  await expect(readingAllocation).toBeVisible();
+  await expect(cmcAllocation).toBeVisible();
+  expect(await readingAllocation.evaluate((element) => element.getAttribute("style"))).not.toBe(await cmcAllocation.evaluate((element) => element.getAttribute("style")));
+  await page.getByRole("button", { name: "近 7 天" }).click();
   await expectNoHorizontalOverflow(page);
 
   await page.getByRole("button", { name: "成长" }).click();
-  await expect(page.getByLabel("分类时间饼图，共 46 分钟")).toBeVisible();
-  await expect(page.getByLabel("学习 46 分钟，占 100%")).toBeVisible();
-  await page.getByRole("button", { name: "近 7 天" }).click();
-  await expectNoHorizontalOverflow(page);
+  await expect(page.getByRole("heading", { name: "时间分配" })).toHaveCount(0);
 });
 
 test("unlocks a medal and pins it into one of three equal home slots", async ({ page }) => {

@@ -10,6 +10,12 @@ const pwaMock = vi.hoisted(() => ({
   updateServiceWorker: vi.fn(() => Promise.resolve())
 }));
 
+const nativeMock = vi.hoisted(() => ({ native: false }));
+
+vi.mock("@capacitor/core", () => ({
+  Capacitor: { isNativePlatform: () => nativeMock.native }
+}));
+
 vi.mock("virtual:pwa-register/react", () => ({
   useRegisterSW: (options: typeof pwaMock.options) => {
     pwaMock.options = options;
@@ -26,6 +32,7 @@ describe("StartupGate", () => {
     vi.useFakeTimers();
     pwaMock.options = undefined;
     pwaMock.updateServiceWorker.mockClear();
+    nativeMock.native = false;
   });
 
   afterEach(() => vi.useRealTimers());
@@ -44,8 +51,7 @@ describe("StartupGate", () => {
       await Promise.resolve();
     });
     await act(async () => {
-      vi.advanceTimersByTime(500);
-      await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(500);
     });
 
     expect(screen.getByText("应用首页")).toBeVisible();
@@ -81,5 +87,17 @@ describe("StartupGate", () => {
 
     expect(pwaMock.updateServiceWorker).not.toHaveBeenCalled();
     expect(screen.queryByRole("button", { name: "刷新应用" })).not.toBeInTheDocument();
+  });
+
+  it("does not register the web offline worker inside the installed Android app", async () => {
+    nativeMock.native = true;
+    render(<StartupGate minimumVisibleMs={0}><p>安卓首页</p></StartupGate>);
+
+    expect(screen.getByRole("status")).toHaveTextContent(/安装包中的新版本|本次安装的新内容/);
+    expect(pwaMock.options).toBeUndefined();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    expect(screen.getByText("安卓首页")).toBeVisible();
   });
 });

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Capacitor } from "@capacitor/core";
 import { useRegisterSW } from "virtual:pwa-register/react";
 
 type StartupGateProps = {
@@ -29,7 +30,46 @@ function waitForInstallation(registration: ServiceWorkerRegistration): Promise<v
   });
 }
 
-export function StartupGate({ children, minimumVisibleMs = 1200 }: StartupGateProps) {
+function StartupScreen({ progress, status }: { progress: number; status: string }) {
+  const catPosition = 6 + progress * .88;
+  return (
+    <main className="startup-screen" aria-labelledby="startup-title">
+      <div className="startup-screen__glow startup-screen__glow--one" aria-hidden="true" />
+      <div className="startup-screen__glow startup-screen__glow--two" aria-hidden="true" />
+      <section className="startup-card">
+        <div className="startup-brand">
+          <img className="startup-brand__mark" src="/pwa-192x192.png" alt="有常猫爪图标" />
+          <div>
+            <p>日日有常 · 步步有长</p>
+            <h1 id="startup-title">有常 APP</h1>
+          </div>
+        </div>
+
+        <div className="startup-progress" style={{ "--startup-progress": `${catPosition}%` } as StartupStyle}>
+          <div className="startup-progress__lane" aria-hidden="true">
+            <img className="startup-progress__cat" src="/mascot/idle/18.gif" alt="" />
+          </div>
+          <div
+            className="startup-progress__track"
+            role="progressbar"
+            aria-label="应用加载进度"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progress}
+          >
+            <span style={{ width: `${progress}%` }} />
+          </div>
+          <div className="startup-progress__copy">
+            <span role="status">{status}</span>
+            <strong>{Math.round(progress)}%</strong>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function WebStartupGate({ children, minimumVisibleMs = 1200 }: StartupGateProps) {
   const startedAt = useRef(Date.now());
   const startupOpen = useRef(true);
   const registrationSeen = useRef(false);
@@ -135,40 +175,102 @@ export function StartupGate({ children, minimumVisibleMs = 1200 }: StartupGatePr
 
   if (ready) return children;
 
-  const catPosition = 6 + progress * .88;
-  return (
-    <main className="startup-screen" aria-labelledby="startup-title">
-      <div className="startup-screen__glow startup-screen__glow--one" aria-hidden="true" />
-      <div className="startup-screen__glow startup-screen__glow--two" aria-hidden="true" />
-      <section className="startup-card">
-        <div className="startup-brand">
-          <img className="startup-brand__mark" src="/pwa-192x192.png" alt="有常猫爪图标" />
-          <div>
-            <p>日日有常 · 步步有长</p>
-            <h1 id="startup-title">有常 APP</h1>
-          </div>
-        </div>
+  return <StartupScreen progress={progress} status={status} />;
+}
 
-        <div className="startup-progress" style={{ "--startup-progress": `${catPosition}%` } as StartupStyle}>
-          <div className="startup-progress__lane" aria-hidden="true">
-            <img className="startup-progress__cat" src="/mascot/idle/18.gif" alt="" />
-          </div>
-          <div
-            className="startup-progress__track"
-            role="progressbar"
-            aria-label="应用加载进度"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={progress}
-          >
-            <span style={{ width: `${progress}%` }} />
-          </div>
-          <div className="startup-progress__copy">
-            <span role="status">{status}</span>
-            <strong>{Math.round(progress)}%</strong>
-          </div>
-        </div>
-      </section>
-    </main>
-  );
+const nativeCleanupMarker = "youchang:native-cache-cleanup-reload";
+
+async function clearNativeOfflineCache(): Promise<boolean> {
+  let foundOldOfflineData = false;
+  if ("serviceWorker" in navigator) {
+    foundOldOfflineData = Boolean(navigator.serviceWorker.controller);
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    if (registrations.length > 0) foundOldOfflineData = true;
+    await Promise.all(registrations.map((registration) => registration.unregister()));
+  }
+  if ("caches" in window) {
+    const cacheNames = await window.caches.keys();
+    if (cacheNames.length > 0) foundOldOfflineData = true;
+    await Promise.all(cacheNames.map((cacheName) => window.caches.delete(cacheName)));
+  }
+  return foundOldOfflineData;
+}
+
+function NativeStartupGate({ children, minimumVisibleMs = 1200 }: StartupGateProps) {
+  const startedAt = useRef(Date.now());
+  const [progress, setProgress] = useState(12);
+  const [status, setStatus] = useState("正在载入安装包中的新版本");
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setProgress((current) => current >= 92 ? current : Math.min(92, current + Math.max(1, Math.round((92 - current) * .14))));
+    }, 85);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    let finishTimer: number | undefined;
+    let revealTimer: number | undefined;
+    let reloadTimer: number | undefined;
+
+    void (async () => {
+      let oldOfflineData = false;
+      try {
+        oldOfflineData = await clearNativeOfflineCache();
+      } catch {
+        setStatus("正在准备本次安装的新内容");
+      }
+      if (!active) return;
+
+      let alreadyReloading = false;
+      try {
+        alreadyReloading = window.sessionStorage.getItem(nativeCleanupMarker) === "1";
+      } catch {
+        // The app can continue even when temporary storage is unavailable.
+      }
+
+      if (oldOfflineData && !alreadyReloading) {
+        setStatus("新版本已就绪，正在重新载入");
+        setProgress(96);
+        try {
+          window.sessionStorage.setItem(nativeCleanupMarker, "1");
+        } catch {
+          // Reloading still clears the current service-worker controller.
+        }
+        reloadTimer = window.setTimeout(() => window.location.reload(), 80);
+        return;
+      }
+
+      try {
+        window.sessionStorage.removeItem(nativeCleanupMarker);
+      } catch {
+        // Nothing else is required here.
+      }
+      const remaining = Math.max(0, minimumVisibleMs - (Date.now() - startedAt.current));
+      finishTimer = window.setTimeout(() => {
+        if (!active) return;
+        setStatus("准备完成，马上开始");
+        setProgress(100);
+        revealTimer = window.setTimeout(() => {
+          if (active) setReady(true);
+        }, 220);
+      }, remaining);
+    })();
+
+    return () => {
+      active = false;
+      if (finishTimer !== undefined) window.clearTimeout(finishTimer);
+      if (revealTimer !== undefined) window.clearTimeout(revealTimer);
+      if (reloadTimer !== undefined) window.clearTimeout(reloadTimer);
+    };
+  }, [minimumVisibleMs]);
+
+  if (ready) return children;
+  return <StartupScreen progress={progress} status={status} />;
+}
+
+export function StartupGate(props: StartupGateProps) {
+  return Capacitor.isNativePlatform() ? <NativeStartupGate {...props} /> : <WebStartupGate {...props} />;
 }

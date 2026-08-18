@@ -4,6 +4,7 @@ import {
   addFixedActualMinutes,
   addScheduledActualMinutes,
   addTimeEntry,
+  getTaskTimeAllocation,
   getTimeAllocation,
   setFixedActualMinutes,
   setScheduledActualMinutes,
@@ -49,6 +50,14 @@ describe("time tracking", () => {
       items: [
         expect.objectContaining({ categoryId: "study", minutes: 60, ratio: 2 / 3 }),
         expect.objectContaining({ categoryId: "exercise", minutes: 30, ratio: 1 / 3 })
+      ]
+    });
+    expect(getTaskTimeAllocation(withEntry, "2026-08-05", "2026-08-05")).toEqual({
+      totalMinutes: 90,
+      items: [
+        expect.objectContaining({ taskTitle: "背单词", categoryId: "study", minutes: 45, ratio: 0.5 }),
+        expect.objectContaining({ taskTitle: "拉伸", categoryId: "exercise", minutes: 30, ratio: 1 / 3 }),
+        expect.objectContaining({ taskTitle: "看资料", categoryId: "study", minutes: 15, ratio: 1 / 6 })
       ]
     });
   });

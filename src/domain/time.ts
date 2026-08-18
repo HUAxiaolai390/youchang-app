@@ -86,6 +86,21 @@ export type TimeAllocation = {
   items: TimeAllocationItem[];
 };
 
+export type TaskTimeAllocationItem = {
+  taskKey: string;
+  taskTitle: string;
+  categoryId: string;
+  categoryName: string;
+  categoryIcon: string;
+  minutes: number;
+  ratio: number;
+};
+
+export type TaskTimeAllocation = {
+  totalMinutes: number;
+  items: TaskTimeAllocationItem[];
+};
+
 export function getTimeAllocation(state: AppState, fromDate: DateKey, toDate: DateKey): TimeAllocation {
   const totals = new Map<string, number>();
   const add = (categoryId: string, minutes?: number) => {
@@ -115,6 +130,56 @@ export function getTimeAllocation(state: AppState, fromDate: DateKey, toDate: Da
       ratio: totalMinutes === 0 ? 0 : minutes / totalMinutes
     };
   }).sort((left, right) => right.minutes - left.minutes);
+
+  return { totalMinutes, items };
+}
+
+export function getTaskTimeAllocation(state: AppState, fromDate: DateKey, toDate: DateKey): TaskTimeAllocation {
+  type TaskTotal = Omit<TaskTimeAllocationItem, "minutes" | "ratio"> & { minutes: number };
+  const totals = new Map<string, TaskTotal>();
+  const fallback = state.categories.find((category) => category.id === "other");
+  const add = (taskKey: string, taskTitle: string, categoryId: string, categoryNameSnapshot: string, minutes?: number) => {
+    if (!minutes || minutes <= 0) return;
+    const category = state.categories.find((item) => item.id === categoryId) ?? fallback;
+    const current = totals.get(taskKey);
+    if (current) {
+      current.minutes += minutes;
+      return;
+    }
+    totals.set(taskKey, {
+      taskKey,
+      taskTitle: taskTitle.trim() || "自由记录",
+      categoryId: category?.id ?? "other",
+      categoryName: category?.name ?? categoryNameSnapshot ?? "其他",
+      categoryIcon: category?.icon ?? "其",
+      minutes
+    });
+  };
+
+  for (const record of state.fixedRecords) {
+    if (record.date >= fromDate && record.date <= toDate) {
+      add(`fixed:${record.templateId}`, record.titleSnapshot, record.categoryId, record.categoryNameSnapshot, record.actualMinutes);
+    }
+  }
+  for (const task of state.scheduledTasks) {
+    if (task.scheduledDate >= fromDate && task.scheduledDate <= toDate) {
+      add(`scheduled:${task.id}`, task.title, task.categoryId, task.categoryNameSnapshot, task.actualMinutes);
+    }
+  }
+  for (const entry of state.timeEntries ?? []) {
+    if (entry.date >= fromDate && entry.date <= toDate) {
+      const normalizedTitle = entry.title.trim() || "自由记录";
+      add(`entry:${entry.categoryId}:${normalizedTitle}`, normalizedTitle, entry.categoryId, entry.categoryNameSnapshot, entry.minutes);
+    }
+  }
+
+  const totalMinutes = [...totals.values()].reduce((sum, item) => sum + item.minutes, 0);
+  const items = [...totals.values()]
+    .map((item): TaskTimeAllocationItem => ({
+      ...item,
+      ratio: totalMinutes === 0 ? 0 : item.minutes / totalMinutes
+    }))
+    .sort((left, right) => right.minutes - left.minutes || left.taskTitle.localeCompare(right.taskTitle, "zh-CN"));
 
   return { totalMinutes, items };
 }

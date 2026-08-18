@@ -5,6 +5,7 @@ import { AchievementMedal } from "../../components/AchievementMedal";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { DisplayNameDialog } from "../../components/DisplayNameDialog";
 import { TimeEntryDialog } from "../../components/TimeEntryDialog";
+import { TimeAllocationCard } from "../../components/TimeAllocationCard";
 import { TaskReminderOverview } from "../../components/TaskReminderOverview";
 import { assignTaskCatVariants } from "../../components/TaskCatAnimation";
 import { achievementTierLabels, getFeaturedAchievements } from "../../domain/achievements";
@@ -360,6 +361,7 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
       <TaskReminderOverview />
       <TaskList title="固定任务" tasks={fixedTasks} assignedCatVariants={todayCatVariants} onToggle={toggle} onStepToggle={toggleStep} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} onHabit={setHabitTask} />
       <TaskList title="今日安排" tasks={scheduledTasks} assignedCatVariants={todayCatVariants} onToggle={toggle} onStepToggle={toggleStep} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
+      <TimeAllocationCard now={now} />
       <Backlog now={now} />
       <button type="button" className="add-task-button" aria-label="添加任务" onClick={openNewTask}>＋<span>添加任务</span></button>
       {formOpen && <TaskForm categories={state.categories} goals={state.goals ?? []} today={today} initialValues={formValues} error={error} onSubmit={saveTask} onCancel={closeForm} />}

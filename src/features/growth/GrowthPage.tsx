@@ -1,11 +1,11 @@
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { useAppState } from "../../app/AppStateProvider";
 import { AchievementMedal } from "../../components/AchievementMedal";
 import { achievementTierLabels, getAchievements, normalizeFeaturedAchievementIds } from "../../domain/achievements";
 import { toDateKey } from "../../domain/date";
 import { experiencePerLevel, getFocusLevel, getFocusProgress, getLevelExperience } from "../../domain/focus";
 import { getActivityHeatmap, getCurrentStreak, getPeriodStat, getSevenDayStats, getTotalCompleted } from "../../domain/stats";
-import { formatTrackedTime, getTimeAllocation } from "../../domain/time";
+import { formatTrackedTime } from "../../domain/time";
 import { getReviewWeekEnd, getWeeklyReview, getWeeklyReviewSnapshot, maximumWeeklyReviewLength } from "../../domain/weekly-review";
 import type { DateKey } from "../../domain/types";
 import { GoalSection } from "./GoalSection";
@@ -19,22 +19,8 @@ function formatReviewRange(weekStart: DateKey): string {
   return `${formatDay(weekStart)}—${formatDay(getReviewWeekEnd(weekStart))}`;
 }
 
-const allocationColors = ["#e6a45c", "#8eaa7d", "#829db8", "#a787b5", "#bd8585", "#979084"];
-
-function pieBackground(items: ReturnType<typeof getTimeAllocation>["items"]): string {
-  let start = 0;
-  const segments = items.map((item, index) => {
-    const end = start + item.ratio * 100;
-    const segment = `${allocationColors[index % allocationColors.length]} ${start}% ${end}%`;
-    start = end;
-    return segment;
-  });
-  return `conic-gradient(${segments.join(", ")})`;
-}
-
 export function GrowthPage() {
   const { state, dispatch } = useAppState();
-  const [timePeriod, setTimePeriod] = useState<"today" | "week">("today");
   const today = new Date();
   const todayKey = toDateKey(today);
   const rollingWeekStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6);
@@ -44,7 +30,6 @@ export function GrowthPage() {
   const focus = getFocusProgress(state);
   const level = getFocusLevel(focus.experience);
   const levelExperience = getLevelExperience(focus.experience);
-  const timeAllocation = getTimeAllocation(state, timePeriod === "today" ? todayKey : toDateKey(rollingWeekStart), todayKey);
   const todayStat = getPeriodStat(state, todayKey, todayKey);
   const weekStat = getPeriodStat(state, toDateKey(rollingWeekStart), todayKey);
   const reviewSnapshot = getWeeklyReviewSnapshot(state, today);
@@ -218,48 +203,6 @@ export function GrowthPage() {
           <p>累计经验</p>
           <strong>{focus.experience} EXP</strong>
         </article>
-      </section>
-
-      <section className="surface-card time-allocation-card" aria-labelledby="time-allocation-title">
-        <div className="time-allocation-card__heading">
-          <div>
-            <p>TIME ALLOCATION</p>
-            <h2 id="time-allocation-title">时间分配</h2>
-          </div>
-          <div className="time-period-switch" aria-label="时间分配范围">
-            <button type="button" aria-pressed={timePeriod === "today"} onClick={() => setTimePeriod("today")}>今天</button>
-            <button type="button" aria-pressed={timePeriod === "week"} onClick={() => setTimePeriod("week")}>近 7 天</button>
-          </div>
-        </div>
-        <div className="time-allocation-card__total">
-          <strong>{formatTrackedTime(timeAllocation.totalMinutes)}</strong>
-          <span>{timePeriod === "today" ? "今天已记录" : "近七天已记录"}</span>
-        </div>
-        {timeAllocation.items.length === 0 ? (
-          <p className="time-allocation-card__empty">完成一次正计时，或在任务旁填写实际用时后，这里就会显示时间去向。</p>
-        ) : (
-          <div className="time-allocation-visual">
-            <div
-              className="time-allocation-pie"
-              style={{ "--pie-background": pieBackground(timeAllocation.items) } as CSSProperties}
-              role="img"
-              aria-label={`分类时间饼图，共 ${formatTrackedTime(timeAllocation.totalMinutes)}`}
-            >
-              <div><strong>{formatTrackedTime(timeAllocation.totalMinutes)}</strong><span>总记录</span></div>
-            </div>
-            <div className="time-allocation-list">
-              {timeAllocation.items.map((item, index) => (
-                <div className="time-allocation-row" key={item.categoryId} aria-label={`${item.categoryName} ${formatTrackedTime(item.minutes)}，占 ${Math.round(item.ratio * 100)}%`}>
-                  <span className={`time-allocation-row__icon time-allocation-row__icon--${index % 6}`} aria-hidden="true">{item.categoryIcon}</span>
-                  <div className="time-allocation-row__main">
-                    <div><strong>{item.categoryName}</strong><span>{formatTrackedTime(item.minutes)} · {Math.round(item.ratio * 100)}%</span></div>
-                    <div className="time-allocation-row__track" aria-hidden="true"><span className={`time-allocation-row__bar time-allocation-row__bar--${index % 6}`} style={{ width: `${item.ratio * 100}%` }} /></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </section>
 
       <article className="surface-card growth-card growth-card--streak">

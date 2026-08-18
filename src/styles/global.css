@@ -971,25 +971,16 @@ button:focus-visible {
 .time-allocation-pie span { color: var(--muted); font-size: 10px; }
 .time-allocation-list { display: grid; gap: 15px; }
 .time-allocation-row { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 11px; align-items: center; }
-.time-allocation-row__icon { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 13px; font-size: 13px; font-weight: 800; }
-.time-allocation-row__icon--0 { background: #fae4c5; color: #855628; }
-.time-allocation-row__icon--1 { background: #dfe9d8; color: #506346; }
-.time-allocation-row__icon--2 { background: #dde6ef; color: #4a6075; }
-.time-allocation-row__icon--3 { background: #eadff0; color: #675171; }
-.time-allocation-row__icon--4 { background: #f1dddd; color: #7a5050; }
-.time-allocation-row__icon--5 { background: #e7e3db; color: #625d54; }
+.time-allocation-row__icon { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid color-mix(in srgb, var(--allocation-color) 55%, white); border-radius: 13px; background: color-mix(in srgb, var(--allocation-color) 22%, white); color: color-mix(in srgb, var(--allocation-color) 70%, #2c2922); font-size: 13px; font-weight: 800; }
 .time-allocation-row__main { display: grid; min-width: 0; gap: 8px; }
 .time-allocation-row__main > div:first-child { display: flex; justify-content: space-between; gap: 10px; }
 .time-allocation-row__main strong { font-size: 14px; }
+.time-allocation-row__title { display: grid; min-width: 0; gap: 1px; text-align: left !important; }
+.time-allocation-row__title strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.time-allocation-row__title small { color: var(--muted); font-size: 10px; }
 .time-allocation-row__main span { color: var(--muted); font-size: 12px; text-align: right; }
 .time-allocation-row__track { height: 8px; overflow: hidden; border-radius: 999px; background: #eeeae3; }
-.time-allocation-row__bar { display: block; height: 100%; min-width: 4px; border-radius: inherit; }
-.time-allocation-row__bar--0 { background: #e6a45c; }
-.time-allocation-row__bar--1 { background: #8eaa7d; }
-.time-allocation-row__bar--2 { background: #829db8; }
-.time-allocation-row__bar--3 { background: #a787b5; }
-.time-allocation-row__bar--4 { background: #bd8585; }
-.time-allocation-row__bar--5 { background: #979084; }
+.time-allocation-row__bar { display: block; height: 100%; min-width: 4px; border-radius: inherit; background: var(--allocation-color); }
 
 .settings-page { display: grid; gap: 18px; }
 .settings-help-entry { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 15px 18px; }
