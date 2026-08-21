@@ -47,10 +47,16 @@ describe("TimeAllocationCard", () => {
     expect(screen.queryByText("网络技术复习")).not.toBeInTheDocument();
     expect(screen.getByLabelText("任务时间饼图，共 2 小时 45 分")).toBeVisible();
     expect(screen.getByLabelText("图例：通过计算机三级，1 小时")).toBeVisible();
-    const positions = [...document.querySelectorAll("[data-callout-position]")].map((node) => node.getAttribute("data-callout-position"));
-    expect(positions).toContain("top");
-    expect(positions).toContain("bottom");
+    const callouts = [...document.querySelectorAll<HTMLElement>("[data-callout-position]")];
+    const positions = callouts.map((node) => node.dataset.calloutPosition);
+    expect(positions).toContain("left");
     expect(positions).toContain("right");
+    callouts.forEach((node) => {
+      const anchorX = Number(node.dataset.anchorX);
+      const endX = Number(node.dataset.endX);
+      expect(node.dataset.calloutPosition === "left" ? endX < anchorX : endX > anchorX).toBe(true);
+    });
+    expect(document.querySelector('[data-callout-bent="false"]')).not.toBeNull();
     expect(screen.getByText("已按长期目标智能合并，并尝试识别过去未关联目标的记录。")).toBeVisible();
   });
 });
