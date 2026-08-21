@@ -977,6 +977,7 @@ button:focus-visible {
 .time-allocation-chart__label-time { fill: var(--muted); font-size: 9.5px; font-weight: 600; }
 .time-allocation-chart__total { fill: var(--ink); font-family: inherit; font-size: 14px; font-weight: 900; letter-spacing: -.03em; }
 .time-allocation-chart__total-caption { fill: var(--muted); font-size: 9px; font-weight: 600; letter-spacing: 0; }
+.time-allocation-chart__more { fill: var(--muted); font-family: inherit; font-size: 8.5px; }
 .time-allocation-list { display: grid; gap: 15px; }
 .time-allocation-row { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 11px; align-items: center; }
 .time-allocation-row__icon { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid color-mix(in srgb, var(--allocation-color) 55%, white); border-radius: 13px; background: color-mix(in srgb, var(--allocation-color) 22%, white); color: color-mix(in srgb, var(--allocation-color) 70%, #2c2922); font-size: 13px; font-weight: 800; }
