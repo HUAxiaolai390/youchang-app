@@ -35,6 +35,8 @@ describe("TimeAllocationCard", () => {
     expect(cmc.style.getPropertyValue("--allocation-color")).not.toBe(computer.style.getPropertyValue("--allocation-color"));
     expect(allocationPalette).toContain(cmc.style.getPropertyValue("--allocation-color") as typeof allocationPalette[number]);
     expect(screen.getByLabelText("任务时间饼图，共 1 小时")).toBeVisible();
+    expect(screen.getByLabelText("图例：备战 CMC，40 分钟")).toBeVisible();
+    expect(screen.getByLabelText("图例：数据库刷题，20 分钟")).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: "近 7 天" }));
     expect(screen.getByLabelText("跑步 1 小时，占 38%")).toBeVisible();
@@ -43,6 +45,7 @@ describe("TimeAllocationCard", () => {
     expect(screen.queryByText("数据库刷题")).not.toBeInTheDocument();
     expect(screen.queryByText("网络技术复习")).not.toBeInTheDocument();
     expect(screen.getByLabelText("任务时间饼图，共 2 小时 40 分")).toBeVisible();
+    expect(screen.getByLabelText("图例：通过计算机三级，1 小时")).toBeVisible();
     expect(screen.getByText("已按长期目标智能合并，并尝试识别过去未关联目标的记录。")).toBeVisible();
   });
 });

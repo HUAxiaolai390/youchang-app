@@ -965,11 +965,18 @@ button:focus-visible {
 .time-allocation-card__total span { color: var(--muted); font-size: 12px; }
 .time-allocation-card__hint { margin: -10px 0 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
 .time-allocation-card__empty { margin: 0; padding: 18px; border-radius: 15px; background: #f3eee6; color: var(--muted); font-size: 13px; line-height: 1.7; }
-.time-allocation-visual { display: grid; grid-template-columns: minmax(150px, .7fr) minmax(240px, 1.3fr); gap: 28px; align-items: center; }
-.time-allocation-pie { display: grid; width: min(100%, 210px); aspect-ratio: 1; place-items: center; justify-self: center; border-radius: 50%; background: var(--pie-background); box-shadow: 0 12px 28px rgba(72,53,31,.11); }
-.time-allocation-pie > div { display: grid; width: 58%; aspect-ratio: 1; place-content: center; gap: 3px; border-radius: 50%; background: var(--surface); box-shadow: 0 2px 14px rgba(72,53,31,.1); text-align: center; }
-.time-allocation-pie strong { max-width: 92px; font-size: 18px; line-height: 1.2; letter-spacing: -.04em; }
-.time-allocation-pie span { color: var(--muted); font-size: 10px; }
+.time-allocation-visual { display: grid; grid-template-columns: minmax(280px, .95fr) minmax(240px, 1.05fr); gap: 24px; align-items: center; }
+.time-allocation-chart { display: block; width: 100%; min-width: 0; overflow: visible; }
+.time-allocation-chart__base, .time-allocation-chart__segment { fill: none; stroke-width: 27; transform: rotate(-90deg); transform-origin: 180px 140px; }
+.time-allocation-chart__base { stroke: #eeeae3; }
+.time-allocation-chart__segment { transition: stroke-dasharray .25s ease; }
+.time-allocation-chart__center { fill: var(--surface); filter: drop-shadow(0 3px 8px rgba(72,53,31,.12)); }
+.time-allocation-chart__line { fill: none; stroke-width: 1.35; stroke-linecap: round; stroke-linejoin: round; }
+.time-allocation-chart__label { font-family: inherit; }
+.time-allocation-chart__label-title { fill: #3d3933; font-size: 10.5px; font-weight: 800; }
+.time-allocation-chart__label-time { fill: var(--muted); font-size: 9.5px; font-weight: 600; }
+.time-allocation-chart__total { fill: var(--ink); font-family: inherit; font-size: 14px; font-weight: 900; letter-spacing: -.03em; }
+.time-allocation-chart__total-caption { fill: var(--muted); font-size: 9px; font-weight: 600; letter-spacing: 0; }
 .time-allocation-list { display: grid; gap: 15px; }
 .time-allocation-row { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 11px; align-items: center; }
 .time-allocation-row__icon { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid color-mix(in srgb, var(--allocation-color) 55%, white); border-radius: 13px; background: color-mix(in srgb, var(--allocation-color) 22%, white); color: color-mix(in srgb, var(--allocation-color) 70%, #2c2922); font-size: 13px; font-weight: 800; }
@@ -1251,7 +1258,7 @@ button:focus-visible {
   .time-allocation-card { padding: 18px; }
   .time-allocation-card__heading { align-items: start; }
   .time-allocation-visual { grid-template-columns: minmax(0, 1fr); gap: 24px; }
-  .time-allocation-pie { width: min(68vw, 210px); }
+  .time-allocation-chart { max-width: 380px; justify-self: center; }
   .category-filter button, .backlog-card__actions button, .task-reminder__actions button,
   .task-reminder__snooze-select select, .settings-inline-actions > button,
   .settings-inline-actions > label.button, .settings-list__item button { min-height: 44px; }

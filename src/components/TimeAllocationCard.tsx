@@ -5,7 +5,20 @@ import { formatTrackedTime, getTaskTimeAllocation } from "../domain/time";
 
 type AllocationStyle = CSSProperties & {
   "--allocation-color"?: string;
-  "--pie-background"?: string;
+};
+
+type AllocationItem = ReturnType<typeof getTaskTimeAllocation>["items"][number];
+
+type ChartCallout = {
+  item: AllocationItem;
+  color: string;
+  startRatio: number;
+  anchorX: number;
+  anchorY: number;
+  elbowX: number;
+  elbowY: number;
+  labelY: number;
+  side: "left" | "right";
 };
 
 export const allocationPalette = [
@@ -39,15 +52,92 @@ function allocationColors(items: ReturnType<typeof getTaskTimeAllocation>["items
   return colors;
 }
 
-function pieBackground(items: ReturnType<typeof getTaskTimeAllocation>["items"], colors: Map<string, string>): string {
-  let start = 0;
-  const segments = items.map((item) => {
-    const end = start + item.ratio * 100;
-    const segment = `${colors.get(item.taskKey)} ${start}% ${end}%`;
-    start = end;
-    return segment;
+function spreadCallouts(callouts: ChartCallout[]): ChartCallout[] {
+  const minimumY = 28;
+  const maximumY = 252;
+  const gap = 29;
+  const sorted = [...callouts].sort((left, right) => left.elbowY - right.elbowY);
+  sorted.forEach((callout, index) => {
+    callout.labelY = Math.max(callout.elbowY, index === 0 ? minimumY : sorted[index - 1].labelY + gap);
   });
-  return `conic-gradient(${segments.join(", ")})`;
+  const overflow = (sorted.at(-1)?.labelY ?? maximumY) - maximumY;
+  if (overflow > 0) sorted.forEach((callout) => { callout.labelY -= overflow; });
+  const underflow = minimumY - (sorted[0]?.labelY ?? minimumY);
+  if (underflow > 0) sorted.forEach((callout) => { callout.labelY += underflow; });
+  return sorted;
+}
+
+function chartCallouts(items: AllocationItem[], colors: Map<string, string>): ChartCallout[] {
+  const centerX = 180;
+  const centerY = 140;
+  let startRatio = 0;
+  const callouts = items.map((item): ChartCallout => {
+    const radians = (-90 + (startRatio + item.ratio / 2) * 360) * Math.PI / 180;
+    const side: ChartCallout["side"] = Math.cos(radians) >= 0 ? "right" : "left";
+    const callout = {
+      item,
+      color: colors.get(item.taskKey) ?? allocationPalette[0],
+      startRatio,
+      anchorX: centerX + Math.cos(radians) * 83,
+      anchorY: centerY + Math.sin(radians) * 83,
+      elbowX: centerX + Math.cos(radians) * 101,
+      elbowY: centerY + Math.sin(radians) * 101,
+      labelY: centerY + Math.sin(radians) * 101,
+      side
+    };
+    startRatio += item.ratio;
+    return callout;
+  });
+  return [
+    ...spreadCallouts(callouts.filter((item) => item.side === "left")),
+    ...spreadCallouts(callouts.filter((item) => item.side === "right"))
+  ];
+}
+
+function shortChartLabel(title: string): string {
+  const characters = Array.from(title);
+  return characters.length > 8 ? `${characters.slice(0, 7).join("")}…` : title;
+}
+
+function TimeAllocationChart({ items, colors, totalMinutes }: { items: AllocationItem[]; colors: Map<string, string>; totalMinutes: number }) {
+  const callouts = chartCallouts(items, colors);
+  return (
+    <svg className="time-allocation-chart" viewBox="0 0 360 280" role="img" aria-label={`任务时间饼图，共 ${formatTrackedTime(totalMinutes)}`}>
+      <circle className="time-allocation-chart__base" cx="180" cy="140" r="68" pathLength="100" />
+      {callouts.map(({ item, color, startRatio }) => (
+        <circle
+          className="time-allocation-chart__segment"
+          key={`segment:${item.taskKey}`}
+          cx="180"
+          cy="140"
+          r="68"
+          pathLength="100"
+          stroke={color}
+          strokeDasharray={`${Math.max(item.ratio * 100 - 0.7, 0.2)} 100`}
+          strokeDashoffset={-startRatio * 100}
+        />
+      ))}
+      {callouts.map(({ item, color, anchorX, anchorY, elbowX, elbowY, labelY, side }) => {
+        const endX = side === "right" ? 282 : 78;
+        const textX = side === "right" ? 288 : 72;
+        return (
+          <g key={`callout:${item.taskKey}`} aria-label={`图例：${item.taskTitle}，${formatTrackedTime(item.minutes)}`}>
+            <polyline className="time-allocation-chart__line" points={`${anchorX},${anchorY} ${elbowX},${elbowY} ${endX},${labelY}`} stroke={color} />
+            <circle className="time-allocation-chart__dot" cx={anchorX} cy={anchorY} r="2.8" fill={color} />
+            <text className="time-allocation-chart__label" x={textX} y={labelY - 3} textAnchor={side === "right" ? "start" : "end"}>
+              <tspan className="time-allocation-chart__label-title" x={textX}>{shortChartLabel(item.taskTitle)}</tspan>
+              <tspan className="time-allocation-chart__label-time" x={textX} dy="13">{formatTrackedTime(item.minutes)}</tspan>
+            </text>
+          </g>
+        );
+      })}
+      <circle className="time-allocation-chart__center" cx="180" cy="140" r="51" />
+      <text className="time-allocation-chart__total" x="180" y="137" textAnchor="middle">
+        <tspan x="180">{formatTrackedTime(totalMinutes)}</tspan>
+        <tspan className="time-allocation-chart__total-caption" x="180" dy="17">总记录</tspan>
+      </text>
+    </svg>
+  );
 }
 
 export function TimeAllocationCard({ now = new Date() }: { now?: Date }) {
@@ -84,14 +174,7 @@ export function TimeAllocationCard({ now = new Date() }: { now?: Date }) {
         <p className="time-allocation-card__empty">完成一次正计时，或在任务旁填写实际用时后，这里会按具体任务显示时间去向。</p>
       ) : (
         <div className="time-allocation-visual">
-          <div
-            className="time-allocation-pie"
-            style={{ "--pie-background": pieBackground(allocation.items, colors) } as AllocationStyle}
-            role="img"
-            aria-label={`任务时间饼图，共 ${formatTrackedTime(allocation.totalMinutes)}`}
-          >
-            <div><strong>{formatTrackedTime(allocation.totalMinutes)}</strong><span>总记录</span></div>
-          </div>
+          <TimeAllocationChart items={allocation.items} colors={colors} totalMinutes={allocation.totalMinutes} />
           <div className="time-allocation-list">
             {allocation.items.map((item) => {
               const style = { "--allocation-color": colors.get(item.taskKey) } as AllocationStyle;
