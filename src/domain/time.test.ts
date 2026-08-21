@@ -89,4 +89,25 @@ describe("time tracking", () => {
       })]
     });
   });
+
+  it("smartly groups historical unlinked records using distinctive goal names and abbreviations", () => {
+    const state = createInitialState(new Date(2026, 7, 18, 9));
+    state.goals = [
+      { id: "modeling", title: "全国大学生数学建模比赛", deadline: "2026-09-15", createdAt: "2026-08-01T00:00:00.000Z" },
+      { id: "computer", title: "通过计算机三级", deadline: "2026-12-01", createdAt: "2026-08-01T00:00:00.000Z" }
+    ];
+    state.scheduledTasks.push(
+      { id: "codex", title: "数模结合 Codex 学习", categoryId: "study", categoryNameSnapshot: "学习", scheduledDate: "2026-08-18", status: "completed", actualMinutes: 35, createdAt: "2026-08-18T00:00:00.000Z" },
+      { id: "report", title: "数模汇报整理", categoryId: "study", categoryNameSnapshot: "学习", scheduledDate: "2026-08-17", status: "completed", actualMinutes: 25, createdAt: "2026-08-17T00:00:00.000Z" },
+      { id: "computer-old", title: "计算机三级真题", categoryId: "study", categoryNameSnapshot: "学习", scheduledDate: "2026-08-16", status: "completed", actualMinutes: 30, createdAt: "2026-08-16T00:00:00.000Z" },
+      { id: "cmc", title: "备战 CMC", categoryId: "study", categoryNameSnapshot: "学习", scheduledDate: "2026-08-15", status: "completed", actualMinutes: 20, createdAt: "2026-08-15T00:00:00.000Z" }
+    );
+
+    const allocation = getTaskTimeAllocation(state, "2026-08-12", "2026-08-18", { groupByGoal: true });
+    expect(allocation.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ taskKey: "goal:modeling", taskTitle: "全国大学生数学建模比赛", minutes: 60, groupedTaskCount: 2, inferredTaskCount: 2 }),
+      expect.objectContaining({ taskKey: "goal:computer", taskTitle: "通过计算机三级", minutes: 30, groupedTaskCount: 1, inferredTaskCount: 1 }),
+      expect.objectContaining({ taskTitle: "备战 CMC", minutes: 20, groupType: "task", inferredTaskCount: 0 })
+    ]));
+  });
 });

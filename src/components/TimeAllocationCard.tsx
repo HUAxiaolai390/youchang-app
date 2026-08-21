@@ -79,7 +79,7 @@ export function TimeAllocationCard({ now = new Date() }: { now?: Date }) {
         <strong>{formatTrackedTime(allocation.totalMinutes)}</strong>
         <span>{period === "today" ? "今天已记录" : "近七天已记录"}</span>
       </div>
-      {period === "week" && allocation.items.length > 0 && <p className="time-allocation-card__hint">已按长期目标智能合并；未关联目标的记录按任务名称整理。</p>}
+      {period === "week" && allocation.items.length > 0 && <p className="time-allocation-card__hint">已按长期目标智能合并，并尝试识别过去未关联目标的记录。</p>}
       {allocation.items.length === 0 ? (
         <p className="time-allocation-card__empty">完成一次正计时，或在任务旁填写实际用时后，这里会按具体任务显示时间去向。</p>
       ) : (
@@ -96,7 +96,7 @@ export function TimeAllocationCard({ now = new Date() }: { now?: Date }) {
             {allocation.items.map((item) => {
               const style = { "--allocation-color": colors.get(item.taskKey) } as AllocationStyle;
               const detail = item.groupType === "goal"
-                ? `长期目标${item.groupedTaskCount > 1 ? ` · 合并 ${item.groupedTaskCount} 项任务` : ""}`
+                ? `长期目标${item.groupedTaskCount > 1 ? ` · 合并 ${item.groupedTaskCount} 项任务` : ""}${item.inferredTaskCount > 0 ? ` · 智能归入 ${item.inferredTaskCount} 项` : ""}`
                 : item.categoryName;
               return (
                 <div className="time-allocation-row" key={item.taskKey} style={style} aria-label={`${item.taskTitle} ${formatTrackedTime(item.minutes)}，占 ${Math.round(item.ratio * 100)}%`}>

@@ -94,6 +94,7 @@ export type TaskTimeAllocationItem = {
   categoryIcon: string;
   groupType: "task" | "goal";
   groupedTaskCount: number;
+  inferredTaskCount: number;
   minutes: number;
   ratio: number;
 };
@@ -147,15 +148,55 @@ function normalizeAllocationTitle(title: string): string {
     .replace(/[\s·，,。.!！?？、:：;；_—-]+/g, "");
 }
 
+const genericGoalWords = [
+  "全国", "大学生", "长期", "目标", "计划", "通过", "完成", "拿下",
+  "备考", "备战", "准备", "考试", "竞赛", "比赛", "学习", "训练", "坚持", "提升"
+] as const;
+
+function goalAliases(title: string): string[] {
+  const normalized = normalizeAllocationTitle(title);
+  let distinctive = normalized;
+  for (const word of genericGoalWords) distinctive = distinctive.replaceAll(word, "");
+
+  const aliases = new Set<string>();
+  if (distinctive.length >= 3) aliases.add(distinctive);
+  if (normalized.includes("数学建模")) aliases.add("数模");
+  if (normalized.includes("计算机三级")) aliases.add("计算机三级");
+  if (normalized.includes("计算机二级")) aliases.add("计算机二级");
+  if (normalized.includes("英语四级")) aliases.add("cet4");
+  if (normalized.includes("英语六级")) aliases.add("cet6");
+  if (normalized.includes("大学生数学竞赛")) aliases.add("cmc");
+
+  return [...aliases];
+}
+
+function inferGoalForTitle(title: string, goals: AppState["goals"]): NonNullable<AppState["goals"]>[number] | undefined {
+  const normalizedTitle = normalizeAllocationTitle(title);
+  const matches = (goals ?? []).map((goal) => {
+    const aliases = goalAliases(goal.title);
+    const score = aliases.reduce((best, alias) => {
+      if (!normalizedTitle.includes(alias)) return best;
+      const aliasScore = alias.length === 2 ? 120 : 100 + Math.min(alias.length, 12);
+      return Math.max(best, aliasScore);
+    }, 0);
+    return { goal, score };
+  }).filter((match) => match.score > 0).sort((left, right) => right.score - left.score);
+
+  if (matches.length === 0) return undefined;
+  if (matches.length > 1 && matches[0].score === matches[1].score) return undefined;
+  return matches[0].goal;
+}
+
 export function getTaskTimeAllocation(
   state: AppState,
   fromDate: DateKey,
   toDate: DateKey,
   options: TaskTimeAllocationOptions = {}
 ): TaskTimeAllocation {
-  type TaskTotal = Omit<TaskTimeAllocationItem, "minutes" | "ratio" | "groupedTaskCount"> & {
+  type TaskTotal = Omit<TaskTimeAllocationItem, "minutes" | "ratio" | "groupedTaskCount" | "inferredTaskCount"> & {
     minutes: number;
     taskTitles: Set<string>;
+    inferredTaskTitles: Set<string>;
   };
   const totals = new Map<string, TaskTotal>();
   const fallback = state.categories.find((category) => category.id === "other");
@@ -171,7 +212,10 @@ export function getTaskTimeAllocation(
   ) => {
     if (!minutes || minutes <= 0) return;
     const normalizedTitle = taskTitle.trim() || "自由记录";
-    const goal = options.groupByGoal && goalId ? goalsById.get(goalId) : undefined;
+    const explicitGoal = options.groupByGoal && goalId ? goalsById.get(goalId) : undefined;
+    const inferredGoal = options.groupByGoal && !explicitGoal ? inferGoalForTitle(normalizedTitle, state.goals) : undefined;
+    const goal = explicitGoal ?? inferredGoal;
+    const inferred = Boolean(inferredGoal);
     const allocationKey = goal
       ? `goal:${goal.id}`
       : options.groupByGoal
@@ -182,6 +226,7 @@ export function getTaskTimeAllocation(
     if (current) {
       current.minutes += minutes;
       current.taskTitles.add(normalizedTitle);
+      if (inferred) current.inferredTaskTitles.add(normalizedTitle);
       return;
     }
     totals.set(allocationKey, {
@@ -192,6 +237,7 @@ export function getTaskTimeAllocation(
       categoryIcon: goal ? "目" : category?.icon ?? "其",
       groupType: goal ? "goal" : "task",
       taskTitles: new Set([normalizedTitle]),
+      inferredTaskTitles: new Set(inferred ? [normalizedTitle] : []),
       minutes
     });
   };
@@ -224,6 +270,7 @@ export function getTaskTimeAllocation(
       categoryIcon: item.categoryIcon,
       groupType: item.groupType,
       groupedTaskCount: item.taskTitles.size,
+      inferredTaskCount: item.inferredTaskTitles.size,
       minutes: item.minutes,
       ratio: totalMinutes === 0 ? 0 : item.minutes / totalMinutes
     }))
