@@ -963,6 +963,7 @@ button:focus-visible {
 .time-allocation-card__total { display: flex; align-items: baseline; gap: 9px; }
 .time-allocation-card__total strong { font-size: 30px; letter-spacing: -.05em; }
 .time-allocation-card__total span { color: var(--muted); font-size: 12px; }
+.time-allocation-card__hint { margin: -10px 0 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
 .time-allocation-card__empty { margin: 0; padding: 18px; border-radius: 15px; background: #f3eee6; color: var(--muted); font-size: 13px; line-height: 1.7; }
 .time-allocation-visual { display: grid; grid-template-columns: minmax(150px, .7fr) minmax(240px, 1.3fr); gap: 28px; align-items: center; }
 .time-allocation-pie { display: grid; width: min(100%, 210px); aspect-ratio: 1; place-items: center; justify-self: center; border-radius: 50%; background: var(--pie-background); box-shadow: 0 12px 28px rgba(72,53,31,.11); }

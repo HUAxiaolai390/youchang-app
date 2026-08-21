@@ -92,6 +92,8 @@ export type TaskTimeAllocationItem = {
   categoryId: string;
   categoryName: string;
   categoryIcon: string;
+  groupType: "task" | "goal";
+  groupedTaskCount: number;
   minutes: number;
   ratio: number;
 };
@@ -134,36 +136,75 @@ export function getTimeAllocation(state: AppState, fromDate: DateKey, toDate: Da
   return { totalMinutes, items };
 }
 
-export function getTaskTimeAllocation(state: AppState, fromDate: DateKey, toDate: DateKey): TaskTimeAllocation {
-  type TaskTotal = Omit<TaskTimeAllocationItem, "minutes" | "ratio"> & { minutes: number };
+export type TaskTimeAllocationOptions = {
+  groupByGoal?: boolean;
+};
+
+function normalizeAllocationTitle(title: string): string {
+  return (title.trim() || "自由记录")
+    .normalize("NFKC")
+    .toLocaleLowerCase("zh-CN")
+    .replace(/[\s·，,。.!！?？、:：;；_—-]+/g, "");
+}
+
+export function getTaskTimeAllocation(
+  state: AppState,
+  fromDate: DateKey,
+  toDate: DateKey,
+  options: TaskTimeAllocationOptions = {}
+): TaskTimeAllocation {
+  type TaskTotal = Omit<TaskTimeAllocationItem, "minutes" | "ratio" | "groupedTaskCount"> & {
+    minutes: number;
+    taskTitles: Set<string>;
+  };
   const totals = new Map<string, TaskTotal>();
   const fallback = state.categories.find((category) => category.id === "other");
-  const add = (taskKey: string, taskTitle: string, categoryId: string, categoryNameSnapshot: string, minutes?: number) => {
+  const goalsById = new Map((state.goals ?? []).map((goal) => [goal.id, goal]));
+  const fixedTemplatesById = new Map(state.fixedTasks.map((task) => [task.id, task]));
+  const add = (
+    taskKey: string,
+    taskTitle: string,
+    categoryId: string,
+    categoryNameSnapshot: string,
+    minutes?: number,
+    goalId?: string
+  ) => {
     if (!minutes || minutes <= 0) return;
+    const normalizedTitle = taskTitle.trim() || "自由记录";
+    const goal = options.groupByGoal && goalId ? goalsById.get(goalId) : undefined;
+    const allocationKey = goal
+      ? `goal:${goal.id}`
+      : options.groupByGoal
+        ? `task:${categoryId}:${normalizeAllocationTitle(normalizedTitle)}`
+        : taskKey;
     const category = state.categories.find((item) => item.id === categoryId) ?? fallback;
-    const current = totals.get(taskKey);
+    const current = totals.get(allocationKey);
     if (current) {
       current.minutes += minutes;
+      current.taskTitles.add(normalizedTitle);
       return;
     }
-    totals.set(taskKey, {
-      taskKey,
-      taskTitle: taskTitle.trim() || "自由记录",
-      categoryId: category?.id ?? "other",
-      categoryName: category?.name ?? categoryNameSnapshot ?? "其他",
-      categoryIcon: category?.icon ?? "其",
+    totals.set(allocationKey, {
+      taskKey: allocationKey,
+      taskTitle: goal?.title ?? normalizedTitle,
+      categoryId: goal ? "goal" : category?.id ?? "other",
+      categoryName: goal ? "长期目标" : category?.name ?? categoryNameSnapshot ?? "其他",
+      categoryIcon: goal ? "目" : category?.icon ?? "其",
+      groupType: goal ? "goal" : "task",
+      taskTitles: new Set([normalizedTitle]),
       minutes
     });
   };
 
   for (const record of state.fixedRecords) {
     if (record.date >= fromDate && record.date <= toDate) {
-      add(`fixed:${record.templateId}`, record.titleSnapshot, record.categoryId, record.categoryNameSnapshot, record.actualMinutes);
+      const templateGoalId = fixedTemplatesById.get(record.templateId)?.goalId;
+      add(`fixed:${record.templateId}`, record.titleSnapshot, record.categoryId, record.categoryNameSnapshot, record.actualMinutes, record.goalId ?? templateGoalId);
     }
   }
   for (const task of state.scheduledTasks) {
     if (task.scheduledDate >= fromDate && task.scheduledDate <= toDate) {
-      add(`scheduled:${task.id}`, task.title, task.categoryId, task.categoryNameSnapshot, task.actualMinutes);
+      add(`scheduled:${task.id}`, task.title, task.categoryId, task.categoryNameSnapshot, task.actualMinutes, task.goalId);
     }
   }
   for (const entry of state.timeEntries ?? []) {
@@ -176,7 +217,14 @@ export function getTaskTimeAllocation(state: AppState, fromDate: DateKey, toDate
   const totalMinutes = [...totals.values()].reduce((sum, item) => sum + item.minutes, 0);
   const items = [...totals.values()]
     .map((item): TaskTimeAllocationItem => ({
-      ...item,
+      taskKey: item.taskKey,
+      taskTitle: item.taskTitle,
+      categoryId: item.categoryId,
+      categoryName: item.categoryName,
+      categoryIcon: item.categoryIcon,
+      groupType: item.groupType,
+      groupedTaskCount: item.taskTitles.size,
+      minutes: item.minutes,
       ratio: totalMinutes === 0 ? 0 : item.minutes / totalMinutes
     }))
     .sort((left, right) => right.minutes - left.minutes || left.taskTitle.localeCompare(right.taskTitle, "zh-CN"));

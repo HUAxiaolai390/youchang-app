@@ -68,4 +68,25 @@ describe("time tracking", () => {
     expect(stopwatchSecondsToMinutes(60)).toBe(1);
     expect(stopwatchSecondsToMinutes(61)).toBe(2);
   });
+
+  it("merges differently named records that advance the same long-term goal", () => {
+    const state = createInitialState(new Date(2026, 7, 18, 9));
+    state.goals = [{ id: "computer", title: "通过计算机三级", deadline: "2026-12-01", createdAt: "2026-08-01T00:00:00.000Z" }];
+    state.scheduledTasks.push(
+      { id: "database", title: "数据库刷题", categoryId: "study", categoryNameSnapshot: "学习", goalId: "computer", scheduledDate: "2026-08-18", status: "completed", actualMinutes: 20, createdAt: "2026-08-18T00:00:00.000Z" },
+      { id: "network", title: "网络技术复习", categoryId: "study", categoryNameSnapshot: "学习", goalId: "computer", scheduledDate: "2026-08-17", status: "completed", actualMinutes: 30, createdAt: "2026-08-17T00:00:00.000Z" }
+    );
+
+    expect(getTaskTimeAllocation(state, "2026-08-12", "2026-08-18", { groupByGoal: true })).toEqual({
+      totalMinutes: 50,
+      items: [expect.objectContaining({
+        taskKey: "goal:computer",
+        taskTitle: "通过计算机三级",
+        groupType: "goal",
+        groupedTaskCount: 2,
+        minutes: 50,
+        ratio: 1
+      })]
+    });
+  });
 });
