@@ -967,13 +967,13 @@ button:focus-visible {
 .time-allocation-card__empty { margin: 0; padding: 18px; border-radius: 15px; background: #f3eee6; color: var(--muted); font-size: 13px; line-height: 1.7; }
 .time-allocation-visual { display: grid; grid-template-columns: minmax(280px, .95fr) minmax(240px, 1.05fr); gap: 24px; align-items: center; }
 .time-allocation-chart { display: block; width: 100%; min-width: 0; overflow: visible; }
-.time-allocation-chart__base, .time-allocation-chart__segment { fill: none; stroke-width: 27; transform: rotate(-90deg); transform-origin: 180px 140px; }
+.time-allocation-chart__base, .time-allocation-chart__segment { fill: none; stroke-width: 27; transform: rotate(-90deg); transform-origin: 200px 145px; }
 .time-allocation-chart__base { stroke: #eeeae3; }
 .time-allocation-chart__segment { transition: stroke-dasharray .25s ease; }
 .time-allocation-chart__center { fill: var(--surface); filter: drop-shadow(0 3px 8px rgba(72,53,31,.12)); }
 .time-allocation-chart__line { fill: none; stroke-width: 1.35; stroke-linecap: round; stroke-linejoin: round; }
 .time-allocation-chart__label { font-family: inherit; }
-.time-allocation-chart__label-title { fill: #3d3933; font-size: 10.5px; font-weight: 800; }
+.time-allocation-chart__label-title { fill: #332f2a; font-size: 10.8px; font-weight: 900; }
 .time-allocation-chart__label-time { fill: var(--muted); font-size: 9.5px; font-weight: 600; }
 .time-allocation-chart__total { fill: var(--ink); font-family: inherit; font-size: 14px; font-weight: 900; letter-spacing: -.03em; }
 .time-allocation-chart__total-caption { fill: var(--muted); font-size: 9px; font-weight: 600; letter-spacing: 0; }
