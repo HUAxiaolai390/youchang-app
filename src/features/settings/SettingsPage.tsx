@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import packageMetadata from "../../../package.json";
 import { useAppState } from "../../app/AppStateProvider";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { HelpCenterDialog } from "../../components/HelpCenterDialog";
@@ -537,7 +538,7 @@ export function SettingsPage() {
         {clearArmed && <div className="clear-confirmation"><label className="field-label" htmlFor="clear-phrase">确认清空</label><input id="clear-phrase" className="field-control" value={clearPhrase} onChange={(event) => setClearPhrase(event.target.value)} placeholder="请输入“清空”" /><button className="button" type="button" disabled={clearPhrase !== "清空"} onClick={() => setClearDialogOpen(true)}>确认清空</button></div>}
       </section>
 
-      <p className="settings-version">有常 1.9</p>
+      <p className="settings-version">有常 v{packageMetadata.version}</p>
 
       {fixedTaskToDelete && <ConfirmDialog title="删除固定任务" message={`删除“${fixedTaskToDelete.title}”后将不再生成新任务，已有的完成记录和成长统计会保留。`} confirmLabel="删除固定任务" onCancel={() => setFixedTaskToDelete(undefined)} onConfirm={() => { dispatch({ type: "fixed/delete", id: fixedTaskToDelete.id }); setFixedTaskToDelete(undefined); }} />}
       {categoryToDelete && <ConfirmDialog title="删除自定义分类" message={`删除“${categoryToDelete.name}”后，当前任务会归入“其他”。`} confirmLabel="删除分类" onCancel={() => setCategoryToDelete(undefined)} onConfirm={() => { dispatch({ type: "category/delete", id: categoryToDelete.id }); setCategoryToDelete(undefined); }} />}
