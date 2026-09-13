@@ -20,7 +20,7 @@ type ExactReminderSchedule = {
   date: DateKey;
 };
 export type NativeReminderAction = {
-  action: "complete" | "snooze";
+  action: "complete" | "snooze" | "postpone" | "skip";
   kind: "fixed" | "scheduled";
   taskId: string;
   date: DateKey;
@@ -132,7 +132,8 @@ export async function consumeNativeReminderActions(): Promise<NativeReminderActi
   if (!isNativeAndroid()) return [];
   const result = await ExactReminder.consumeActions();
   return Array.isArray(result.actions) ? result.actions.filter((action): action is NativeReminderAction => (
-    (action.action === "complete" || action.action === "snooze")
+    (action.action === "complete" || action.action === "snooze"
+      || action.action === "postpone" || action.action === "skip")
       && (action.kind === "fixed" || action.kind === "scheduled")
       && typeof action.taskId === "string"
       && isDateKey(action.date)

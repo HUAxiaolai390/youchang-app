@@ -167,6 +167,57 @@ describe("AppStateProvider", () => {
     });
   });
 
+  it("moves a scheduled task to tomorrow from a notification action", () => {
+    const now = new Date(2026, 7, 13, 9);
+    const state = createInitialState(now);
+    state.scheduledTasks.push({
+      id: "postpone-task",
+      title: "通知后改期",
+      categoryId: "study",
+      categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-13",
+      status: "pending",
+      createdAt: now.toISOString()
+    });
+
+    const postponed = reduceAppState(state, {
+      type: "scheduled/postpone-from-notification",
+      id: "postpone-task"
+    }, now);
+
+    expect(postponed.scheduledTasks.find((task) => task.id === "postpone-task")?.status).toBe("rescheduled");
+    expect(postponed.scheduledTasks).toContainEqual(expect.objectContaining({
+      title: "通知后改期",
+      scheduledDate: "2026-08-14",
+      status: "pending",
+      sourceTaskId: "postpone-task"
+    }));
+  });
+
+  it("skips a fixed occurrence for today from a notification action", () => {
+    const now = new Date(2026, 7, 13, 9);
+    const state = createInitialState(now);
+    state.fixedTasks.push({
+      id: "daily-exercise",
+      title: "今日运动",
+      categoryId: "exercise",
+      categoryNameSnapshot: "运动",
+      activeFrom: "2026-08-13",
+      repeatRule: { type: "daily" },
+      order: 0,
+      createdAt: now.toISOString()
+    });
+
+    const skipped = reduceAppState(state, {
+      type: "fixed/skip-from-notification",
+      recordId: "daily-exercise:2026-08-13",
+      date: "2026-08-13"
+    }, now);
+
+    expect(skipped.fixedTasks[0].skippedDates).toEqual(["2026-08-13"]);
+    expect(skipped.fixedRecords).toEqual([]);
+  });
+
   it("persists a task added through dispatch", async () => {
     const repository = new InMemoryRepository(createInitialState(new Date(2026, 6, 31, 9)));
     const user = userEvent.setup();

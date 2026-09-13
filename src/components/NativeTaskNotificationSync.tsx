@@ -44,6 +44,10 @@ export function NativeTaskNotificationSync() {
           dispatch(action.kind === "fixed"
             ? { type: "fixed/complete-from-notification", recordId: action.taskId, date: action.date, completedAt: action.at }
             : { type: "scheduled/complete-from-notification", id: action.taskId, completedAt: action.at });
+        } else if (action.action === "postpone" && action.kind === "scheduled") {
+          dispatch({ type: "scheduled/postpone-from-notification", id: action.taskId });
+        } else if (action.action === "skip" && action.kind === "fixed") {
+          dispatch({ type: "fixed/skip-from-notification", recordId: action.taskId, date: action.date });
         } else {
           dispatch({
             type: "reminder/snooze",

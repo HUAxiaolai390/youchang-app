@@ -180,7 +180,7 @@ describe("SettingsPage", () => {
   it("shows the current package version instead of a hardcoded version", () => {
     renderSettings();
 
-    expect(screen.getByText("有常 v2.8.0")).toBeVisible();
+    expect(screen.getByText("有常 v2.9.0")).toBeVisible();
   });
 
   it("requires typing 清空 before clearing data", async () => {

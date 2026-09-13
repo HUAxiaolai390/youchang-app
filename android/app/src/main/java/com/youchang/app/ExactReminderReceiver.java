@@ -94,9 +94,21 @@ public class ExactReminderReceiver extends BroadcastReceiver {
 
         PendingIntent completeAction = null;
         PendingIntent snoozeAction = null;
+        PendingIntent secondaryAction = null;
         if (("fixed".equals(kind) || "scheduled".equals(kind)) && taskId != null && date != null) {
             completeAction = actionIntent(context, ReminderActionReceiver.ACTION_COMPLETE, id, title, wakeScreen, kind, taskId, date, id ^ 0x20000000);
             snoozeAction = actionIntent(context, ReminderActionReceiver.ACTION_SNOOZE, id, title, wakeScreen, kind, taskId, date, id ^ 0x30000000);
+            secondaryAction = actionIntent(
+                context,
+                "scheduled".equals(kind) ? ReminderActionReceiver.ACTION_POSTPONE : ReminderActionReceiver.ACTION_SKIP,
+                id,
+                title,
+                wakeScreen,
+                kind,
+                taskId,
+                date,
+                id ^ 0x50000000
+            );
         }
 
         NotificationCompat.Builder notification = new NotificationCompat.Builder(context, CHANNEL_ID)
@@ -115,10 +127,11 @@ public class ExactReminderReceiver extends BroadcastReceiver {
         if (mascot != null) {
             notification.setLargeIcon(NotificationCompat.reduceLargeIconSize(context, mascot));
         }
-        if (completeAction != null && snoozeAction != null) {
+        if (completeAction != null && snoozeAction != null && secondaryAction != null) {
             notification
                 .addAction(0, "完成", completeAction)
-                .addAction(0, "10 分钟后", snoozeAction);
+                .addAction(0, "10 分钟后", snoozeAction)
+                .addAction(0, "scheduled".equals(kind) ? "改到明天" : "跳过今天", secondaryAction);
         }
 
         try {

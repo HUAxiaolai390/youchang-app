@@ -8,6 +8,8 @@ import androidx.core.app.NotificationManagerCompat;
 public class ReminderActionReceiver extends BroadcastReceiver {
     public static final String ACTION_COMPLETE = "com.youchang.app.REMINDER_COMPLETE";
     public static final String ACTION_SNOOZE = "com.youchang.app.REMINDER_SNOOZE";
+    public static final String ACTION_POSTPONE = "com.youchang.app.REMINDER_POSTPONE";
+    public static final String ACTION_SKIP = "com.youchang.app.REMINDER_SKIP";
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -16,13 +18,14 @@ public class ReminderActionReceiver extends BroadcastReceiver {
         String taskId = intent.getStringExtra(ExactReminderReceiver.EXTRA_TASK_ID);
         String date = intent.getStringExtra(ExactReminderReceiver.EXTRA_DATE);
         int notificationId = intent.getIntExtra(ExactReminderReceiver.EXTRA_ID, 0);
-        if ((!ACTION_COMPLETE.equals(action) && !ACTION_SNOOZE.equals(action))
+        if ((!ACTION_COMPLETE.equals(action) && !ACTION_SNOOZE.equals(action)
+            && !ACTION_POSTPONE.equals(action) && !ACTION_SKIP.equals(action))
             || kind == null || taskId == null || date == null || notificationId == 0) return;
 
         if (ACTION_COMPLETE.equals(action)) {
             ExactReminderScheduler.removePersistedReminder(context, notificationId);
             ReminderActionStore.append(context, "complete", kind, taskId, date, System.currentTimeMillis());
-        } else {
+        } else if (ACTION_SNOOZE.equals(action)) {
             long remindAt = System.currentTimeMillis() + 10 * 60_000L;
             String title = intent.getStringExtra(ExactReminderReceiver.EXTRA_TITLE);
             boolean wakeScreen = intent.getBooleanExtra(ExactReminderReceiver.EXTRA_WAKE_SCREEN, true);
@@ -50,6 +53,12 @@ public class ReminderActionReceiver extends BroadcastReceiver {
                 date
             );
             ReminderActionStore.append(context, "snooze", kind, taskId, date, remindAt);
+        } else if (ACTION_POSTPONE.equals(action) && "scheduled".equals(kind)) {
+            ExactReminderScheduler.removePersistedReminder(context, notificationId);
+            ReminderActionStore.append(context, "postpone", kind, taskId, date, System.currentTimeMillis());
+        } else if (ACTION_SKIP.equals(action) && "fixed".equals(kind)) {
+            ExactReminderScheduler.removePersistedReminder(context, notificationId);
+            ReminderActionStore.append(context, "skip", kind, taskId, date, System.currentTimeMillis());
         }
         NotificationManagerCompat.from(context).cancel(notificationId);
     }

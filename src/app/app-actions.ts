@@ -11,6 +11,7 @@ export type AppAction =
   | { type: "scheduled/update"; id: string; input: UpdateScheduledTaskInput }
   | { type: "scheduled/toggle"; id: string }
   | { type: "scheduled/complete-from-notification"; id: string; completedAt: number }
+  | { type: "scheduled/postpone-from-notification"; id: string }
   | { type: "scheduled/step-toggle"; id: string; stepId: string }
   | { type: "scheduled/delete"; id: string }
   | { type: "scheduled/reschedule"; id: string; targetDate: DateKey }
@@ -21,6 +22,7 @@ export type AppAction =
   | { type: "fixed/delete"; id: string }
   | { type: "fixed/toggle"; recordId: string }
   | { type: "fixed/complete-from-notification"; recordId: string; date: DateKey; completedAt: number }
+  | { type: "fixed/skip-from-notification"; recordId: string; date: DateKey }
   | { type: "fixed/step-toggle"; recordId: string; stepId: string }
   | { type: "fixed/toggle-date"; templateId: string; date: DateKey }
   | { type: "fixed/set-active"; id: string; active: boolean }

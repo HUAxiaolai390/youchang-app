@@ -92,6 +92,8 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
         ? toggleScheduledTask(state, action.id, new Date(action.completedAt))
         : state;
     }
+    case "scheduled/postpone-from-notification":
+      return postponeTaskUntilTomorrow(state, action.id, now);
     case "scheduled/step-toggle":
       return toggleScheduledTaskStep(state, action.id, action.stepId);
     case "scheduled/delete":
@@ -120,6 +122,13 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
       const separator = action.recordId.lastIndexOf(":");
       const templateId = separator > 0 ? action.recordId.slice(0, separator) : action.recordId;
       return toggleFixedTaskForDate(state, templateId, action.date, new Date(action.completedAt));
+    }
+    case "fixed/skip-from-notification": {
+      const existing = state.fixedRecords.find((record) => record.id === action.recordId);
+      const separator = action.recordId.lastIndexOf(":");
+      const templateId = existing?.templateId
+        ?? (separator > 0 ? action.recordId.slice(0, separator) : action.recordId);
+      return toggleFixedTaskSkipDate(state, templateId, action.date, now);
     }
     case "fixed/step-toggle":
       return toggleFixedTaskStep(state, action.recordId, action.stepId);
