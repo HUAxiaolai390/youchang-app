@@ -158,6 +158,9 @@ describe("versioned backups", () => {
     const reminded = createInitialState(new Date(2026, 7, 9, 8));
     reminded.settings.systemNotificationsEnabled = true;
     reminded.settings.wakeScreenForReminders = false;
+    reminded.settings.quietHoursEnabled = true;
+    reminded.settings.quietHoursStart = "23:00";
+    reminded.settings.quietHoursEnd = "07:00";
     reminded.scheduledTasks.push({
       id: "reminder-task", title: "提醒任务", categoryId: "study", categoryNameSnapshot: "学习",
       scheduledDate: "2026-08-09", status: "pending", createdAt: "2026-08-09T00:00:00.000Z",
@@ -168,6 +171,11 @@ describe("versioned backups", () => {
     const parsed = parseBackup(JSON.stringify(reminded));
     expect(parsed.settings.systemNotificationsEnabled).toBe(true);
     expect(parsed.settings.wakeScreenForReminders).toBe(false);
+    expect(parsed.settings).toMatchObject({
+      quietHoursEnabled: true,
+      quietHoursStart: "23:00",
+      quietHoursEnd: "07:00"
+    });
     expect(parsed.scheduledTasks[0]).toMatchObject({
       reminderMinutesBefore: 10,
       reminderSnoozedUntil: "2026-08-09T01:20:00.000Z"
@@ -179,6 +187,9 @@ describe("versioned backups", () => {
     const invalidSnooze = JSON.parse(JSON.stringify(reminded));
     invalidSnooze.scheduledTasks[0].reminderSnoozedUntil = "later";
     expect(() => parseBackup(JSON.stringify(invalidSnooze))).toThrow("备份文件格式无效");
+    const invalidQuietHours = JSON.parse(JSON.stringify(reminded));
+    invalidQuietHours.settings.quietHoursStart = "25:00";
+    expect(() => parseBackup(JSON.stringify(invalidQuietHours))).toThrow("备份文件格式无效");
   });
 
   it("round trips task priority and steps", () => {

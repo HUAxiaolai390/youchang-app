@@ -67,6 +67,26 @@ describe("SettingsPage", () => {
     expect(screen.getByText(/专注或休息倒计时开始后/)).toBeVisible();
   });
 
+  it("saves a do-not-disturb window for ordinary reminders", async () => {
+    const repository = renderSettings();
+    const user = userEvent.setup();
+
+    const toggle = screen.getByRole("checkbox", { name: "免打扰时间" });
+    expect(toggle).not.toBeChecked();
+    await user.click(toggle);
+    await user.clear(screen.getByLabelText("免打扰开始"));
+    await user.type(screen.getByLabelText("免打扰开始"), "22:30");
+    await user.clear(screen.getByLabelText("免打扰结束"));
+    await user.type(screen.getByLabelText("免打扰结束"), "07:30");
+
+    expect(repository.load().settings).toMatchObject({
+      quietHoursEnabled: true,
+      quietHoursStart: "22:30",
+      quietHoursEnd: "07:30"
+    });
+    expect(screen.getByText(/普通任务提醒会在这段时间静默/)).toBeVisible();
+  });
+
   it("shows compact notification diagnostics on demand", async () => {
     renderSettings();
     const user = userEvent.setup();
@@ -160,7 +180,7 @@ describe("SettingsPage", () => {
   it("shows the current package version instead of a hardcoded version", () => {
     renderSettings();
 
-    expect(screen.getByText("有常 v2.6.1")).toBeVisible();
+    expect(screen.getByText("有常 v2.8.0")).toBeVisible();
   });
 
   it("requires typing 清空 before clearing data", async () => {

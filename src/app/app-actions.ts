@@ -4,7 +4,7 @@ import type {
   UpdateFixedTaskInput,
   UpdateScheduledTaskInput
 } from "../domain/tasks";
-import type { AppState, DateKey, FocusTimerRuntime } from "../domain/types";
+import type { AppState, DateKey, FocusTimerRuntime, TimeKey } from "../domain/types";
 
 export type AppAction =
   | { type: "scheduled/add"; input: AddScheduledTaskInput }
@@ -33,6 +33,7 @@ export type AppAction =
   | { type: "settings/featured-achievements"; ids: string[] }
   | { type: "settings/system-notifications"; enabled: boolean }
   | { type: "settings/wake-screen-reminders"; enabled: boolean }
+  | { type: "settings/quiet-hours"; enabled: boolean; start: TimeKey; end: TimeKey }
   | { type: "settings/backup-exported"; at: string }
   | { type: "reminder/mark-sent"; kind: "fixed" | "scheduled"; id: string; sentAt: string }
   | { type: "reminder/snooze"; kind: "fixed" | "scheduled"; id: string; until: string }

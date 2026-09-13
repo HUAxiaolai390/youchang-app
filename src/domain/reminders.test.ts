@@ -5,12 +5,59 @@ import {
   getPendingTaskReminders,
   getSchedulableTaskReminders,
   getTaskReminderOverview,
+  isWithinQuietHours,
   markTaskReminderSent,
   normalizeReminderMinutesBefore,
   snoozeTaskReminder
 } from "./reminders";
 
 describe("task reminders", () => {
+  it("recognizes an overnight do-not-disturb window", () => {
+    const state = createInitialState(new Date(2026, 7, 9, 8));
+    state.settings.quietHoursEnabled = true;
+    state.settings.quietHoursStart = "23:00";
+    state.settings.quietHoursEnd = "07:00";
+
+    expect(isWithinQuietHours(state.settings, new Date(2026, 7, 9, 22, 59))).toBe(false);
+    expect(isWithinQuietHours(state.settings, new Date(2026, 7, 9, 23))).toBe(true);
+    expect(isWithinQuietHours(state.settings, new Date(2026, 7, 10, 6, 59))).toBe(true);
+    expect(isWithinQuietHours(state.settings, new Date(2026, 7, 10, 7))).toBe(false);
+  });
+
+  it("does not schedule ordinary task notifications during do-not-disturb hours", () => {
+    const now = new Date(2026, 7, 9, 20);
+    const state = createInitialState(now);
+    state.settings.quietHoursEnabled = true;
+    state.settings.quietHoursStart = "23:00";
+    state.settings.quietHoursEnd = "07:00";
+    state.scheduledTasks.push({
+      id: "night-task", title: "夜间任务", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-09", status: "pending", createdAt: now.toISOString(),
+      plannedStartTime: "23:30", reminderMinutesBefore: 0
+    }, {
+      id: "morning-task", title: "早间任务", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-10", status: "pending", createdAt: now.toISOString(),
+      plannedStartTime: "08:00", reminderMinutesBefore: 0
+    });
+
+    expect(getSchedulableTaskReminders(state, now).map((reminder) => reminder.id)).toEqual(["morning-task"]);
+  });
+
+  it("does not show the in-app task popup while do-not-disturb is active", () => {
+    const now = new Date(2026, 7, 9, 23, 5);
+    const state = createInitialState(now);
+    state.settings.quietHoursEnabled = true;
+    state.settings.quietHoursStart = "23:00";
+    state.settings.quietHoursEnd = "07:00";
+    state.scheduledTasks.push({
+      id: "night-task", title: "夜间任务", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-09", status: "pending", createdAt: now.toISOString(),
+      plannedStartTime: "23:00", reminderMinutesBefore: 0
+    });
+
+    expect(getPendingTaskReminders(state, now)).toEqual([]);
+  });
+
   it("prepares future reminders across dates for the phone operating system", () => {
     const state = createInitialState(new Date(2026, 7, 9, 8));
     state.scheduledTasks.push({

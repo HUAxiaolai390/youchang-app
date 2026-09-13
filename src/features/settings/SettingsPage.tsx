@@ -327,6 +327,15 @@ export function SettingsPage() {
     }
   }
 
+  function updateQuietHours(changes: { enabled?: boolean; start?: TimeKey; end?: TimeKey }) {
+    dispatch({
+      type: "settings/quiet-hours",
+      enabled: changes.enabled ?? state.settings.quietHoursEnabled === true,
+      start: changes.start ?? state.settings.quietHoursStart ?? "23:00",
+      end: changes.end ?? state.settings.quietHoursEnd ?? "07:00"
+    });
+  }
+
   const customCategories = state.categories.filter((category) => !category.builtIn);
   const managedFixedTasks = state.fixedTasks.filter((task) => !task.successorId);
   const exceptionTask = managedFixedTasks.find((task) => task.id === exceptionFixedId);
@@ -378,6 +387,41 @@ export function SettingsPage() {
           <p className="settings-muted">点击“开启通知”后，请按系统提示允许有常准时提醒；返回有常后会自动完成设置。</p>
         )}
         <p className="settings-muted">任务需填写开始时间并选择提醒时间；专注或休息倒计时开始后会自动登记结束提醒。</p>
+        <div className="quiet-hours-control">
+          <label className="quiet-hours-control__toggle" htmlFor="quiet-hours-enabled">
+            <span>
+              <strong>免打扰时间</strong>
+              <small>普通任务提醒会在这段时间静默；专注完成和休息结束仍会提醒。</small>
+            </span>
+            <input
+              id="quiet-hours-enabled"
+              type="checkbox"
+              aria-label="免打扰时间"
+              checked={state.settings.quietHoursEnabled === true}
+              onChange={(event) => updateQuietHours({ enabled: event.target.checked })}
+            />
+          </label>
+          <div className="quiet-hours-control__times">
+            <label className="field-label" htmlFor="quiet-hours-start">免打扰开始</label>
+            <input
+              id="quiet-hours-start"
+              className="field-control"
+              type="time"
+              value={state.settings.quietHoursStart ?? "23:00"}
+              disabled={state.settings.quietHoursEnabled !== true}
+              onChange={(event) => updateQuietHours({ start: event.target.value as TimeKey })}
+            />
+            <label className="field-label" htmlFor="quiet-hours-end">免打扰结束</label>
+            <input
+              id="quiet-hours-end"
+              className="field-control"
+              type="time"
+              value={state.settings.quietHoursEnd ?? "07:00"}
+              disabled={state.settings.quietHoursEnabled !== true}
+              onChange={(event) => updateQuietHours({ end: event.target.value as TimeKey })}
+            />
+          </div>
+        </div>
         <button
           type="button"
           className="button button--quiet"

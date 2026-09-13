@@ -162,6 +162,9 @@ export interface AppState {
     featuredAchievementIds?: string[];
     systemNotificationsEnabled?: boolean;
     wakeScreenForReminders?: boolean;
+    quietHoursEnabled?: boolean;
+    quietHoursStart?: TimeKey;
+    quietHoursEnd?: TimeKey;
     lastBackupAt?: string;
   };
   categories: Category[];

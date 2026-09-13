@@ -161,6 +161,16 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
         ...state,
         settings: { ...state.settings, wakeScreenForReminders: action.enabled }
       };
+    case "settings/quiet-hours":
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          quietHoursEnabled: action.enabled,
+          quietHoursStart: action.start,
+          quietHoursEnd: action.end
+        }
+      };
     case "settings/backup-exported":
       return {
         ...state,

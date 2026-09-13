@@ -22,7 +22,10 @@ export function createInitialState(now: Date): AppState {
       musicVolume: 0.35,
       featuredAchievementIds: [],
       systemNotificationsEnabled: false,
-      wakeScreenForReminders: true
+      wakeScreenForReminders: true,
+      quietHoursEnabled: false,
+      quietHoursStart: "23:00",
+      quietHoursEnd: "07:00"
     },
     categories: builtInCategories.map((category, order) => ({
       ...category,

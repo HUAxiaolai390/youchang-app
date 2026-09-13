@@ -163,6 +163,9 @@ function hasValidSettings(value: unknown): boolean {
         && value.musicVolume <= 1))
     && (value.systemNotificationsEnabled === undefined || typeof value.systemNotificationsEnabled === "boolean")
     && (value.wakeScreenForReminders === undefined || typeof value.wakeScreenForReminders === "boolean")
+    && (value.quietHoursEnabled === undefined || typeof value.quietHoursEnabled === "boolean")
+    && (value.quietHoursStart === undefined || isTimeKey(value.quietHoursStart))
+    && (value.quietHoursEnd === undefined || isTimeKey(value.quietHoursEnd))
     && (value.lastBackupAt === undefined || isValidTimestamp(value.lastBackupAt));
 }
 

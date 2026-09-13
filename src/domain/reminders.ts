@@ -52,6 +52,32 @@ function dateAtTime(date: DateKey, time: TimeKey): Date {
   return result;
 }
 
+const defaultQuietHoursStart = 23 * 60;
+const defaultQuietHoursEnd = 7 * 60;
+
+function minutesOfDay(value: unknown, fallback: number): number {
+  if (typeof value !== "string") return fallback;
+  const match = /^(\d{1,2}):(\d{2})$/.exec(value);
+  if (!match) return fallback;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes)
+    || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return fallback;
+  return hours * 60 + minutes;
+}
+
+/** Returns whether a local date/time falls inside the configured quiet window. */
+export function isWithinQuietHours(settings: AppState["settings"], at: Date): boolean {
+  if (settings.quietHoursEnabled !== true) return false;
+  const start = minutesOfDay(settings.quietHoursStart, defaultQuietHoursStart);
+  const end = minutesOfDay(settings.quietHoursEnd, defaultQuietHoursEnd);
+  if (start === end) return false;
+  const current = at.getHours() * 60 + at.getMinutes();
+  return start < end
+    ? current >= start && current < end
+    : current >= start || current < end;
+}
+
 /**
  * Returns every future reminder that can be handed to the phone operating
  * system. Unlike the in-app reminder list, this is not limited to today.
@@ -127,7 +153,8 @@ export function getSchedulableTaskReminders(state: AppState, now: Date): TaskRem
   }
 
   return candidates
-    .filter((reminder) => reminder.remindAt.getTime() > now.getTime())
+    .filter((reminder) => reminder.remindAt.getTime() > now.getTime()
+      && !isWithinQuietHours(state.settings, reminder.remindAt))
     .sort((left, right) => left.remindAt.getTime() - right.remindAt.getTime());
 }
 
@@ -173,7 +200,7 @@ export function getPendingTaskReminders(state: AppState, now: Date): TaskReminde
   }
 
   return candidates
-    .filter((reminder) => reminder.remindAt <= now)
+    .filter((reminder) => reminder.remindAt <= now && !isWithinQuietHours(state.settings, now))
     .sort((left, right) => left.startAt.getTime() - right.startAt.getTime());
 }
 
