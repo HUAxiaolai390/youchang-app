@@ -36,34 +36,50 @@ export function NativeTaskNotificationSync() {
   useEffect(() => {
     if (!nativeAndroid) return;
     let active = true;
+    let consuming = false;
     const applyActions = async () => {
-      const actions = await consumeNativeReminderActions();
-      if (!active) return;
-      for (const action of actions) {
-        if (action.action === "complete") {
-          dispatch(action.kind === "fixed"
-            ? { type: "fixed/complete-from-notification", recordId: action.taskId, date: action.date, completedAt: action.at }
-            : { type: "scheduled/complete-from-notification", id: action.taskId, completedAt: action.at });
-        } else if (action.action === "postpone" && action.kind === "scheduled") {
-          dispatch({ type: "scheduled/postpone-from-notification", id: action.taskId });
-        } else if (action.action === "skip" && action.kind === "fixed") {
-          dispatch({ type: "fixed/skip-from-notification", recordId: action.taskId, date: action.date });
-        } else {
-          dispatch({
-            type: "reminder/snooze",
-            kind: action.kind,
-            id: action.taskId,
-            until: new Date(action.at).toISOString()
-          });
+      if (!active || consuming) return;
+      consuming = true;
+      try {
+        const actions = await consumeNativeReminderActions();
+        if (!active) return;
+        for (const action of actions) {
+          if (action.action === "complete") {
+            dispatch(action.kind === "fixed"
+              ? { type: "fixed/complete-from-notification", recordId: action.taskId, date: action.date, completedAt: action.at }
+              : { type: "scheduled/complete-from-notification", id: action.taskId, completedAt: action.at });
+          } else if (action.action === "postpone" && action.kind === "scheduled") {
+            dispatch({ type: "scheduled/postpone-from-notification", id: action.taskId });
+          } else if (action.action === "skip" && action.kind === "fixed") {
+            dispatch({ type: "fixed/skip-from-notification", recordId: action.taskId, date: action.date });
+          } else {
+            dispatch({
+              type: "reminder/snooze",
+              kind: action.kind,
+              id: action.taskId,
+              until: new Date(action.at).toISOString()
+            });
+          }
         }
+      } catch {
+        // The native bridge can be unavailable briefly while the activity is
+        // starting or returning from the background. The next poll retries it.
+      } finally {
+        consuming = false;
       }
     };
     void applyActions();
     const onResume = () => void applyActions();
+    // Notification action broadcasts can arrive while the activity remains
+    // visible, so focus/visibility events alone are not sufficient to notice
+    // them. A short, single-flight poll keeps the Today page in sync without
+    // issuing overlapping native bridge calls.
+    const actionPoll = window.setInterval(() => void applyActions(), 500);
     window.addEventListener("focus", onResume);
     document.addEventListener("visibilitychange", onResume);
     return () => {
       active = false;
+      window.clearInterval(actionPoll);
       window.removeEventListener("focus", onResume);
       document.removeEventListener("visibilitychange", onResume);
     };
