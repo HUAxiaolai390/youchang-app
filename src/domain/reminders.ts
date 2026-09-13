@@ -23,7 +23,7 @@ export type TaskReminder = {
   snoozed: boolean;
 };
 
-export type ReminderOverviewStatus = "upcoming" | "missed" | "snoozed";
+export type ReminderOverviewStatus = "upcoming" | "missed" | "snoozed" | "completed";
 
 export type TaskReminderOverviewItem = TaskReminder & {
   status: ReminderOverviewStatus;
@@ -183,7 +183,8 @@ export function getTaskReminderOverview(state: AppState, now: Date): TaskReminde
 
   for (const record of state.fixedRecords) {
     const snoozedUntil = record.reminderSnoozedUntil ? new Date(record.reminderSnoozedUntil) : undefined;
-    if ((!snoozedUntil && record.date !== today) || record.completedAt
+    if ((!snoozedUntil && record.date !== today)
+      || (!record.completedAt && record.date !== today)
       || !record.plannedStartTime || record.reminderMinutesBefore === undefined) continue;
     const startAt = dateAtTime(record.date, record.plannedStartTime);
     candidates.push({
@@ -202,7 +203,8 @@ export function getTaskReminderOverview(state: AppState, now: Date): TaskReminde
   for (const task of state.scheduledTasks) {
     const snoozedUntil = task.reminderSnoozedUntil ? new Date(task.reminderSnoozedUntil) : undefined;
     const canShowSnoozed = Boolean(snoozedUntil) && ["pending", "backlog", "archived"].includes(task.status);
-    if ((!snoozedUntil && task.scheduledDate !== today) || (!canShowSnoozed && task.status !== "pending")
+    if ((!snoozedUntil && task.scheduledDate !== today)
+      || (!canShowSnoozed && task.status !== "pending" && task.status !== "completed")
       || !task.plannedStartTime || task.reminderMinutesBefore === undefined) continue;
     const startAt = dateAtTime(task.scheduledDate, task.plannedStartTime);
     candidates.push({
@@ -220,7 +222,11 @@ export function getTaskReminderOverview(state: AppState, now: Date): TaskReminde
 
   return candidates.map((reminder): TaskReminderOverviewItem => ({
     ...reminder,
-    status: reminder.snoozed && reminder.remindAt > now
+    status: (reminder.kind === "fixed"
+      ? Boolean(state.fixedRecords.find((record) => record.id === reminder.id)?.completedAt)
+      : state.scheduledTasks.find((task) => task.id === reminder.id)?.status === "completed")
+      ? "completed"
+      : reminder.snoozed && reminder.remindAt > now
       ? "snoozed"
       : reminder.startAt < now
         ? "missed"
@@ -229,6 +235,7 @@ export function getTaskReminderOverview(state: AppState, now: Date): TaskReminde
 }
 
 export function describeReminderOverviewItem(item: TaskReminderOverviewItem, now: Date): string {
+  if (item.status === "completed") return "今天已完成";
   if (item.status === "snoozed") {
     return `${item.remindAt.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false })} 再提醒`;
   }

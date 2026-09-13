@@ -120,7 +120,7 @@ describe("task reminders", () => {
     ]);
   });
 
-  it("groups today's reminders into upcoming, missed, and snoozed items", () => {
+  it("keeps completed reminders in today's overview", () => {
     const state = createInitialState(new Date(2026, 7, 9, 9));
     state.scheduledTasks.push({
       id: "upcoming", title: "稍后复习", categoryId: "study", categoryNameSnapshot: "学习",
@@ -143,6 +143,7 @@ describe("task reminders", () => {
 
     expect(getTaskReminderOverview(state, new Date(2026, 7, 9, 9))).toEqual([
       expect.objectContaining({ id: "missed", status: "missed" }),
+      expect.objectContaining({ id: "done", status: "completed" }),
       expect.objectContaining({ id: "snoozed", status: "snoozed" }),
       expect.objectContaining({ id: "upcoming", status: "upcoming" })
     ]);

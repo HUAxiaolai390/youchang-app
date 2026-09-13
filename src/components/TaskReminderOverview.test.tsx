@@ -55,7 +55,8 @@ describe("TaskReminderOverview", () => {
     await user.click(screen.getByRole("button", { name: "完成提醒任务：晨间阅读" }));
 
     expect(repository.state.scheduledTasks.find((task) => task.id === "missed")?.status).toBe("completed");
-    expect(center).not.toHaveTextContent("晨间阅读");
+    expect(center).toHaveTextContent("今天已完成");
+    expect(center).toHaveTextContent("晨间阅读");
   });
 
   it("postpones a missed reminder for ten minutes", async () => {

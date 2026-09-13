@@ -9,11 +9,12 @@ import {
 } from "../domain/reminders";
 
 const readSystemTime = () => new Date();
-const groupOrder: ReminderOverviewStatus[] = ["missed", "snoozed", "upcoming"];
+const groupOrder: ReminderOverviewStatus[] = ["missed", "snoozed", "upcoming", "completed"];
 const groupLabels: Record<ReminderOverviewStatus, string> = {
   missed: "已错过",
   snoozed: "已推迟",
-  upcoming: "即将开始"
+  upcoming: "即将开始",
+  completed: "今天已完成"
 };
 
 export function TaskReminderOverview({
@@ -111,11 +112,13 @@ export function TaskReminderOverview({
                       <small>{describeReminderOverviewItem(item, currentTime)}</small>
                     </span>
                     <span className="reminder-item__actions">
-                      <button type="button" className="reminder-item__complete" onClick={() => complete(item)} aria-label={`完成提醒任务：${item.title}`}>完成</button>
-                      {status !== "upcoming" && <button type="button" onClick={() => snooze(item)} aria-label={`10 分钟后提醒：${item.title}`}>10 分钟后</button>}
-                      <button type="button" onClick={() => moveOrSkip(item)}>
-                        {item.kind === "scheduled" ? "改到明天" : item.date === toDateKey(currentTime) ? "今天跳过" : "跳过这次"}
-                      </button>
+                      {status !== "completed" && <>
+                        <button type="button" className="reminder-item__complete" onClick={() => complete(item)} aria-label={`完成提醒任务：${item.title}`}>完成</button>
+                        {status !== "upcoming" && <button type="button" onClick={() => snooze(item)} aria-label={`10 分钟后提醒：${item.title}`}>10 分钟后</button>}
+                        <button type="button" onClick={() => moveOrSkip(item)}>
+                          {item.kind === "scheduled" ? "改到明天" : item.date === toDateKey(currentTime) ? "今天跳过" : "跳过这次"}
+                        </button>
+                      </>}
                     </span>
                   </li>
                 ))}
