@@ -18,7 +18,7 @@ import {
   updateScheduledTask
 } from "../domain/tasks";
 import { moveArchivedTaskToCurrentWeek, postponeTaskUntilTomorrow, rescheduleTask, rollover } from "../domain/rollover";
-import type { AppState } from "../domain/types";
+import type { AppState, DateKey } from "../domain/types";
 import { completeFocusSession, configureFocus, saveFocusTimerRuntime } from "../domain/focus";
 import {
   addFixedActualMinutes,
@@ -78,6 +78,18 @@ function getDisplayError(error: unknown): string {
   return FALLBACK_ERROR_MESSAGE;
 }
 
+function resolveFixedNotification(state: AppState, recordId: string, date: DateKey) {
+  const directRecord = state.fixedRecords.find((record) => record.id === recordId);
+  if (directRecord && directRecord.date !== date) return undefined;
+  const suffix = `:${date}`;
+  const templateId = directRecord?.templateId
+    ?? (recordId.endsWith(suffix) ? recordId.slice(0, -suffix.length) : undefined);
+  const template = state.fixedTasks.find((task) => task.id === templateId);
+  if (!template) return undefined;
+  const record = directRecord ?? state.fixedRecords.find((item) => item.templateId === template.id && item.date === date);
+  return { template, record };
+}
+
 export function reduceAppState(state: AppState, action: AppAction, now: Date): AppState {
   switch (action.type) {
     case "scheduled/add":
@@ -88,12 +100,19 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
       return toggleScheduledTask(state, action.id, now);
     case "scheduled/complete-from-notification": {
       const task = state.scheduledTasks.find((item) => item.id === action.id);
-      return task && task.status !== "completed"
+      return task && ["pending", "backlog", "archived"].includes(task.status)
+        && (!action.date || task.scheduledDate === action.date)
         ? toggleScheduledTask(state, action.id, new Date(action.completedAt))
         : state;
     }
-    case "scheduled/postpone-from-notification":
-      return postponeTaskUntilTomorrow(state, action.id, now);
+    case "scheduled/postpone-from-notification": {
+      const task = state.scheduledTasks.find((item) => item.id === action.id);
+      if (!task || !["pending", "backlog", "archived"].includes(task.status)
+        || (action.date && task.scheduledDate !== action.date)) return state;
+      const clickedAt = action.at === undefined ? now : new Date(action.at);
+      if (!Number.isFinite(clickedAt.getTime())) return state;
+      return rollover(postponeTaskUntilTomorrow(state, action.id, clickedAt), now);
+    }
     case "scheduled/step-toggle":
       return toggleScheduledTaskStep(state, action.id, action.stepId);
     case "scheduled/delete":
@@ -113,22 +132,19 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
     case "fixed/toggle":
       return toggleFixedRecord(state, action.recordId, now);
     case "fixed/complete-from-notification": {
-      const existing = state.fixedRecords.find((record) => record.id === action.recordId);
-      if (existing) {
-        return existing.completedAt
+      const resolved = resolveFixedNotification(state, action.recordId, action.date);
+      if (!resolved || resolved.template.skippedDates?.includes(action.date)) return state;
+      if (resolved.record) {
+        return resolved.record.completedAt
           ? state
-          : toggleFixedRecord(state, existing.id, new Date(action.completedAt));
+          : toggleFixedRecord(state, resolved.record.id, new Date(action.completedAt));
       }
-      const separator = action.recordId.lastIndexOf(":");
-      const templateId = separator > 0 ? action.recordId.slice(0, separator) : action.recordId;
-      return toggleFixedTaskForDate(state, templateId, action.date, new Date(action.completedAt));
+      return toggleFixedTaskForDate(state, resolved.template.id, action.date, new Date(action.completedAt));
     }
     case "fixed/skip-from-notification": {
-      const existing = state.fixedRecords.find((record) => record.id === action.recordId);
-      const separator = action.recordId.lastIndexOf(":");
-      const templateId = existing?.templateId
-        ?? (separator > 0 ? action.recordId.slice(0, separator) : action.recordId);
-      return toggleFixedTaskSkipDate(state, templateId, action.date, now);
+      const resolved = resolveFixedNotification(state, action.recordId, action.date);
+      if (!resolved || resolved.record?.completedAt || resolved.template.skippedDates?.includes(action.date)) return state;
+      return toggleFixedTaskSkipDate(state, resolved.template.id, action.date, now);
     }
     case "fixed/step-toggle":
       return toggleFixedTaskStep(state, action.recordId, action.stepId);
@@ -188,7 +204,7 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
     case "reminder/mark-sent":
       return markTaskReminderSent(state, action.kind, action.id, action.sentAt);
     case "reminder/snooze":
-      return snoozeTaskReminder(state, action.kind, action.id, action.until);
+      return snoozeTaskReminder(state, action.kind, action.id, action.until, action.date);
     case "focus/configure":
       return configureFocus(state, action.focusMinutes, action.breakMinutes, action.timer);
     case "focus/session-complete": {

@@ -1,8 +1,9 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAppState } from "../app/AppStateProvider";
 import {
   buildNativeTaskNotifications,
-  consumeNativeReminderActions,
+  acknowledgeNativeReminderActions,
+  readNativeReminderActions,
   isNativeAndroid,
   syncNativeTaskNotifications
 } from "../native/task-notifications";
@@ -10,6 +11,7 @@ import {
 export function NativeTaskNotificationSync() {
   const { state, dispatch } = useAppState();
   const nativeAndroid = isNativeAndroid();
+  const [actionsReady, setActionsReady] = useState(false);
   const scheduleSignature = useMemo(() => {
     if (!nativeAndroid) return "web";
     const reminders = buildNativeTaskNotifications(state, new Date());
@@ -26,12 +28,12 @@ export function NativeTaskNotificationSync() {
   }, [nativeAndroid, state]);
 
   useEffect(() => {
-    if (!nativeAndroid) return;
+    if (!nativeAndroid || !actionsReady) return;
     void syncNativeTaskNotifications(state).catch(() => {
       // A denied permission or a manufacturer-specific restriction must not
       // block task editing. The setting screen still shows permission status.
     });
-  }, [nativeAndroid, scheduleSignature]);
+  }, [nativeAndroid, scheduleSignature, actionsReady]);
 
   useEffect(() => {
     if (!nativeAndroid) return;
@@ -41,29 +43,39 @@ export function NativeTaskNotificationSync() {
       if (!active || consuming) return;
       consuming = true;
       try {
-        const actions = await consumeNativeReminderActions();
+        const actions = await readNativeReminderActions();
         if (!active) return;
+        if (actions.length > 0) setActionsReady(false);
         for (const action of actions) {
+          if (!active) return;
+          let saved: boolean;
           if (action.action === "complete") {
-            dispatch(action.kind === "fixed"
+            saved = dispatch(action.kind === "fixed"
               ? { type: "fixed/complete-from-notification", recordId: action.taskId, date: action.date, completedAt: action.at }
-              : { type: "scheduled/complete-from-notification", id: action.taskId, completedAt: action.at });
+              : { type: "scheduled/complete-from-notification", id: action.taskId, date: action.date, completedAt: action.at });
           } else if (action.action === "postpone" && action.kind === "scheduled") {
-            dispatch({ type: "scheduled/postpone-from-notification", id: action.taskId });
+            saved = dispatch({ type: "scheduled/postpone-from-notification", id: action.taskId, date: action.date, at: action.at });
           } else if (action.action === "skip" && action.kind === "fixed") {
-            dispatch({ type: "fixed/skip-from-notification", recordId: action.taskId, date: action.date });
+            saved = dispatch({ type: "fixed/skip-from-notification", recordId: action.taskId, date: action.date });
           } else {
-            dispatch({
+            saved = dispatch({
               type: "reminder/snooze",
               kind: action.kind,
               id: action.taskId,
-              until: new Date(action.at).toISOString()
+              until: new Date(action.at).toISOString(),
+              date: action.date
             });
           }
+          // Retain this and later actions if storage fails. Acknowledging only
+          // saved IDs also preserves actions appended while this batch runs.
+          if (!saved) return;
+          await acknowledgeNativeReminderActions([action.id]);
         }
+        if (active) setActionsReady(true);
       } catch {
         // The native bridge can be unavailable briefly while the activity is
         // starting or returning from the background. The next poll retries it.
+        if (active) setActionsReady(false);
       } finally {
         consuming = false;
       }

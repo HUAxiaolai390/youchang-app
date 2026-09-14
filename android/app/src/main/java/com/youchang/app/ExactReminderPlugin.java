@@ -84,6 +84,19 @@ public class ExactReminderPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void getActions(PluginCall call) {
+        JSObject result = new JSObject();
+        result.put("actions", ReminderActionStore.pending(getContext()));
+        call.resolve(result);
+    }
+
+    @PluginMethod
+    public void acknowledgeActions(PluginCall call) {
+        ReminderActionStore.acknowledge(getContext(), call.getArray("ids", new JSArray()));
+        call.resolve();
+    }
+
+    @PluginMethod
     public void consumeActions(PluginCall call) {
         JSObject result = new JSObject();
         result.put("actions", ReminderActionStore.consume(getContext()));

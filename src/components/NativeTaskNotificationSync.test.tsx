@@ -11,6 +11,8 @@ const nativeMock = vi.hoisted(() => ({
   build: vi.fn(() => []),
   cancelFocus: vi.fn(() => Promise.resolve()),
   consume: vi.fn(),
+  read: vi.fn(),
+  acknowledge: vi.fn(),
   isNativeAndroid: vi.fn(() => true),
   scheduleFocus: vi.fn(() => Promise.resolve(true)),
   sync: vi.fn(() => Promise.resolve())
@@ -20,6 +22,8 @@ vi.mock("../native/task-notifications", () => ({
   buildNativeTaskNotifications: nativeMock.build,
   cancelFocusPhaseNotification: nativeMock.cancelFocus,
   consumeNativeReminderActions: nativeMock.consume,
+  readNativeReminderActions: nativeMock.read,
+  acknowledgeNativeReminderActions: nativeMock.acknowledge,
   isNativeAndroid: nativeMock.isNativeAndroid,
   scheduleFocusPhaseNotification: nativeMock.scheduleFocus,
   syncNativeTaskNotifications: nativeMock.sync
@@ -27,6 +31,7 @@ vi.mock("../native/task-notifications", () => ({
 
 class MemoryRepository implements AppRepository {
   private value: AppState;
+  saveError?: Error;
 
   constructor(value: AppState) {
     this.value = value;
@@ -37,6 +42,7 @@ class MemoryRepository implements AppRepository {
   }
 
   save(state: AppState) {
+    if (this.saveError) throw this.saveError;
     this.value = state;
   }
 
@@ -53,6 +59,8 @@ describe("NativeTaskNotificationSync", () => {
     nativeMock.cancelFocus.mockClear();
     nativeMock.consume.mockReset();
     nativeMock.consume.mockResolvedValue([]);
+    nativeMock.read.mockReset().mockImplementation(() => nativeMock.consume());
+    nativeMock.acknowledge.mockReset().mockResolvedValue(undefined);
     nativeMock.isNativeAndroid.mockReturnValue(true);
     nativeMock.scheduleFocus.mockClear();
     nativeMock.sync.mockClear();
@@ -77,6 +85,7 @@ describe("NativeTaskNotificationSync", () => {
     nativeMock.consume
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([{
+        id: "postpone-event",
         action: "postpone",
         kind: "scheduled",
         taskId: "notification-postpone",
@@ -104,5 +113,46 @@ describe("NativeTaskNotificationSync", () => {
       expect(screen.getByRole("heading", { name: "今日安排" }).closest("section")).not.toHaveTextContent("通知改期任务");
     });
     expect(repository.load().scheduledTasks.find((task) => task.id === "notification-postpone")?.status).toBe("rescheduled");
+  });
+
+  it("keeps a failed save in the native queue and applies it after the app is reopened", async () => {
+    const now = new Date(2026, 8, 14, 8);
+    const state = createInitialState(now);
+    state.scheduledTasks.push({ id: "review", title: "复习", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-09-14", status: "pending", createdAt: now.toISOString() });
+    const repository = new MemoryRepository(state);
+    repository.saveError = new Error("保存失败，请立即导出备份");
+    const queue = [{ id: "event-1", action: "postpone", kind: "scheduled", taskId: "review", date: "2026-09-14", at: now.getTime() }];
+    nativeMock.consume.mockImplementation(async () => queue.splice(0));
+    nativeMock.read.mockImplementation(async () => [...queue]);
+    nativeMock.acknowledge.mockImplementation(async (ids: string[]) => {
+      for (let index = queue.length - 1; index >= 0; index--) {
+        if (ids.includes(queue[index].id)) queue.splice(index, 1);
+      }
+    });
+    const view = render(<AppStateProvider repository={repository} now={() => now}><NativeTaskNotificationSync /></AppStateProvider>);
+    await act(async () => { await Promise.resolve(); });
+    expect(repository.load().scheduledTasks[0].status).toBe("pending");
+    expect(queue).toHaveLength(1);
+    view.unmount();
+    repository.saveError = undefined;
+
+    render(<AppStateProvider repository={repository} now={() => now}><NativeTaskNotificationSync /></AppStateProvider>);
+    await act(async () => { await Promise.resolve(); });
+    expect(queue).toHaveLength(0);
+    expect(repository.load().scheduledTasks).toHaveLength(2);
+    expect(repository.load().scheduledTasks[1]).toMatchObject({ status: "pending", scheduledDate: "2026-09-15" });
+  });
+
+  it("waits for pending actions before replacing alarms from the saved task list", async () => {
+    let finishRead!: (actions: []) => void;
+    const pending = new Promise<[]>((resolve) => { finishRead = resolve; });
+    nativeMock.consume.mockReturnValue(pending);
+    nativeMock.read.mockReturnValue(pending);
+    const repository = new MemoryRepository(createInitialState(new Date()));
+    render(<AppStateProvider repository={repository}><NativeTaskNotificationSync /></AppStateProvider>);
+    expect(nativeMock.sync).not.toHaveBeenCalled();
+    await act(async () => { finishRead([]); await Promise.resolve(); });
+    expect(nativeMock.sync).toHaveBeenCalled();
   });
 });

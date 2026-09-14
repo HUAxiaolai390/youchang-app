@@ -20,6 +20,7 @@ type ExactReminderSchedule = {
   date: DateKey;
 };
 export type NativeReminderAction = {
+  id: string;
   action: "complete" | "snooze" | "postpone" | "skip";
   kind: "fixed" | "scheduled";
   taskId: string;
@@ -31,7 +32,8 @@ interface ExactReminderPlugin {
   scheduleTest(options: { at: number; wakeScreen: boolean }): Promise<{ at: number }>;
   scheduleFocus(options: { at: number; title: string; body: string; wakeScreen: boolean }): Promise<{ at: number }>;
   cancelFocus(): Promise<void>;
-  consumeActions(): Promise<{ actions: NativeReminderAction[] }>;
+  getActions(): Promise<{ actions: NativeReminderAction[] }>;
+  acknowledgeActions(options: { ids: string[] }): Promise<void>;
 }
 const ExactReminder = registerPlugin<ExactReminderPlugin>("ExactReminder");
 
@@ -128,17 +130,26 @@ export async function cancelFocusPhaseNotification(): Promise<void> {
   await ExactReminder.cancelFocus();
 }
 
-export async function consumeNativeReminderActions(): Promise<NativeReminderAction[]> {
+export async function readNativeReminderActions(): Promise<NativeReminderAction[]> {
   if (!isNativeAndroid()) return [];
-  const result = await ExactReminder.consumeActions();
+  const result = await ExactReminder.getActions();
   return Array.isArray(result.actions) ? result.actions.filter((action): action is NativeReminderAction => (
-    (action.action === "complete" || action.action === "snooze"
-      || action.action === "postpone" || action.action === "skip")
+    action !== null && typeof action === "object"
+      && typeof action.id === "string" && action.id.length > 0
+      && (action.action === "complete" || action.action === "snooze"
+        || (action.action === "postpone" && action.kind === "scheduled")
+        || (action.action === "skip" && action.kind === "fixed"))
       && (action.kind === "fixed" || action.kind === "scheduled")
-      && typeof action.taskId === "string"
+      && typeof action.taskId === "string" && action.taskId.length > 0
       && isDateKey(action.date)
       && Number.isFinite(action.at)
+      && Number.isFinite(new Date(action.at).getTime())
   )) : [];
+}
+
+export async function acknowledgeNativeReminderActions(ids: string[]): Promise<void> {
+  if (!isNativeAndroid() || ids.length === 0) return;
+  await ExactReminder.acknowledgeActions({ ids });
 }
 
 function isDateKey(value: unknown): value is DateKey {

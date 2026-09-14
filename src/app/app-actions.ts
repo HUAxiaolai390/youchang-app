@@ -10,8 +10,8 @@ export type AppAction =
   | { type: "scheduled/add"; input: AddScheduledTaskInput }
   | { type: "scheduled/update"; id: string; input: UpdateScheduledTaskInput }
   | { type: "scheduled/toggle"; id: string }
-  | { type: "scheduled/complete-from-notification"; id: string; completedAt: number }
-  | { type: "scheduled/postpone-from-notification"; id: string }
+  | { type: "scheduled/complete-from-notification"; id: string; completedAt: number; date?: DateKey }
+  | { type: "scheduled/postpone-from-notification"; id: string; at?: number; date?: DateKey }
   | { type: "scheduled/step-toggle"; id: string; stepId: string }
   | { type: "scheduled/delete"; id: string }
   | { type: "scheduled/reschedule"; id: string; targetDate: DateKey }
@@ -38,7 +38,7 @@ export type AppAction =
   | { type: "settings/quiet-hours"; enabled: boolean; start: TimeKey; end: TimeKey }
   | { type: "settings/backup-exported"; at: string }
   | { type: "reminder/mark-sent"; kind: "fixed" | "scheduled"; id: string; sentAt: string }
-  | { type: "reminder/snooze"; kind: "fixed" | "scheduled"; id: string; until: string }
+  | { type: "reminder/snooze"; kind: "fixed" | "scheduled"; id: string; until: string; date?: DateKey }
   | { type: "focus/configure"; focusMinutes: number; breakMinutes: number; timer?: FocusTimerRuntime }
   | { type: "focus/session-complete"; minutes: number; timer?: FocusTimerRuntime; target?: string }
   | { type: "focus/timer-save"; timer: FocusTimerRuntime }

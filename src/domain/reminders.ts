@@ -300,20 +300,21 @@ export function snoozeTaskReminder(
   state: AppState,
   kind: TaskReminder["kind"],
   id: string,
-  until: string
+  until: string,
+  date?: DateKey
 ): AppState {
   if (!Number.isFinite(Date.parse(until))) return state;
   if (kind === "fixed") {
     return {
       ...state,
-      fixedRecords: state.fixedRecords.map((record) => record.id === id
+      fixedRecords: state.fixedRecords.map((record) => record.id === id && (!date || record.date === date)
         ? { ...record, reminderSentAt: undefined, reminderSnoozedUntil: until }
         : record)
     };
   }
   return {
     ...state,
-    scheduledTasks: state.scheduledTasks.map((task) => task.id === id
+    scheduledTasks: state.scheduledTasks.map((task) => task.id === id && (!date || task.scheduledDate === date)
       ? { ...task, reminderSentAt: undefined, reminderSnoozedUntil: until }
       : task)
   };
