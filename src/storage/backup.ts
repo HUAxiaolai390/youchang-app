@@ -136,6 +136,7 @@ function isOptionalActualMinutes(value: unknown): boolean {
 function isTimeEntry(value: unknown): boolean {
   return hasStrings(value, ["id", "title", "categoryId", "categoryNameSnapshot", "createdAt"])
     && isDateKey(value.date)
+    && (value.goalId === undefined || isString(value.goalId))
     && typeof value.minutes === "number"
     && Number.isInteger(value.minutes)
     && value.minutes >= 1
@@ -290,7 +291,7 @@ function normalizeCategoryReferences(state: AppState): AppState {
     fixedTasks: state.fixedTasks.map((task) => normalizeGoal(normalize(task))),
     fixedRecords: state.fixedRecords.map((record) => normalizeGoal(normalize(record))),
     scheduledTasks: state.scheduledTasks.map((task) => normalizeGoal(normalize(task))),
-    timeEntries: (state.timeEntries ?? []).map(normalize),
+    timeEntries: (state.timeEntries ?? []).map((entry) => normalizeGoal(normalize(entry))),
     weeklyReviews: state.weeklyReviews ?? [],
     goals
   };

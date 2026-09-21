@@ -75,4 +75,17 @@ describe("notification actions across retries and days", () => {
     expect(twice.fixedTasks[0].skippedDates).toEqual(["2026-09-13"]);
     expect(twice.fixedRecords).toHaveLength(0);
   });
+
+  it("snoozes the fixed occurrence from a notification and ignores a stale date", () => {
+    const state = fixture();
+    state.fixedRecords[0].plannedStartTime = "09:00";
+    state.fixedRecords[0].reminderMinutesBefore = 0;
+    const until = new Date(2026, 8, 13, 10, 0).toISOString();
+    const action = { type: "reminder/snooze" as const, kind: "fixed" as const,
+      id: "record-uuid", date: "2026-09-13" as const, until };
+    const snoozed = reduceAppState(state, action, clickedAt);
+    expect(snoozed.fixedRecords[0].reminderSnoozedUntil).toBe(until);
+    const stale = reduceAppState(snoozed, { ...action, date: "2026-09-14" }, clickedAt);
+    expect(stale).toBe(snoozed);
+  });
 });

@@ -25,7 +25,8 @@ import {
   addScheduledActualMinutes,
   addTimeEntry,
   setFixedActualMinutes,
-  setScheduledActualMinutes
+  setScheduledActualMinutes,
+  setTimeEntryGoal
 } from "../domain/time";
 import type { AppRepository } from "../storage/repository";
 import type { AppAction } from "./app-actions";
@@ -227,6 +228,15 @@ export function reduceAppState(state: AppState, action: AppAction, now: Date): A
       return setScheduledActualMinutes(state, action.id, action.minutes);
     case "scheduled/time-add":
       return addScheduledActualMinutes(state, action.id, action.minutes);
+    case "scheduled/set-goal":
+      if (!(state.goals ?? []).some((goal) => goal.id === action.goalId)) return state;
+      return { ...state, scheduledTasks: state.scheduledTasks.map((task) => task.id === action.id ? { ...task, goalId: action.goalId } : task) };
+    case "fixed/set-goal":
+      if (!(state.goals ?? []).some((goal) => goal.id === action.goalId)) return state;
+      return { ...state, fixedRecords: state.fixedRecords.map((record) => record.id === action.recordId ? { ...record, goalId: action.goalId } : record) };
+    case "time-entry/set-goal":
+      if (!(state.goals ?? []).some((goal) => goal.id === action.goalId)) return state;
+      return setTimeEntryGoal(state, action.id, action.goalId);
     case "time-entry/add":
       return addTimeEntry(state, {
         title: action.title,

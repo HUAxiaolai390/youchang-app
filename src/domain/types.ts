@@ -135,6 +135,7 @@ export interface TimeEntry {
   categoryNameSnapshot: string;
   date: DateKey;
   minutes: number;
+  goalId?: string;
   createdAt: string;
 }
 

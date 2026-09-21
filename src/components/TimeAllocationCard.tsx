@@ -2,6 +2,7 @@ import { useState, type CSSProperties } from "react";
 import { useAppState } from "../app/AppStateProvider";
 import { toDateKey } from "../domain/date";
 import { formatTrackedTime, getTaskTimeAllocation } from "../domain/time";
+import { TimeAllocationDetailDialog } from "./TimeAllocationDetailDialog";
 
 type AllocationStyle = CSSProperties & {
   "--allocation-color"?: string;
@@ -205,6 +206,7 @@ function TimeAllocationChart({ items, colors, totalMinutes }: { items: Allocatio
 export function TimeAllocationCard({ now = new Date() }: { now?: Date }) {
   const { state } = useAppState();
   const [period, setPeriod] = useState<"today" | "week">("today");
+  const [selectedTaskKey, setSelectedTaskKey] = useState<string>();
   const todayKey = toDateKey(now);
   const rollingWeekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
   const allocation = getTaskTimeAllocation(
@@ -214,6 +216,7 @@ export function TimeAllocationCard({ now = new Date() }: { now?: Date }) {
     { groupByGoal: period === "week" }
   );
   const colors = allocationColors(allocation.items);
+  const selectedItem = allocation.items.find((item) => item.taskKey === selectedTaskKey);
 
   return (
     <section className="surface-card time-allocation-card" aria-labelledby="time-allocation-title">
@@ -244,7 +247,7 @@ export function TimeAllocationCard({ now = new Date() }: { now?: Date }) {
                 ? `长期目标${item.groupedTaskCount > 1 ? ` · 合并 ${item.groupedTaskCount} 项任务` : ""}${item.inferredTaskCount > 0 ? ` · 智能归入 ${item.inferredTaskCount} 项` : ""}`
                 : item.categoryName;
               return (
-                <div className="time-allocation-row" key={item.taskKey} style={style} aria-label={`${item.taskTitle} ${formatTrackedTime(item.minutes)}，占 ${Math.round(item.ratio * 100)}%`}>
+                <button type="button" className="time-allocation-row" key={item.taskKey} style={style} aria-label={`${item.taskTitle} ${formatTrackedTime(item.minutes)}，占 ${Math.round(item.ratio * 100)}%`} onClick={() => setSelectedTaskKey(item.taskKey)}>
                   <span className="time-allocation-row__icon" aria-hidden="true">{item.categoryIcon}</span>
                   <div className="time-allocation-row__main">
                     <div>
@@ -253,12 +256,13 @@ export function TimeAllocationCard({ now = new Date() }: { now?: Date }) {
                     </div>
                     <div className="time-allocation-row__track" aria-hidden="true"><span className="time-allocation-row__bar" style={{ width: `${item.ratio * 100}%` }} /></div>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
         </div>
       )}
+      {selectedItem && <TimeAllocationDetailDialog item={selectedItem} onCancel={() => setSelectedTaskKey(undefined)} />}
     </section>
   );
 }

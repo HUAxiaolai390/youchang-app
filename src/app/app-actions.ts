@@ -46,6 +46,9 @@ export type AppAction =
   | { type: "fixed/time-add"; recordId: string; minutes: number }
   | { type: "scheduled/time-set"; id: string; minutes: number }
   | { type: "scheduled/time-add"; id: string; minutes: number }
+  | { type: "scheduled/set-goal"; id: string; goalId: string }
+  | { type: "fixed/set-goal"; recordId: string; goalId: string }
+  | { type: "time-entry/set-goal"; id: string; goalId: string }
   | { type: "time-entry/add"; title: string; categoryId: string; date: DateKey; minutes: number }
   | { type: "weekly-review/save"; weekStart: DateKey; summary: string; adjustment: string }
   | { type: "goal/add"; title: string; deadline: DateKey }

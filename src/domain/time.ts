@@ -44,6 +44,14 @@ export function addScheduledActualMinutes(state: AppState, id: string, minutes: 
   return setScheduledActualMinutes(state, id, (task.actualMinutes ?? 0) + normalizeMinutes(minutes, false));
 }
 
+export function setTimeEntryGoal(state: AppState, id: string, goalId: string): AppState {
+  if (!state.timeEntries?.some((entry) => entry.id === id)) return state;
+  return {
+    ...state,
+    timeEntries: state.timeEntries.map((entry) => entry.id === id ? { ...entry, goalId } : entry)
+  };
+}
+
 export type AddTimeEntryInput = {
   title: string;
   categoryId: string;
@@ -95,8 +103,19 @@ export type TaskTimeAllocationItem = {
   groupType: "task" | "goal";
   groupedTaskCount: number;
   inferredTaskCount: number;
+  sources: TaskTimeAllocationSource[];
   minutes: number;
   ratio: number;
+};
+
+export type TaskTimeAllocationSource = {
+  kind: "fixed" | "scheduled" | "entry";
+  id: string;
+  title: string;
+  date: DateKey;
+  minutes: number;
+  goalId?: string;
+  inferred: boolean;
 };
 
 export type TaskTimeAllocation = {
@@ -208,7 +227,8 @@ export function getTaskTimeAllocation(
     categoryId: string,
     categoryNameSnapshot: string,
     minutes?: number,
-    goalId?: string
+    goalId?: string,
+    source?: Omit<TaskTimeAllocationSource, "goalId" | "inferred">
   ) => {
     if (!minutes || minutes <= 0) return;
     const normalizedTitle = taskTitle.trim() || "自由记录";
@@ -216,6 +236,9 @@ export function getTaskTimeAllocation(
     const inferredGoal = options.groupByGoal && !explicitGoal ? inferGoalForTitle(normalizedTitle, state.goals) : undefined;
     const goal = explicitGoal ?? inferredGoal;
     const inferred = Boolean(inferredGoal);
+    const sourceDetail = source
+      ? { ...source, goalId: goal?.id, inferred }
+      : undefined;
     const allocationKey = goal
       ? `goal:${goal.id}`
       : options.groupByGoal
@@ -227,6 +250,7 @@ export function getTaskTimeAllocation(
       current.minutes += minutes;
       current.taskTitles.add(normalizedTitle);
       if (inferred) current.inferredTaskTitles.add(normalizedTitle);
+      if (sourceDetail) current.sources.push(sourceDetail);
       return;
     }
     totals.set(allocationKey, {
@@ -238,6 +262,7 @@ export function getTaskTimeAllocation(
       groupType: goal ? "goal" : "task",
       taskTitles: new Set([normalizedTitle]),
       inferredTaskTitles: new Set(inferred ? [normalizedTitle] : []),
+      sources: sourceDetail ? [sourceDetail] : [],
       minutes
     });
   };
@@ -245,18 +270,24 @@ export function getTaskTimeAllocation(
   for (const record of state.fixedRecords) {
     if (record.date >= fromDate && record.date <= toDate) {
       const templateGoalId = fixedTemplatesById.get(record.templateId)?.goalId;
-      add(`fixed:${record.templateId}`, record.titleSnapshot, record.categoryId, record.categoryNameSnapshot, record.actualMinutes, record.goalId ?? templateGoalId);
+      add(`fixed:${record.templateId}`, record.titleSnapshot, record.categoryId, record.categoryNameSnapshot,
+        record.actualMinutes, record.goalId ?? templateGoalId,
+        { kind: "fixed", id: record.id, title: record.titleSnapshot, date: record.date, minutes: record.actualMinutes ?? 0 });
     }
   }
   for (const task of state.scheduledTasks) {
     if (task.scheduledDate >= fromDate && task.scheduledDate <= toDate) {
-      add(`scheduled:${task.id}`, task.title, task.categoryId, task.categoryNameSnapshot, task.actualMinutes, task.goalId);
+      add(`scheduled:${task.id}`, task.title, task.categoryId, task.categoryNameSnapshot,
+        task.actualMinutes, task.goalId,
+        { kind: "scheduled", id: task.id, title: task.title, date: task.scheduledDate, minutes: task.actualMinutes ?? 0 });
     }
   }
   for (const entry of state.timeEntries ?? []) {
     if (entry.date >= fromDate && entry.date <= toDate) {
       const normalizedTitle = entry.title.trim() || "自由记录";
-      add(`entry:${entry.categoryId}:${normalizedTitle}`, normalizedTitle, entry.categoryId, entry.categoryNameSnapshot, entry.minutes);
+      add(`entry:${entry.categoryId}:${normalizedTitle}`, normalizedTitle, entry.categoryId, entry.categoryNameSnapshot,
+        entry.minutes, entry.goalId,
+        { kind: "entry", id: entry.id, title: normalizedTitle, date: entry.date, minutes: entry.minutes });
     }
   }
 
@@ -271,6 +302,7 @@ export function getTaskTimeAllocation(
       groupType: item.groupType,
       groupedTaskCount: item.taskTitles.size,
       inferredTaskCount: item.inferredTaskTitles.size,
+      sources: item.sources,
       minutes: item.minutes,
       ratio: totalMinutes === 0 ? 0 : item.minutes / totalMinutes
     }))

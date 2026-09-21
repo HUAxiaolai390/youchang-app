@@ -979,7 +979,7 @@ button:focus-visible {
 .time-allocation-chart__total-caption { fill: var(--muted); font-size: 9px; font-weight: 600; letter-spacing: 0; }
 .time-allocation-chart__more { fill: var(--muted); font-family: inherit; font-size: 8.5px; }
 .time-allocation-list { display: grid; gap: 15px; }
-.time-allocation-row { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 11px; align-items: center; }
+.time-allocation-row { display: grid; width: 100%; padding: 0; border: 0; grid-template-columns: 38px minmax(0, 1fr); gap: 11px; align-items: center; background: transparent; color: inherit; text-align: left; cursor: pointer; }
 .time-allocation-row__icon { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid color-mix(in srgb, var(--allocation-color) 55%, white); border-radius: 13px; background: color-mix(in srgb, var(--allocation-color) 22%, white); color: color-mix(in srgb, var(--allocation-color) 70%, #2c2922); font-size: 13px; font-weight: 800; }
 .time-allocation-row__main { display: grid; min-width: 0; gap: 8px; }
 .time-allocation-row__main > div:first-child { display: flex; justify-content: space-between; gap: 10px; }
@@ -990,6 +990,17 @@ button:focus-visible {
 .time-allocation-row__main span { color: var(--muted); font-size: 12px; text-align: right; }
 .time-allocation-row__track { height: 8px; overflow: hidden; border-radius: 999px; background: #eeeae3; }
 .time-allocation-row__bar { display: block; height: 100%; min-width: 4px; border-radius: inherit; background: var(--allocation-color); }
+.time-allocation-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 5px; border-radius: 14px; }
+.time-allocation-detail-dialog { width: min(620px, calc(100vw - 30px)); max-height: min(720px, calc(100vh - 30px)); overflow: auto; }
+.time-allocation-detail-dialog__heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+.time-allocation-detail-dialog__heading h2 { margin: 0; }
+.time-allocation-detail-dialog__heading p { margin: 5px 0 0; }
+.time-allocation-detail-list { display: grid; gap: 10px; max-height: 390px; overflow: auto; }
+.time-allocation-detail-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 0; border-top: 1px solid #eee7dc; }
+.time-allocation-detail-row > div:first-child { display: grid; min-width: 0; gap: 3px; }
+.time-allocation-detail-row strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.time-allocation-detail-row small { color: var(--muted); font-size: 11px; }
+.time-allocation-detail-goal { display: grid; flex: 0 0 min(220px, 42%); gap: 4px; color: var(--muted); font-size: 10px; }
 
 .settings-page { display: grid; gap: 18px; }
 .settings-help-entry { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 15px 18px; }

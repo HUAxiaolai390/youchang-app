@@ -75,4 +75,23 @@ describe("TimeAllocationCard", () => {
     expect(document.querySelector('[data-callout-bent="false"]')).not.toBeNull();
     expect(screen.getByText("已按长期目标智能合并，并尝试识别过去未关联目标的记录。")).toBeVisible();
   });
+
+  it("opens allocation sources and remembers a manual goal correction", async () => {
+    const now = new Date(2026, 7, 18, 12);
+    const state = createInitialState(now);
+    state.goals = [
+      { id: "modeling-goal", title: "全国大学生数学建模比赛", deadline: "2026-09-01", createdAt: now.toISOString() },
+      { id: "computer-goal", title: "通过计算机三级", deadline: "2026-12-01", createdAt: now.toISOString() }
+    ];
+    state.scheduledTasks.push({ id: "modeling", title: "阅读资料", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-18", status: "pending", actualMinutes: 25, createdAt: now.toISOString() });
+    const repository = new MemoryRepository(state);
+    render(<AppStateProvider repository={repository} now={() => now}><TimeAllocationCard now={now} /></AppStateProvider>);
+
+    fireEvent.click(screen.getByRole("button", { name: "阅读资料 25 分钟，占 100%" }));
+    expect(screen.getByRole("dialog")).toHaveTextContent("阅读资料");
+    const goalSelect = screen.getByRole("combobox", { name: "调整：阅读资料" });
+    await fireEvent.change(goalSelect, { target: { value: "modeling-goal" } });
+    expect(repository.value.scheduledTasks[0].goalId).toBe("modeling-goal");
+  });
 });
