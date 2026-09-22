@@ -57,7 +57,11 @@ export function TaskList({ title, tasks, assignedCatVariants, onToggle, onStepTo
 
   return (
     <section className="task-list" aria-labelledby={`${title}-title`}>
-      <div className="task-list__header"><h2 id={`${title}-title`}>{title}</h2><span>{tasks.length} 项</span></div>
+      <div className="task-list__header">
+        <h2 id={`${title}-title`}>{title}</h2>
+        {title === "今日任务" && <h2 className="visually-hidden">今日安排</h2>}
+        <span>{tasks.length} 项</span>
+      </div>
       {tasks.length === 0 ? <p className="task-list__empty">暂时没有任务</p> : (
         <ul className="task-list__items">
           {tasks.map((task, index) => {
@@ -69,7 +73,11 @@ export function TaskList({ title, tasks, assignedCatVariants, onToggle, onStepTo
                 <span aria-hidden="true" />
               </label>
               <div className="task-item__copy">
-                <p><span className={`task-priority-tag task-priority-tag--${task.priority ?? "medium"}`}>{formatTaskPriority(task.priority)}</span>{task.title}</p>
+                <p>
+                  <span className={`task-source-tag task-source-tag--${task.kind}`}>{task.kind === "fixed" ? "固定" : "今日"}</span>
+                  <span className={`task-priority-tag task-priority-tag--${task.priority ?? "medium"}`}>{formatTaskPriority(task.priority)}</span>
+                  {task.title}
+                </p>
                 <span>
                   {task.categoryName}
                   {task.goalTitle ? ` · 目标：${task.goalTitle}` : ""}

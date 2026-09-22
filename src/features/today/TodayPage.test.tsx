@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppStateProvider } from "../../app/AppStateProvider";
@@ -103,16 +103,19 @@ describe("TodayPage", () => {
     expect(screen.getByRole("heading", { name: /下午好/ })).toBeVisible();
   });
 
-  it("always shows three equal medal slots and renders selected unlocked medals", () => {
+  it("groups fixed and temporary tasks in one collapsed today layout", () => {
     const state = createInitialState(new Date());
-    addTask(state, "finished", "完成的任务", "study", "completed");
-    state.settings.featuredAchievementIds = ["first-task"];
+    addFixedRecord(state, "固定任务");
+    addTask(state, "temporary", "临时任务", "study");
 
     renderToday(state);
 
-    expect(screen.getByRole("region", { name: "我的勋章" }).querySelectorAll(".today-achievement-slot")).toHaveLength(3);
-    expect(screen.getByLabelText("初见有常，铜章")).toBeInTheDocument();
-    expect(screen.getAllByText("待展示")).toHaveLength(2);
+    const taskRegion = screen.getByRole("region", { name: "今日任务" });
+    expect(taskRegion).toBeVisible();
+    expect(within(taskRegion).getByText("固定任务")).toBeVisible();
+    expect(within(taskRegion).getByText("临时任务")).toBeVisible();
+    expect(screen.getByRole("link", { name: /我的勋章.*查看全部/ })).toBeVisible();
+    expect(screen.getByRole("button", { name: "展开时间分配" })).toHaveAttribute("aria-expanded", "false");
   });
 
   it("opens the pending-task list and jumps to the selected unfinished task", async () => {

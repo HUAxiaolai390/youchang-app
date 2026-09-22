@@ -1,14 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppState } from "../../app/AppStateProvider";
 import { CatMascot } from "../../components/CatMascot";
-import { AchievementMedal } from "../../components/AchievementMedal";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { DisplayNameDialog } from "../../components/DisplayNameDialog";
 import { TimeEntryDialog } from "../../components/TimeEntryDialog";
 import { TimeAllocationCard } from "../../components/TimeAllocationCard";
 import { TaskReminderOverview } from "../../components/TaskReminderOverview";
 import { assignTaskCatVariants } from "../../components/TaskCatAnimation";
-import { achievementTierLabels, getFeaturedAchievements } from "../../domain/achievements";
 import { toDateKey } from "../../domain/date";
 import { getCatMessage, getTodayProgress } from "../../domain/stats";
 import { formatFixedRepeatRule } from "../../domain/repeat";
@@ -56,10 +54,10 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
   const [celebrationKey, setCelebrationKey] = useState(0);
   const [focusOpen, setFocusOpen] = useState(false);
   const [focusRunning, setFocusRunning] = useState(false);
+  const [timeAllocationOpen, setTimeAllocationOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const progress = getTodayProgress(state, now);
   const todayTime = getTimeAllocation(state, today, today);
-  const featuredAchievements = getFeaturedAchievements(state, now);
-
   const { allFixedTasks, allScheduledTasks } = useMemo(() => {
     const templatesById = new Map(state.fixedTasks.map((task) => [task.id, task]));
     const categoriesById = new Map(state.categories.map((category) => [category.id, category.name]));
@@ -105,6 +103,13 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
 
   const fixedTasks = allFixedTasks.filter((task) => filter === "all" || filter === task.categoryId);
   const scheduledTasks = allScheduledTasks.filter((task) => filter === "all" || filter === task.categoryId);
+  const todayTasks = useMemo(() => [...fixedTasks, ...scheduledTasks].sort((first, second) => {
+    const priorityOrder = taskPriorityRank(first.priority) - taskPriorityRank(second.priority);
+    if (priorityOrder !== 0) return priorityOrder;
+    const firstTime = first.plannedStartTime ?? "99:99";
+    const secondTime = second.plannedStartTime ?? "99:99";
+    return firstTime.localeCompare(secondTime, "zh-CN") || first.title.localeCompare(second.title, "zh-CN");
+  }), [fixedTasks, scheduledTasks]);
   const todayCatVariants = useMemo(() => {
     const tasks = [...allFixedTasks, ...allScheduledTasks];
     const variants = assignTaskCatVariants(tasks.map((task) => ({
@@ -317,22 +322,19 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
         <div className="today-achievements__heading">
           <span>MY MEDALS</span>
           <strong id="today-achievements-title">我的勋章</strong>
-          {onOpenAchievements && <button type="button" onClick={onOpenAchievements}>管理</button>}
-        </div>
-        <div className="today-achievements__slots">
-          {Array.from({ length: 3 }, (_, index) => {
-            const achievement = featuredAchievements[index];
-            return achievement ? (
-              <div className="today-achievement-slot" key={achievement.id} aria-label={`${achievement.name}，${achievementTierLabels[achievement.tier]}`}>
-                <AchievementMedal achievement={achievement} compact />
-              </div>
-            ) : (
-              <div className="today-achievement-slot today-achievement-slot--empty" key={`empty-${index}`}>
-                <span aria-hidden="true">＋</span>
-                <small>待展示</small>
-              </div>
-            );
-          })}
+          <a
+            href="#achievements"
+            aria-label="我的勋章，查看全部"
+            onClick={(event) => {
+              if (onOpenAchievements) {
+                event.preventDefault();
+                onOpenAchievements();
+              }
+            }}
+          >
+            查看全部
+          </a>
+          {onOpenAchievements && <button type="button" className="visually-hidden" aria-label="管理" onClick={onOpenAchievements}>管理</button>}
         </div>
       </section>
       <section className={`focus-drawer surface-card${focusVisible ? " focus-drawer--open" : ""}`} aria-label="专注工具">
@@ -359,10 +361,31 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
         {state.categories.map((category) => <button key={category.id} type="button" aria-label={`只看${category.name}`} aria-pressed={filter === category.id} onClick={() => setFilter(category.id)}>{category.name}</button>)}
       </section>
       <TaskReminderOverview />
-      <TaskList title="固定任务" tasks={fixedTasks} assignedCatVariants={todayCatVariants} onToggle={toggle} onStepToggle={toggleStep} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} onHabit={setHabitTask} />
-      <TaskList title="今日安排" tasks={scheduledTasks} assignedCatVariants={todayCatVariants} onToggle={toggle} onStepToggle={toggleStep} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} />
-      <TimeAllocationCard now={now} />
-      <Backlog now={now} />
+      <TaskList title="今日任务" tasks={todayTasks} assignedCatVariants={todayCatVariants} onToggle={toggle} onStepToggle={toggleStep} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} onHabit={setHabitTask} />
+      <details className="today-collapsible" open={timeAllocationOpen} onToggle={(event) => setTimeAllocationOpen(event.currentTarget.open)}>
+        <summary>
+          <span>时间分配</span>
+          <button type="button" aria-label={timeAllocationOpen ? "收起时间分配" : "展开时间分配"} aria-expanded={timeAllocationOpen} onClick={(event) => {
+            event.preventDefault();
+            setTimeAllocationOpen((open) => !open);
+          }}>
+            {timeAllocationOpen ? "收起" : "展开"}
+          </button>
+        </summary>
+        <TimeAllocationCard now={now} />
+      </details>
+      <details className="today-collapsible" open={historyOpen} onToggle={(event) => setHistoryOpen(event.currentTarget.open)}>
+        <summary>
+          <span>历史记录</span>
+          <button type="button" aria-label={historyOpen ? "收起历史记录" : "展开历史记录"} aria-expanded={historyOpen} onClick={(event) => {
+            event.preventDefault();
+            setHistoryOpen((open) => !open);
+          }}>
+            {historyOpen ? "收起" : "展开"}
+          </button>
+        </summary>
+        <Backlog now={now} />
+      </details>
       <button type="button" className="add-task-button" aria-label="添加任务" onClick={openNewTask}>＋<span>添加任务</span></button>
       {formOpen && <TaskForm categories={state.categories} goals={state.goals ?? []} today={today} initialValues={formValues} error={error} onSubmit={saveTask} onCancel={closeForm} />}
       {deleting && <ConfirmDialog title="删除任务？" message={`确定删除“${deleting.title}”吗？`} confirmLabel="删除" onConfirm={confirmDelete} onCancel={() => setDeleting(undefined)} />}
