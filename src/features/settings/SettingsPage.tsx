@@ -477,7 +477,7 @@ export function SettingsPage() {
       <details className="surface-card settings-section settings-disclosure" aria-labelledby="appearance-group-title">
         <summary className="settings-disclosure__summary" aria-label="个人与外观">
           <span id="appearance-group-title">个人与外观</span>
-          <span className="settings-disclosure__action">收起</span>
+          <span className="settings-disclosure__action">展开</span>
         </summary>
         <div className="settings-disclosure__content">
           <section className="settings-section__heading" aria-labelledby="display-name-settings-title">
