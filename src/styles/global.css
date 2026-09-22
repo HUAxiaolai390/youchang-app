@@ -433,7 +433,7 @@ button:focus-visible {
 .today-achievements__heading { display: grid; align-content: center; gap: 1px; }
 .today-achievements__heading > span { color: #ad7740; font-size: 9px; font-weight: 900; letter-spacing: .13em; }
 .today-achievements__heading > strong { font-size: 16px; }
-.today-achievements__heading a { display: inline-flex; min-height: 30px; align-items: center; justify-self: start; margin-top: 2px; padding: 0 9px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.56); color: var(--muted); cursor: pointer; font-size: 11px; text-decoration: none; white-space: nowrap; }
+.today-achievements__heading a { display: inline-flex; min-height: 44px; align-items: center; justify-self: start; margin-top: 2px; padding: 0 9px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.56); color: var(--muted); cursor: pointer; font-size: 11px; text-decoration: none; white-space: nowrap; }
 .today-achievements__heading a:hover { border-color: #b9a98f; color: var(--ink); }
 .today-achievements__slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .today-achievement-slot { display: grid; min-width: 0; min-height: 62px; place-items: center; padding: 6px 8px; border: 1px solid #e2d8ca; border-radius: 15px; background: linear-gradient(145deg, #fffdf9, #f5ede2); }
@@ -1238,7 +1238,7 @@ button:focus-visible {
   .today-achievements { grid-row: auto; grid-column: 1; grid-template-columns: 65px minmax(0, 1fr); gap: 8px; min-height: 0; padding: 9px; }
   .today-achievements__heading > span { display: none; }
   .today-achievements__heading > strong { font-size: 12px; }
-  .today-achievements__heading a { min-height: 28px; padding: 0 8px; font-size: 10px; }
+  .today-achievements__heading a { min-height: 44px; padding: 0 8px; font-size: 10px; }
   .today-achievements__slots { gap: 5px; }
   .today-achievement-slot { min-height: 54px; padding: 4px; border-radius: 11px; }
   .today-achievement-slot--empty { grid-template-columns: minmax(0, 1fr); gap: 0; }
