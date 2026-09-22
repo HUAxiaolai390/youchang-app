@@ -29,7 +29,7 @@ function renderSettings(state = createInitialState(new Date(2026, 6, 31, 9))) {
 }
 
 async function expandDataAndHelp(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("button", { name: "展开数据与帮助" }));
+  await user.click(screen.getByText("数据与帮助"));
 }
 
 function backupFile(text: string, name = "backup.json") {
@@ -67,12 +67,14 @@ describe("SettingsPage", () => {
     renderSettings();
     const user = userEvent.setup();
 
-    expect(screen.getByRole("group", { name: "通知与提醒" })).toBeVisible();
-    expect(screen.getByRole("group", { name: "固定任务" })).toBeVisible();
-    expect(screen.getByRole("group", { name: "个人与外观" })).toBeVisible();
-    expect(screen.getByRole("group", { name: "数据与帮助" })).toBeVisible();
+    expect(screen.getByRole("group", { name: "通知与提醒" })).toHaveAttribute("open");
+    expect(screen.getByRole("group", { name: "固定任务" })).toHaveAttribute("open");
+    expect(screen.getByRole("group", { name: "个人与外观" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "个人与外观" })).not.toHaveAttribute("open");
+    expect(screen.getByRole("group", { name: "数据与帮助" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "数据与帮助" })).not.toHaveAttribute("open");
     expect(screen.queryByLabelText("固定任务名称")).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "展开数据与帮助" }));
+    await expandDataAndHelp(user);
     expect(screen.getByRole("button", { name: "导出备份" })).toBeVisible();
     expect(screen.getByRole("button", { name: "打开帮助中心" })).toBeVisible();
   });

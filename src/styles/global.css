@@ -1049,12 +1049,12 @@ button:focus-visible {
 .fixed-task-exception-dialog { align-self: center; }
 .fixed-exception-actions { margin-top: 4px; }
 .settings-disclosure { gap: 0; }
-.settings-disclosure__summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; cursor: pointer; list-style: none; }
+.settings-disclosure__summary { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 14px; cursor: pointer; list-style: none; }
 .settings-disclosure__summary::-webkit-details-marker { display: none; }
 .settings-disclosure__summary > span:first-child { display: grid; gap: 4px; }
 .settings-disclosure__summary strong { font-size: 19px; letter-spacing: -.03em; }
 .settings-disclosure__summary small { color: var(--muted); font-size: 12px; }
-.settings-disclosure__action { flex: 0 0 auto; border: 0; padding: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+.settings-disclosure__action { display: inline-flex; min-height: 44px; flex: 0 0 auto; align-items: center; padding: 0 8px; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
 .settings-disclosure[open] .settings-disclosure__action { font-size: 0; }
 .settings-disclosure[open] .settings-disclosure__action::after { content: "收起"; font-size: 13px; }
 .settings-disclosure__content { display: grid; gap: 15px; padding-top: 18px; }

@@ -473,7 +473,7 @@ export function SettingsPage() {
         </div>
       </details>
 
-      <details className="surface-card settings-section settings-disclosure" open aria-labelledby="appearance-group-title">
+      <details className="surface-card settings-section settings-disclosure" aria-labelledby="appearance-group-title">
         <summary className="settings-disclosure__summary" aria-label="个人与外观">
           <span id="appearance-group-title">个人与外观</span>
           <span className="settings-disclosure__action">收起</span>
@@ -550,10 +550,10 @@ export function SettingsPage() {
         </form>
       </FixedTaskEditSurface>}
 
-      <details className="surface-card settings-section settings-disclosure" open aria-labelledby="data-help-group-title">
-        <summary className="settings-disclosure__summary">
+      <details className="surface-card settings-section settings-disclosure" aria-labelledby="data-help-group-title">
+        <summary className="settings-disclosure__summary" aria-label="展开数据与帮助">
           <span id="data-help-group-title">数据与帮助</span>
-          <button type="button" className="settings-disclosure__action" aria-label="展开数据与帮助" onClick={(event) => event.preventDefault()}>展开数据与帮助</button>
+          <span className="settings-disclosure__action">展开</span>
         </summary>
         <div className="settings-disclosure__content">
           <section className="surface-card settings-help-entry" aria-labelledby="settings-help-title">
