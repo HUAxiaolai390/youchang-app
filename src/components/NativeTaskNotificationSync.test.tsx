@@ -100,7 +100,7 @@ describe("NativeTaskNotificationSync", () => {
       </AppStateProvider>
     );
 
-    expect(screen.getByRole("heading", { name: "今日安排" }).closest("section")).toHaveTextContent("通知改期任务");
+    expect(screen.getByRole("heading", { name: "今日任务" }).closest("section")).toHaveTextContent("通知改期任务");
     await waitFor(() => expect(nativeMock.consume).toHaveBeenCalledTimes(1));
 
     await act(async () => {
@@ -110,7 +110,7 @@ describe("NativeTaskNotificationSync", () => {
 
     await waitFor(() => expect(nativeMock.consume).toHaveBeenCalledTimes(2));
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "今日安排" }).closest("section")).not.toHaveTextContent("通知改期任务");
+      expect(screen.getByRole("heading", { name: "今日任务" }).closest("section")).not.toHaveTextContent("通知改期任务");
     });
     expect(repository.load().scheduledTasks.find((task) => task.id === "notification-postpone")?.status).toBe("rescheduled");
   });

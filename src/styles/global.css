@@ -430,7 +430,7 @@ button:focus-visible {
 .today-achievements__heading { display: grid; align-content: center; gap: 1px; }
 .today-achievements__heading > span { color: #ad7740; font-size: 9px; font-weight: 900; letter-spacing: .13em; }
 .today-achievements__heading > strong { font-size: 16px; }
-.today-achievements__heading button { justify-self: start; margin-top: 2px; padding: 0; border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 11px; text-decoration: underline; text-underline-offset: 3px; }
+.today-achievements__heading a { justify-self: start; margin-top: 2px; color: var(--muted); cursor: pointer; font-size: 11px; text-decoration: underline; text-underline-offset: 3px; }
 .today-achievements__slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .today-achievement-slot { display: grid; min-width: 0; min-height: 62px; place-items: center; padding: 6px 8px; border: 1px solid #e2d8ca; border-radius: 15px; background: linear-gradient(145deg, #fffdf9, #f5ede2); }
 .today-achievement-slot--empty { grid-template-columns: auto auto; align-content: center; gap: 5px; border-style: dashed; color: #9e9589; }

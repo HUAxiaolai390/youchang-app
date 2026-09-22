@@ -59,7 +59,6 @@ export function TaskList({ title, tasks, assignedCatVariants, onToggle, onStepTo
     <section className="task-list" aria-labelledby={`${title}-title`}>
       <div className="task-list__header">
         <h2 id={`${title}-title`}>{title}</h2>
-        {title === "今日任务" && <h2 className="visually-hidden">今日安排</h2>}
         <span>{tasks.length} 项</span>
       </div>
       {tasks.length === 0 ? <p className="task-list__empty">暂时没有任务</p> : (

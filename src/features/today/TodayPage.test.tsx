@@ -115,7 +115,10 @@ describe("TodayPage", () => {
     expect(within(taskRegion).getByText("固定任务")).toBeVisible();
     expect(within(taskRegion).getByText("临时任务")).toBeVisible();
     expect(screen.getByRole("link", { name: /我的勋章.*查看全部/ })).toBeVisible();
-    expect(screen.getByRole("button", { name: "展开时间分配" })).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByText("时间分配", { selector: "summary" }).closest("details")).not.toHaveAttribute("open");
+    expect(screen.queryByRole("heading", { name: "今日安排" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "管理" })).not.toBeInTheDocument();
+    expect(screen.getByText("时间分配", { selector: "summary" }).querySelector("button")).toBeNull();
   });
 
   it("opens the pending-task list and jumps to the selected unfinished task", async () => {

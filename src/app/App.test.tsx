@@ -92,7 +92,7 @@ describe("App", () => {
     const user = userEvent.setup();
 
     render(<App />);
-    await user.click(screen.getByRole("button", { name: "管理" }));
+    await user.click(screen.getByRole("link", { name: /我的勋章.*查看全部/ }));
 
     expect(screen.getByRole("heading", { name: "成就勋章" })).toBeInTheDocument();
   });

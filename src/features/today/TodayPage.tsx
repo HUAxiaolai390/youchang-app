@@ -334,7 +334,6 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
           >
             查看全部
           </a>
-          {onOpenAchievements && <button type="button" className="visually-hidden" aria-label="管理" onClick={onOpenAchievements}>管理</button>}
         </div>
       </section>
       <section className={`focus-drawer surface-card${focusVisible ? " focus-drawer--open" : ""}`} aria-label="专注工具">
@@ -363,27 +362,11 @@ export function TodayPage({ onOpenAchievements }: { onOpenAchievements?: () => v
       <TaskReminderOverview />
       <TaskList title="今日任务" tasks={todayTasks} assignedCatVariants={todayCatVariants} onToggle={toggle} onStepToggle={toggleStep} onEdit={openEdit} onDelete={setDeleting} onTime={setTiming} onHabit={setHabitTask} />
       <details className="today-collapsible" open={timeAllocationOpen} onToggle={(event) => setTimeAllocationOpen(event.currentTarget.open)}>
-        <summary>
-          <span>时间分配</span>
-          <button type="button" aria-label={timeAllocationOpen ? "收起时间分配" : "展开时间分配"} aria-expanded={timeAllocationOpen} onClick={(event) => {
-            event.preventDefault();
-            setTimeAllocationOpen((open) => !open);
-          }}>
-            {timeAllocationOpen ? "收起" : "展开"}
-          </button>
-        </summary>
+        <summary>时间分配</summary>
         <TimeAllocationCard now={now} />
       </details>
       <details className="today-collapsible" open={historyOpen} onToggle={(event) => setHistoryOpen(event.currentTarget.open)}>
-        <summary>
-          <span>历史记录</span>
-          <button type="button" aria-label={historyOpen ? "收起历史记录" : "展开历史记录"} aria-expanded={historyOpen} onClick={(event) => {
-            event.preventDefault();
-            setHistoryOpen((open) => !open);
-          }}>
-            {historyOpen ? "收起" : "展开"}
-          </button>
-        </summary>
+        <summary>历史记录</summary>
         <Backlog now={now} />
       </details>
       <button type="button" className="add-task-button" aria-label="添加任务" onClick={openNewTask}>＋<span>添加任务</span></button>
