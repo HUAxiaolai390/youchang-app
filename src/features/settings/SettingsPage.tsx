@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import packageMetadata from "../../../package.json";
 import { useAppState } from "../../app/AppStateProvider";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { BackgroundMusic } from "../../components/BackgroundMusic";
+import { DisplayNameDialog } from "../../components/DisplayNameDialog";
 import { HelpCenterDialog } from "../../components/HelpCenterDialog";
 import { RepeatRuleFields } from "../../components/RepeatRuleFields";
 import { toDateKey } from "../../domain/date";
@@ -151,6 +153,7 @@ export function SettingsPage() {
   const [clearArmed, setClearArmed] = useState(false);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const [helpCenterOpen, setHelpCenterOpen] = useState(false);
+  const [displayNameOpen, setDisplayNameOpen] = useState(false);
   const nativeAndroid = isNativeAndroid();
   const notificationsSupported = supportsSystemNotifications();
   const [notificationPermission, setNotificationPermission] = useState<SystemNotificationPermission>(
@@ -336,6 +339,11 @@ export function SettingsPage() {
     });
   }
 
+  function saveDisplayName(value: string) {
+    dispatch({ type: "settings/display-name", value });
+    setDisplayNameOpen(false);
+  }
+
   const customCategories = state.categories.filter((category) => !category.builtIn);
   const managedFixedTasks = state.fixedTasks.filter((task) => !task.successorId);
   const exceptionTask = managedFixedTasks.find((task) => task.id === exceptionFixedId);
@@ -350,15 +358,13 @@ export function SettingsPage() {
 
   return (
     <section className="settings-page" aria-label="设置内容">
-      <section className="surface-card settings-help-entry" aria-labelledby="settings-help-title">
-        <span className="settings-help-entry__icon" aria-hidden="true">?</span>
-        <div>
-          <h2 id="settings-help-title">使用帮助</h2>
-          <p>快速了解任务、优先级、提醒、专注和备份。</p>
-        </div>
-        <button type="button" className="button" onClick={() => setHelpCenterOpen(true)}>打开帮助中心</button>
-      </section>
-      <section className="surface-card settings-section" aria-labelledby="reminder-settings-title">
+      <details className="surface-card settings-section settings-disclosure" open aria-labelledby="notifications-group-title">
+        <summary className="settings-disclosure__summary" aria-label="通知与提醒">
+          <span id="notifications-group-title">通知与提醒</span>
+          <span className="settings-disclosure__action">收起</span>
+        </summary>
+        <div className="settings-disclosure__content">
+      <section aria-labelledby="reminder-settings-title">
         <div className="settings-section__heading">
           <div>
             <h2 id="reminder-settings-title">通知权限</h2>
@@ -437,8 +443,16 @@ export function SettingsPage() {
           </div>
         )}
       </section>
+        </div>
+      </details>
 
-      <section className="surface-card settings-section" aria-labelledby="fixed-settings-title">
+      <details className="surface-card settings-section settings-disclosure" open aria-labelledby="fixed-group-title">
+        <summary className="settings-disclosure__summary" aria-label="固定任务">
+          <span id="fixed-group-title">固定任务</span>
+          <span className="settings-disclosure__action">收起</span>
+        </summary>
+        <div className="settings-disclosure__content">
+      <section aria-labelledby="fixed-settings-title">
         <h2 id="fixed-settings-title">固定任务管理</h2>
         <p className="settings-muted">这里只管理已有固定任务。新建固定任务请回到“今日”，点击“添加任务”。</p>
         <ul className="settings-list" aria-label="固定任务列表">
@@ -456,6 +470,22 @@ export function SettingsPage() {
           ))}
         </ul>
       </section>
+        </div>
+      </details>
+
+      <details className="surface-card settings-section settings-disclosure" open aria-labelledby="appearance-group-title">
+        <summary className="settings-disclosure__summary" aria-label="个人与外观">
+          <span id="appearance-group-title">个人与外观</span>
+          <span className="settings-disclosure__action">收起</span>
+        </summary>
+        <div className="settings-disclosure__content">
+          <section className="settings-section__heading" aria-labelledby="display-name-settings-title">
+            <div><h2 id="display-name-settings-title">个人称呼</h2><p className="settings-muted">设置首页问候语中的称呼。</p></div>
+            <button type="button" className="button" onClick={() => setDisplayNameOpen(true)}>修改我的称呼</button>
+          </section>
+          <BackgroundMusic />
+        </div>
+      </details>
 
       {exceptionTask && <FixedTaskExceptionSurface onCancel={() => setExceptionFixedId(undefined)}>
         <section className="settings-form fixed-exception-panel">
@@ -520,15 +550,29 @@ export function SettingsPage() {
         </form>
       </FixedTaskEditSurface>}
 
-      <details className="surface-card settings-section settings-disclosure">
+      <details className="surface-card settings-section settings-disclosure" open aria-labelledby="data-help-group-title">
         <summary className="settings-disclosure__summary">
-          <span>
-            <strong id="category-settings-title">分类管理</strong>
-            <small>内置 {state.categories.length - customCategories.length} 类 · 自定义 {customCategories.length} 类</small>
-          </span>
-          <span className="settings-disclosure__action">展开</span>
+          <span id="data-help-group-title">数据与帮助</span>
+          <button type="button" className="settings-disclosure__action" aria-label="展开数据与帮助" onClick={(event) => event.preventDefault()}>展开数据与帮助</button>
         </summary>
-        <div className="settings-disclosure__content" aria-labelledby="category-settings-title">
+        <div className="settings-disclosure__content">
+          <section className="surface-card settings-help-entry" aria-labelledby="settings-help-title">
+            <span className="settings-help-entry__icon" aria-hidden="true">?</span>
+            <div>
+              <h2 id="settings-help-title">使用帮助</h2>
+              <p>快速了解任务、优先级、提醒、专注和备份。</p>
+            </div>
+            <button type="button" className="button" onClick={() => setHelpCenterOpen(true)}>打开帮助中心</button>
+          </section>
+          <details className="settings-subdisclosure">
+            <summary className="settings-disclosure__summary">
+              <span>
+                <strong id="category-settings-title">分类管理</strong>
+                <small>内置 {state.categories.length - customCategories.length} 类 · 自定义 {customCategories.length} 类</small>
+              </span>
+              <span className="settings-disclosure__action">展开</span>
+            </summary>
+            <div className="settings-disclosure__content" aria-labelledby="category-settings-title">
           <form className="settings-form settings-form--category" onSubmit={addCategory}>
             <label className="field-label" htmlFor="category-name">新分类名称</label>
             <input id="category-name" className="field-control" value={categoryNameInput} onChange={(event) => setCategoryNameInput(event.target.value)} />
@@ -545,8 +589,8 @@ export function SettingsPage() {
             <h3 id="category-history-title">历史分类记录</h3>
             <ul>{categoryHistory.map((task) => <li key={task.id}>{task.label}：{task.title}（{categoryName(state.categories, task.categoryId)}）<small>原分类：{task.originalCategory}</small></li>)}</ul>
           </section>}
-        </div>
-      </details>
+            </div>
+          </details>
 
       <section className="surface-card settings-section" aria-labelledby="backup-settings-title">
         <div className="settings-section__heading">
@@ -575,12 +619,16 @@ export function SettingsPage() {
         )}
       </section>
 
-      <section className="surface-card settings-section settings-section--danger" aria-labelledby="danger-settings-title">
-        <h2 id="danger-settings-title">危险操作</h2>
-        <p className="settings-muted">清空会移除本机的全部任务、分类和记录，且无法撤销。</p>
-        <button type="button" className="button" onClick={() => { setClearPhrase(""); setClearArmed(true); }}>清空所有数据</button>
-        {clearArmed && <div className="clear-confirmation"><label className="field-label" htmlFor="clear-phrase">确认清空</label><input id="clear-phrase" className="field-control" value={clearPhrase} onChange={(event) => setClearPhrase(event.target.value)} placeholder="请输入“清空”" /><button className="button" type="button" disabled={clearPhrase !== "清空"} onClick={() => setClearDialogOpen(true)}>确认清空</button></div>}
-      </section>
+      <details className="settings-subdisclosure settings-section--danger">
+        <summary className="settings-disclosure__summary"><span id="danger-settings-title">危险操作</span><span className="settings-disclosure__action">展开</span></summary>
+        <section aria-labelledby="danger-settings-title">
+          <p className="settings-muted">清空会移除本机的全部任务、分类和记录，且无法撤销。</p>
+          <button type="button" className="button" onClick={() => { setClearPhrase(""); setClearArmed(true); }}>清空所有数据</button>
+          {clearArmed && <div className="clear-confirmation"><label className="field-label" htmlFor="clear-phrase">确认清空</label><input id="clear-phrase" className="field-control" value={clearPhrase} onChange={(event) => setClearPhrase(event.target.value)} placeholder="请输入“清空”" /><button className="button" type="button" disabled={clearPhrase !== "清空"} onClick={() => setClearDialogOpen(true)}>确认清空</button></div>}
+        </section>
+      </details>
+      </div>
+      </details>
 
       <p className="settings-version">有常 v{packageMetadata.version}</p>
 
@@ -589,6 +637,7 @@ export function SettingsPage() {
       {recoveryToDelete && <ConfirmDialog title="删除异常数据副本" message="删除后无法恢复。若还没导出，建议先取消并保存一份。" confirmLabel="删除副本" onCancel={() => setRecoveryToDelete(undefined)} onConfirm={() => { removeRecoverySnapshot(window.localStorage, recoveryToDelete.key); setRecoverySnapshots(listRecoverySnapshots(window.localStorage)); setRecoveryToDelete(undefined); }} />}
       {clearDialogOpen && <ConfirmDialog title="确认清空所有数据" message="这会清空本机所有数据，且无法恢复。" confirmLabel="我确认清空" onCancel={() => setClearDialogOpen(false)} onConfirm={() => { dispatch({ type: "data/clear" }); setClearDialogOpen(false); setClearArmed(false); setClearPhrase(""); }} />}
       {helpCenterOpen && <HelpCenterDialog onClose={() => setHelpCenterOpen(false)} />}
+      {displayNameOpen && <DisplayNameDialog currentName={state.settings.displayName} onSave={saveDisplayName} onCancel={() => setDisplayNameOpen(false)} />}
     </section>
   );
 }

@@ -1054,10 +1054,12 @@ button:focus-visible {
 .settings-disclosure__summary > span:first-child { display: grid; gap: 4px; }
 .settings-disclosure__summary strong { font-size: 19px; letter-spacing: -.03em; }
 .settings-disclosure__summary small { color: var(--muted); font-size: 12px; }
-.settings-disclosure__action { flex: 0 0 auto; color: var(--muted); font-size: 13px; font-weight: 800; }
+.settings-disclosure__action { flex: 0 0 auto; border: 0; padding: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
 .settings-disclosure[open] .settings-disclosure__action { font-size: 0; }
 .settings-disclosure[open] .settings-disclosure__action::after { content: "收起"; font-size: 13px; }
 .settings-disclosure__content { display: grid; gap: 15px; padding-top: 18px; }
+.settings-disclosure, .settings-subdisclosure { overflow: visible; }
+.settings-section--danger > section { display: grid; gap: 15px; padding-top: 15px; }
 .settings-inline-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; }
 .settings-inline-actions > button, .settings-list__item button { border: 0; background: transparent; color: var(--ink); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .settings-inline-actions .button { border: 1px solid var(--line); text-decoration: none; }

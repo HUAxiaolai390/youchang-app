@@ -28,6 +28,10 @@ function renderSettings(state = createInitialState(new Date(2026, 6, 31, 9))) {
   return repository;
 }
 
+async function expandDataAndHelp(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: "展开数据与帮助" }));
+}
+
 function backupFile(text: string, name = "backup.json") {
   const file = new File([text], name, { type: "application/json" });
   Object.defineProperty(file, "text", { value: async () => text });
@@ -57,6 +61,20 @@ describe("SettingsPage", () => {
 
     expect(screen.queryByRole("heading", { name: "个人设置" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("我的称呼")).not.toBeInTheDocument();
+  });
+
+  it("organizes settings into four concise groups", async () => {
+    renderSettings();
+    const user = userEvent.setup();
+
+    expect(screen.getByRole("group", { name: "通知与提醒" })).toBeVisible();
+    expect(screen.getByRole("group", { name: "固定任务" })).toBeVisible();
+    expect(screen.getByRole("group", { name: "个人与外观" })).toBeVisible();
+    expect(screen.getByRole("group", { name: "数据与帮助" })).toBeVisible();
+    expect(screen.queryByLabelText("固定任务名称")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "展开数据与帮助" }));
+    expect(screen.getByRole("button", { name: "导出备份" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "打开帮助中心" })).toBeVisible();
   });
 
   it("shows the system-notification capability without blocking in-app reminders", () => {
@@ -96,11 +114,12 @@ describe("SettingsPage", () => {
     expect(screen.getByRole("status", { name: "通知状态检查结果" })).toHaveTextContent("通知栏权限");
   });
 
-  it("shows the last backup status and a weekly reminder", () => {
+  it("shows the last backup status and a weekly reminder", async () => {
     const state = createInitialState(new Date(2026, 7, 15, 9));
     state.settings.lastBackupAt = "2026-08-01T01:00:00.000Z";
 
     renderSettings(state);
+    await expandDataAndHelp(userEvent.setup());
 
     expect(screen.getByText("建议备份")).toBeVisible();
     expect(screen.getByText(/已超过 7 天/)).toBeVisible();
@@ -126,6 +145,7 @@ describe("SettingsPage", () => {
     window.localStorage.setItem("youchang:recovery:2026-08-15T01:00:00.000Z", "{");
     renderSettings();
     const user = userEvent.setup();
+    await expandDataAndHelp(user);
 
     expect(screen.getByRole("heading", { name: "发现异常数据恢复副本" })).toBeVisible();
     await user.click(screen.getByRole("button", { name: "删除副本" }));
@@ -145,6 +165,7 @@ describe("SettingsPage", () => {
     });
     const repository = renderSettings(state);
     const user = userEvent.setup();
+    await expandDataAndHelp(user);
 
     await user.upload(screen.getByLabelText("导入备份"), backupFile("bad", "bad.json"));
 
@@ -161,6 +182,7 @@ describe("SettingsPage", () => {
       scheduledDate: "2026-07-30", status: "pending", createdAt: "2026-07-30T01:00:00.000Z"
     });
     const user = userEvent.setup();
+    await expandDataAndHelp(user);
 
     await user.upload(screen.getByLabelText("导入备份"), backupFile(JSON.stringify(imported)));
 
@@ -214,6 +236,7 @@ describe("SettingsPage", () => {
     });
     const repository = renderSettings(state);
     const user = userEvent.setup();
+    await expandDataAndHelp(user);
 
     const categoryManagement = screen.getByText("分类管理").closest("details");
     expect(categoryManagement).not.toHaveAttribute("open");
