@@ -115,7 +115,14 @@ describe("TodayPage", () => {
     expect(within(taskRegion).getByText("固定任务")).toBeVisible();
     expect(within(taskRegion).getByText("临时任务")).toBeVisible();
     expect(screen.getByRole("link", { name: /我的勋章.*查看全部/ })).toBeVisible();
+    expect(screen.getByRole("region", { name: "待办清单" })).toHaveClass("today-todo");
+    expect(screen.getByRole("button", { name: /待办清单.*2 项未完成/ })).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("button", { name: /专注计时/ })).toHaveAttribute("aria-expanded", "false");
+    expect(within(taskRegion).getByText("固定", { selector: ".task-source-tag" })).toBeVisible();
+    expect(within(taskRegion).getByText("今日", { selector: ".task-source-tag" })).toBeVisible();
     expect(screen.getByText("时间分配", { selector: "summary" }).closest("details")).not.toHaveAttribute("open");
+    expect(screen.getByText("时间分配", { selector: "summary" })).toHaveTextContent("时间分配");
+    expect(screen.getByText("历史记录", { selector: "summary" })).toHaveTextContent("历史记录");
     expect(screen.queryByRole("heading", { name: "今日安排" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "管理" })).not.toBeInTheDocument();
     expect(screen.getByText("时间分配", { selector: "summary" }).querySelector("button")).toBeNull();

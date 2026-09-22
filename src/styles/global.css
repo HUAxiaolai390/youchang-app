@@ -422,6 +422,9 @@ button:focus-visible {
 .today-todo__list small { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .today-todo__list em { color: #786a58; font-size: 10px; font-style: normal; font-weight: 700; }
 .today-todo__add { margin: 0 9px 9px; }
+.task-source-tag { display: inline-flex; align-items: center; min-height: 20px; margin-right: 5px; padding: 0 6px; border: 1px solid rgba(74,64,51,.14); border-radius: 999px; background: rgba(255,255,255,.62); color: #756957; font-size: 10px; font-weight: 800; letter-spacing: .04em; line-height: 1; vertical-align: 1px; }
+.task-source-tag--fixed { border-color: rgba(126, 99, 61, .2); background: #f7ead7; color: #805f35; }
+.task-source-tag--scheduled { border-color: rgba(84, 111, 76, .2); background: #e8f0e4; color: #4f6848; }
 .task-priority-tag { display: inline-grid; width: 22px; height: 22px; margin-right: 6px; place-items: center; border-radius: 7px; background: #eee9e1; color: #625b52; font-size: 10px; font-weight: 900; vertical-align: 1px; }
 .task-priority-tag--high { background: #f1ddd2; color: #8b4932; }
 .task-priority-tag--medium { background: #f2e7c8; color: #826520; }
@@ -430,7 +433,8 @@ button:focus-visible {
 .today-achievements__heading { display: grid; align-content: center; gap: 1px; }
 .today-achievements__heading > span { color: #ad7740; font-size: 9px; font-weight: 900; letter-spacing: .13em; }
 .today-achievements__heading > strong { font-size: 16px; }
-.today-achievements__heading a { justify-self: start; margin-top: 2px; color: var(--muted); cursor: pointer; font-size: 11px; text-decoration: underline; text-underline-offset: 3px; }
+.today-achievements__heading a { display: inline-flex; min-height: 30px; align-items: center; justify-self: start; margin-top: 2px; padding: 0 9px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.56); color: var(--muted); cursor: pointer; font-size: 11px; text-decoration: none; white-space: nowrap; }
+.today-achievements__heading a:hover { border-color: #b9a98f; color: var(--ink); }
 .today-achievements__slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .today-achievement-slot { display: grid; min-width: 0; min-height: 62px; place-items: center; padding: 6px 8px; border: 1px solid #e2d8ca; border-radius: 15px; background: linear-gradient(145deg, #fffdf9, #f5ede2); }
 .today-achievement-slot--empty { grid-template-columns: auto auto; align-content: center; gap: 5px; border-style: dashed; color: #9e9589; }
@@ -447,6 +451,13 @@ button:focus-visible {
 .focus-drawer--open .focus-drawer__toggle { border-bottom: 1px solid var(--line); }
 .focus-drawer__content { padding: 12px; }
 .focus-drawer__content .focus-card { box-shadow: none; }
+.today-collapsible { overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-card); background: color-mix(in srgb, var(--surface) 94%, transparent); box-shadow: var(--shadow-card); }
+.today-collapsible > summary { display: flex; min-height: 48px; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; color: var(--ink); cursor: pointer; font-size: 14px; font-weight: 800; list-style: none; }
+.today-collapsible > summary::-webkit-details-marker { display: none; }
+.today-collapsible > summary::after { color: var(--muted); content: "展开"; font-size: 11px; font-weight: 700; }
+.today-collapsible[open] > summary { border-bottom: 1px solid var(--line); }
+.today-collapsible[open] > summary::after { content: "收起"; }
+.today-collapsible > :not(summary) { margin: 0; padding: 12px 16px 16px; }
 .category-filter { grid-row: 3; grid-column: 1 / -1; display: flex; gap: 8px; overflow-x: auto; align-self: center; padding: 5px 1px; scrollbar-width: none; }
 .category-filter::-webkit-scrollbar { display: none; }
 .category-filter button { flex: 0 0 auto; min-height: 36px; padding: 0 13px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); cursor: pointer; font-size: 14px; }
@@ -1201,6 +1212,7 @@ button:focus-visible {
   .task-cat-animation { width: 52px; height: 48px; }
   .task-item__actions button { min-height: 44px; padding: 0 9px; }
   .today-page { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .today-page > * { min-width: 0; }
   .focus-drawer, .category-filter { grid-row: auto; grid-column: 1; }
   .today-hero { grid-template-columns: minmax(0, 1fr) 102px; gap: 12px 9px; padding: 16px; }
   .cat-mascot { width: 102px; }
@@ -1226,6 +1238,7 @@ button:focus-visible {
   .today-achievements { grid-row: auto; grid-column: 1; grid-template-columns: 65px minmax(0, 1fr); gap: 8px; min-height: 0; padding: 9px; }
   .today-achievements__heading > span { display: none; }
   .today-achievements__heading > strong { font-size: 12px; }
+  .today-achievements__heading a { min-height: 28px; padding: 0 8px; font-size: 10px; }
   .today-achievements__slots { gap: 5px; }
   .today-achievement-slot { min-height: 54px; padding: 4px; border-radius: 11px; }
   .today-achievement-slot--empty { grid-template-columns: minmax(0, 1fr); gap: 0; }
@@ -1237,6 +1250,12 @@ button:focus-visible {
   .focus-drawer__copy small { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
   .focus-drawer__action { font-size: 12px; }
   .focus-drawer__content { padding: 8px; }
+  .today-collapsible > summary { min-height: 44px; padding-inline: 12px; font-size: 13px; }
+  .today-collapsible > :not(summary) { padding: 10px 12px 12px; }
+  .task-list { padding-top: 12px; }
+  .task-list__header { margin-bottom: 7px; }
+  .task-list__header h2 { font-size: 16px; }
+  .task-source-tag { min-height: 19px; padding-inline: 5px; font-size: 9px; }
   .focus-card { padding: 18px; }
   .focus-card__body { grid-template-columns: minmax(0, 1fr); justify-items: center; }
   .focus-card__controls { width: 100%; }

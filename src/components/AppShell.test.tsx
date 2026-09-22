@@ -17,6 +17,7 @@ describe("AppShell", () => {
     expect(screen.getByRole("button", { name: "计划" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "成长" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "设置" })).toBeEnabled();
+    expect(screen.getByRole("navigation", { name: "主导航" })).toHaveClass("bottom-nav");
   });
 
   it("navigates when an inactive page is selected", async () => {
