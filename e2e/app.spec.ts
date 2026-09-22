@@ -300,6 +300,7 @@ test("opens the concise help center from settings", async ({ page }) => {
   await page.reload();
 
   await page.getByRole("button", { name: "设置", exact: true }).click();
+  await page.getByText("数据与帮助", { exact: true }).click();
   await page.getByRole("button", { name: "打开帮助中心" }).click();
 
   const dialog = page.getByRole("dialog", { name: "使用说明与帮助中心" });
@@ -773,6 +774,7 @@ test("completes the core task, growth, and backup flow", async ({ page }, testIn
 
   await page.getByRole("button", { name: "设置" }).click();
   await expect(page.getByRole("heading", { name: "设置", exact: true })).toBeVisible();
+  await page.getByText("数据与帮助", { exact: true }).click();
   const importInput = page.getByLabel("导入备份");
   await importInput.focus();
   await expectVisibleFocusOutline(page.locator('label[for="backup-file"]'));

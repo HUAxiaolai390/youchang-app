@@ -73,8 +73,10 @@ describe("SettingsPage", () => {
     expect(screen.getByRole("group", { name: "个人与外观" })).not.toHaveAttribute("open");
     expect(screen.getByRole("group", { name: "数据与帮助" })).toBeInTheDocument();
     expect(screen.getByRole("group", { name: "数据与帮助" })).not.toHaveAttribute("open");
+    expect(screen.getByText("数据与帮助").closest("summary")).toHaveAttribute("aria-label", "展开数据与帮助");
     expect(screen.queryByLabelText("固定任务名称")).not.toBeInTheDocument();
     await expandDataAndHelp(user);
+    expect(screen.getByText("数据与帮助").closest("summary")).toHaveAttribute("aria-label", "收起数据与帮助");
     expect(screen.getByRole("button", { name: "导出备份" })).toBeVisible();
     expect(screen.getByRole("button", { name: "打开帮助中心" })).toBeVisible();
   });

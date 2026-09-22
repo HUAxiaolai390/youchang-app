@@ -153,6 +153,7 @@ export function SettingsPage() {
   const [clearArmed, setClearArmed] = useState(false);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const [helpCenterOpen, setHelpCenterOpen] = useState(false);
+  const [dataHelpOpen, setDataHelpOpen] = useState(false);
   const [displayNameOpen, setDisplayNameOpen] = useState(false);
   const nativeAndroid = isNativeAndroid();
   const notificationsSupported = supportsSystemNotifications();
@@ -340,7 +341,7 @@ export function SettingsPage() {
   }
 
   function saveDisplayName(value: string) {
-    dispatch({ type: "settings/display-name", value });
+    dispatch({ type: "settings/name", value });
     setDisplayNameOpen(false);
   }
 
@@ -449,7 +450,7 @@ export function SettingsPage() {
       <details className="surface-card settings-section settings-disclosure" open aria-labelledby="fixed-group-title">
         <summary className="settings-disclosure__summary" aria-label="固定任务">
           <span id="fixed-group-title">固定任务</span>
-          <span className="settings-disclosure__action">收起</span>
+          <span className="settings-disclosure__action">展开</span>
         </summary>
         <div className="settings-disclosure__content">
       <section aria-labelledby="fixed-settings-title">
@@ -550,8 +551,8 @@ export function SettingsPage() {
         </form>
       </FixedTaskEditSurface>}
 
-      <details className="surface-card settings-section settings-disclosure" aria-labelledby="data-help-group-title">
-        <summary className="settings-disclosure__summary" aria-label="展开数据与帮助">
+      <details className="surface-card settings-section settings-disclosure" open={dataHelpOpen} onToggle={(event) => setDataHelpOpen(event.currentTarget.open)} aria-labelledby="data-help-group-title">
+        <summary className="settings-disclosure__summary" aria-label={dataHelpOpen ? "收起数据与帮助" : "展开数据与帮助"}>
           <span id="data-help-group-title">数据与帮助</span>
           <span className="settings-disclosure__action">展开</span>
         </summary>
