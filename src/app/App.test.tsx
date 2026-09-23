@@ -116,6 +116,15 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: "通知权限" })).toBeInTheDocument();
   });
 
+  it("keeps one background audio element when settings owns the music controls", async () => {
+    const user = userEvent.setup();
+
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "设置" }));
+
+    expect(screen.getAllByTestId("background-music-audio")).toHaveLength(1);
+  });
+
   it("shows other as the live label across pages after deleting a custom category", async () => {
     const now = new Date();
     const today = toDateKey(now);

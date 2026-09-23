@@ -261,6 +261,9 @@ test("keeps the settings page free of duplicate installation and music panels", 
   await expect(importBackupButton).toHaveCSS("display", "flex");
   await expect(importBackupButton).toHaveCSS("align-items", "center");
   await expect(importBackupButton).toHaveCSS("justify-content", "center");
+  const appearance = page.locator("details.settings-disclosure").filter({ hasText: "个人与外观" });
+  await appearance.locator("summary").click();
+  await expect(page.getByRole("region", { name: "背景音乐控制" })).toHaveCount(1);
   await expect(page.getByTestId("background-music-audio")).toHaveCount(1);
   await page.getByRole("button", { name: "今日", exact: true }).click();
   await expect(page.getByRole("region", { name: "背景音乐控制" })).toBeVisible();
@@ -278,7 +281,8 @@ test("keeps category management collapsed and opens fixed-task leave in a dialog
   await page.getByRole("button", { name: "保存任务" }).click();
   await page.getByRole("button", { name: "设置", exact: true }).click();
 
-  const categoryManagement = page.locator("details.settings-disclosure");
+  await page.getByText("数据与帮助", { exact: true }).click();
+  const categoryManagement = page.locator("details.settings-subdisclosure").filter({ hasText: "分类管理" });
   await expect(categoryManagement).not.toHaveAttribute("open", "");
   await categoryManagement.locator("summary").click();
   await expect(categoryManagement).toHaveAttribute("open", "");
@@ -487,6 +491,7 @@ test("retroactively completes a forgotten task on its original day", async ({ pa
   });
   await page.reload();
 
+  await page.locator("summary").filter({ hasText: "历史记录" }).click();
   await page.getByRole("button", { name: "补记完成：忘记打勾的跑步" }).click();
   await expect(page.locator(".backlog-panel__notice")).toContainText("补记“忘记打勾的跑步”完成");
 
@@ -532,6 +537,7 @@ test("records manual and stopwatch time into the allocation", async ({ page }) =
   await page.getByRole("button", { name: "保存用时" }).click();
   await expectNoHorizontalOverflow(page);
 
+  await page.locator("summary").filter({ hasText: "时间分配" }).click();
   await expect(page.getByLabel("任务时间饼图，共 1 小时 16 分")).toBeVisible();
   const readingAllocation = page.getByLabel("论文阅读 46 分钟，占 61%");
   const cmcAllocation = page.getByLabel("备战 CMC 30 分钟，占 39%");
@@ -545,7 +551,7 @@ test("records manual and stopwatch time into the allocation", async ({ page }) =
   await expect(page.getByRole("heading", { name: "时间分配" })).toHaveCount(0);
 });
 
-test("unlocks a medal and pins it into one of three equal home slots", async ({ page }) => {
+test("unlocks a medal and keeps medal management reachable from the concise home page", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => window.localStorage.clear());
   await page.reload();
@@ -555,7 +561,7 @@ test("unlocks a medal and pins it into one of three equal home slots", async ({ 
   await page.getByRole("button", { name: "保存任务" }).click();
   await page.getByRole("checkbox", { name: "完成：勋章测试任务" }).check();
 
-  await page.getByRole("button", { name: "管理" }).click();
+  await page.getByRole("link", { name: /我的勋章.*查看全部/ }).click();
   await expect(page.getByRole("heading", { name: "成就勋章" })).toBeInViewport();
   const firstMedal = page.locator(".achievement-card").filter({ hasText: "初见有常" });
   await expect(firstMedal).toHaveCount(1);
@@ -564,14 +570,7 @@ test("unlocks a medal and pins it into one of three equal home slots", async ({ 
   await expect(firstMedal).toContainText("首页展示");
 
   await page.getByRole("button", { name: "今日" }).click();
-  await expect(page.getByLabel("初见有常，铜章")).toBeVisible();
-  const slots = page.locator(".today-achievement-slot");
-  await expect(slots).toHaveCount(3);
-  const sizes = await slots.evaluateAll((elements) => elements.map((element) => {
-    const bounds = element.getBoundingClientRect();
-    return { width: Math.round(bounds.width), height: Math.round(bounds.height) };
-  }));
-  expect(new Set(sizes.map((size) => `${size.width}x${size.height}`)).size).toBe(1);
+  await expect(page.getByRole("link", { name: /我的勋章.*查看全部/ })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 

@@ -110,7 +110,7 @@ function AppContents() {
             <p>{page.description}</p>
           </section>
         ) : null}
-        <BackgroundMusic compact visible={activePage === "today"} />
+        {activePage === "today" && <BackgroundMusic compact />}
         {activePage === "today" && <TodayPage onOpenAchievements={openAchievementManagement} />}
         {activePage === "week" && <WeekPage />}
         {activePage === "growth" && <GrowthPage />}
