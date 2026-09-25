@@ -78,4 +78,25 @@ describe("TaskReminderOverview", () => {
     expect(repository.state.scheduledTasks[0].reminderSnoozedUntil).toBe("2026-08-09T01:10:00.000Z");
     expect(screen.getByRole("heading", { name: "已推迟" })).toBeVisible();
   });
+
+  it("does not count completed reminders as needing attention", () => {
+    const now = new Date(2026, 7, 9, 9);
+    const state = createInitialState(now);
+    addReminderTask(state, "done", "已经完成的任务", "08:00");
+    state.scheduledTasks[0].status = "completed";
+    const repository = new MemoryRepository(state);
+
+    render(
+      <AppStateProvider repository={repository}>
+        <TaskReminderOverview now={() => now} tickMilliseconds={60_000} />
+      </AppStateProvider>
+    );
+
+    const center = screen.getByRole("region", { name: "提醒中心" });
+    expect(center).toHaveTextContent("今天已完成 1 项");
+    expect(center).not.toHaveTextContent("需要留意");
+    expect(center).not.toHaveTextContent("0 即将");
+    expect(center).not.toHaveTextContent("0 错过");
+    expect(center).not.toHaveTextContent("0 推迟");
+  });
 });

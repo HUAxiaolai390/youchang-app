@@ -803,6 +803,10 @@ button:focus-visible {
 .reschedule-picker > button { justify-self: start; padding: 0; }
 
 .growth-page { display: grid; gap: 18px; }
+.growth-more { display: grid; gap: 18px; }
+.growth-more > summary { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 2px 4px; color: var(--ink); cursor: pointer; font-size: 16px; font-weight: 800; list-style-position: inside; }
+.growth-more > summary span { color: var(--muted); font-size: 12px; font-weight: 500; }
+.growth-more[open] > summary { margin-bottom: 0; }
 .growth-period-overview { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .growth-period-card { display: grid; min-width: 0; gap: 5px; padding: 19px 21px; }
 .growth-period-card > span { color: #a56f38; font-size: 11px; font-weight: 900; letter-spacing: .08em; }

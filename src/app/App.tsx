@@ -56,6 +56,9 @@ function AppContents() {
 
     const frame = window.requestAnimationFrame(() => {
       const headingId = growthDestination === "goals" ? "goal-section-title" : "achievement-wall-title";
+      if (growthDestination === "achievements") {
+        document.querySelector<HTMLDetailsElement>(".growth-more")?.setAttribute("open", "");
+      }
       const heading = document.getElementById(headingId);
       heading?.focus({ preventScroll: true });
       heading?.scrollIntoView?.({ behavior: "auto", block: "start" });
@@ -86,30 +89,29 @@ function AppContents() {
   return (
     <>
       <AppShell activePage={activePage} onNavigate={setActivePage}>
-        {activePage === "growth" ? (
-          <section className="surface-card page-intro page-intro--quote" aria-labelledby="page-title">
-            <div className="daily-quote__heading">
-              <h2 id="page-title">{page.title}</h2>
-              <div className="daily-quote__actions">
-                <span>每日一句 · Daily Quote</span>
-                <button type="button" className="growth-goal-shortcut" onClick={openGoalManagement}>管理长期目标</button>
-              </div>
+        <section className="surface-card page-intro page-intro--quote" aria-labelledby="daily-quote-title">
+          <div className="daily-quote__heading">
+            <div>
+              <span id="daily-quote-title">每日一句 · Daily Quote</span>
+              {activePage === "growth" && <h2 id="page-title">{page.title}</h2>}
             </div>
-            <blockquote className="daily-quote">
-              <p className="daily-quote__zh">“{dailyQuote.zh}”</p>
-              <p className="daily-quote__en" lang="en">“{dailyQuote.en}”</p>
-              <footer>
-                <span>— {dailyQuote.authorZh}</span>
-                <span lang="en">{dailyQuote.authorEn}</span>
-              </footer>
-            </blockquote>
-          </section>
-        ) : activePage !== "today" ? (
+            {activePage === "growth" && <button type="button" className="growth-goal-shortcut" onClick={openGoalManagement}>管理长期目标</button>}
+          </div>
+          <blockquote className="daily-quote">
+            <p className="daily-quote__zh">“{dailyQuote.zh}”</p>
+            <p className="daily-quote__en" lang="en">“{dailyQuote.en}”</p>
+            <footer>
+              <span>— {dailyQuote.authorZh}</span>
+              <span lang="en">{dailyQuote.authorEn}</span>
+            </footer>
+          </blockquote>
+        </section>
+        {activePage !== "today" && activePage !== "growth" && (
           <section className="surface-card page-intro" aria-labelledby="page-title">
             <h2 id="page-title">{page.title}</h2>
             <p>{page.description}</p>
           </section>
-        ) : null}
+        )}
         {activePage === "today" && <BackgroundMusic compact />}
         {activePage === "today" && <TodayPage onOpenAchievements={openAchievementManagement} />}
         {activePage === "week" && <WeekPage />}

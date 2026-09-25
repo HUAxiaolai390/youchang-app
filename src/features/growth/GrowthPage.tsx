@@ -95,6 +95,9 @@ export function GrowthPage() {
 
       <GoalSection now={today} />
 
+      <details className="growth-more">
+        <summary>更多成长数据 <span>热力图、复盘、专注与勋章</span></summary>
+
       <section className="surface-card weekly-review-card" aria-labelledby="weekly-review-title">
         <div className="weekly-review-card__heading">
           <div>
@@ -283,6 +286,7 @@ export function GrowthPage() {
       <article className="surface-card growth-card growth-card--total">
         <p>累计完成 {totalCompleted} 项</p>
       </article>
+      </details>
     </section>
   );
 }

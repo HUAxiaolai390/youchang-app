@@ -35,6 +35,7 @@ export function TaskReminderOverview({
     status,
     items.filter((item) => item.status === status)
   ])) as Record<ReminderOverviewStatus, TaskReminderOverviewItem[]>, [items]);
+  const attentionCount = groups.missed.length + groups.snoozed.length + groups.upcoming.length;
 
   useEffect(() => {
     const refresh = () => setCurrentTime(readNow());
@@ -84,12 +85,12 @@ export function TaskReminderOverview({
         <span className="reminder-overview__icon" aria-hidden="true">◷</span>
         <span className="reminder-overview__heading">
           <strong id="reminder-overview-title">提醒中心</strong>
-          <small>{items.length ? `${items.length} 项需要留意` : "今天还没有设置提醒"}</small>
+          <small>{attentionCount ? `${attentionCount} 项需要留意` : groups.completed.length ? `今天已完成 ${groups.completed.length} 项` : "今天还没有设置提醒"}</small>
         </span>
         <span className="reminder-overview__counts" aria-label="提醒数量">
-          <span><b>{groups.upcoming.length}</b> 即将</span>
-          <span><b>{groups.missed.length}</b> 错过</span>
-          <span><b>{groups.snoozed.length}</b> 推迟</span>
+          {groups.upcoming.length > 0 && <span><b>{groups.upcoming.length}</b> 即将</span>}
+          {groups.missed.length > 0 && <span><b>{groups.missed.length}</b> 错过</span>}
+          {groups.snoozed.length > 0 && <span><b>{groups.snoozed.length}</b> 推迟</span>}
         </span>
         <span className="reminder-overview__action">{expanded ? "收起" : "展开"}</span>
       </button>

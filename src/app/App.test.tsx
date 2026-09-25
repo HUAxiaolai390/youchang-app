@@ -46,6 +46,28 @@ describe("App", () => {
     expect(screen.getByText("累计完成 0 项")).toBeInTheDocument();
   });
 
+  it("shows the daily quote at the top of every page", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    for (const page of ["今日", "计划", "成长", "设置"]) {
+      await user.click(screen.getByRole("button", { name: new RegExp(`^${page}$`) }));
+      expect(screen.getByText("每日一句 · Daily Quote")).toBeVisible();
+      if (page !== "今日") expect(screen.getByRole("heading", { name: new RegExp(`^${page}$`) })).toBeVisible();
+    }
+  });
+
+  it("keeps detailed growth sections collapsed until requested", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: /^成长$/ }));
+
+    const more = screen.getByText("更多成长数据").closest("details");
+    expect(more).not.toHaveAttribute("open");
+    await user.click(screen.getByText("更多成长数据"));
+    expect(more).toHaveAttribute("open");
+  });
+
   it("keeps long-term goal management easy to find from the growth header", async () => {
     const user = userEvent.setup();
 
@@ -79,6 +101,7 @@ describe("App", () => {
       await user.click(screen.getByRole("button", { name: /星期一 8月17日/ }));
       await user.click(screen.getByRole("button", { name: "补记完成：昨晚完成的复习" }));
       await user.click(screen.getByRole("button", { name: "成长" }));
+      await user.click(screen.getByText("更多成长数据"));
 
       expect(screen.getByLabelText(/8月17日，完成 1\/1 项/)).toBeVisible();
       expect(screen.getByText("1 天活跃")).toBeVisible();

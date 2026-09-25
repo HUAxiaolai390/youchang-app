@@ -384,6 +384,7 @@ test("writes and remembers a weekly review", async ({ page }) => {
   await page.reload();
 
   await page.getByRole("button", { name: "成长", exact: true }).click();
+  await page.getByText("更多成长数据").click();
   await expect(page.getByRole("heading", { name: "本周复盘" })).toBeVisible();
   await expect(page.getByLabel("本周复盘摘要")).toContainText("0/0");
   await page.getByLabel("本周总结").fill("按计划完成了本周重点");
