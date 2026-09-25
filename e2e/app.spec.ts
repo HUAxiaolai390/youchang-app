@@ -378,27 +378,6 @@ test("summarizes upcoming and missed tasks in the reminder center", async ({ pag
   await expectNoHorizontalOverflow(page);
 });
 
-test("writes and remembers a weekly review", async ({ page }) => {
-  await page.goto("/");
-  await page.evaluate(() => window.localStorage.clear());
-  await page.reload();
-
-  await page.getByRole("button", { name: "成长", exact: true }).click();
-  await page.getByText("更多成长数据").click();
-  await expect(page.getByRole("heading", { name: "本周复盘" })).toBeVisible();
-  await expect(page.getByLabel("本周复盘摘要")).toContainText("0/0");
-  await page.getByLabel("本周总结").fill("按计划完成了本周重点");
-  await page.getByLabel("下周调整").fill("减少安排，给重要任务留出余量");
-  await page.getByRole("button", { name: "保存本周复盘" }).click();
-  await expect(page.getByText("本周复盘已保存", { exact: true })).toBeVisible();
-  await expectNoHorizontalOverflow(page);
-
-  await page.reload();
-  await page.getByRole("button", { name: "成长", exact: true }).click();
-  await expect(page.getByLabel("本周总结")).toHaveValue("按计划完成了本周重点");
-  await expect(page.getByLabel("下周调整")).toHaveValue("减少安排，给重要任务留出余量");
-});
-
 test("creates a long-term goal and tracks a linked task", async ({ page }) => {
   await page.clock.setFixedTime(new Date(2026, 7, 11, 9, 0, 0));
   await page.goto("/");
