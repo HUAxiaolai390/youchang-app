@@ -82,4 +82,6 @@ pnpm check
 
 PWA 版本仍然保留：使用手机打开安全的 HTTPS 地址后，可通过浏览器菜单安装到主屏幕。Android 浏览器会在支持时显示“安装有常”；iPhone 需要使用 Safari 的“分享 → 添加到主屏幕”。
 
-电脑与手机目前各自保存数据，不会自动同步。当前 APK 使用安卓调试签名，适合个人试装；准备给同学分发或上架应用商店前，需要再生成并妥善保存正式签名。
+电脑与手机目前各自保存数据，不会自动同步。项目同时提供调试测试包和正式签名包；公开分发时请使用 `outputs/youchang-v2.9.5-android-release.apk`。正式签名密钥只保存在本机 `signing/` 文件夹，已被 Git 忽略，必须单独备份，不能上传到 GitHub。
+
+需要构建后续正式版本时，先更新版本号，再运行 `powershell -ExecutionPolicy Bypass -File scripts/build-android-release.ps1`。如果丢失 `signing/` 文件夹，旧安装将无法通过同一签名更新，只能重新安装并导入备份。
