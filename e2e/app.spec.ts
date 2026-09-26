@@ -172,6 +172,7 @@ test("customizes and remembers the focus timer", async ({ page }) => {
   await expect(page.locator(".focus-timer")).toContainText("37:00");
   await page.getByRole("button", { name: "成长" }).click();
   await expect(page.getByText("等级 1", { exact: true })).toBeVisible();
+  await page.locator(".growth-more > summary").click();
   await expect(page.getByText("0 次", { exact: true })).toBeVisible();
 });
 
@@ -748,6 +749,7 @@ test("completes the core task, growth, and backup flow", async ({ page }, testIn
 
   await page.getByRole("button", { name: "成长" }).click();
   await expect(page.getByRole("heading", { name: "成长" })).toBeVisible();
+  await page.locator(".growth-more > summary").click();
   await expect(page.getByText("累计完成 1 项", { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
