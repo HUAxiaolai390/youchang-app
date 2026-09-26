@@ -9,12 +9,11 @@ import {
 } from "../domain/reminders";
 
 const readSystemTime = () => new Date();
-const groupOrder: ReminderOverviewStatus[] = ["missed", "snoozed", "upcoming", "completed"];
+const groupOrder: ReminderOverviewStatus[] = ["missed", "snoozed", "upcoming"];
 const groupLabels: Record<ReminderOverviewStatus, string> = {
   missed: "已错过",
   snoozed: "已推迟",
-  upcoming: "即将开始",
-  completed: "今天已完成"
+  upcoming: "即将开始"
 };
 
 export function TaskReminderOverview({
@@ -35,7 +34,6 @@ export function TaskReminderOverview({
     status,
     items.filter((item) => item.status === status)
   ])) as Record<ReminderOverviewStatus, TaskReminderOverviewItem[]>, [items]);
-  const attentionCount = groups.missed.length + groups.snoozed.length + groups.upcoming.length;
 
   useEffect(() => {
     const refresh = () => setCurrentTime(readNow());
@@ -85,7 +83,7 @@ export function TaskReminderOverview({
         <span className="reminder-overview__icon" aria-hidden="true">◷</span>
         <span className="reminder-overview__heading">
           <strong id="reminder-overview-title">提醒中心</strong>
-          <small>{attentionCount ? `${attentionCount} 项需要留意` : groups.completed.length ? `今天已完成 ${groups.completed.length} 项` : "今天还没有设置提醒"}</small>
+          <small>{items.length ? `${items.length} 项需要留意` : "今天没有待处理提醒"}</small>
         </span>
         <span className="reminder-overview__counts" aria-label="提醒数量">
           {groups.upcoming.length > 0 && <span><b>{groups.upcoming.length}</b> 即将</span>}
@@ -113,13 +111,13 @@ export function TaskReminderOverview({
                       <small>{describeReminderOverviewItem(item, currentTime)}</small>
                     </span>
                     <span className="reminder-item__actions">
-                      {status !== "completed" && <>
+                      <>
                         <button type="button" className="reminder-item__complete" onClick={() => complete(item)} aria-label={`完成提醒任务：${item.title}`}>完成</button>
                         {status !== "upcoming" && <button type="button" onClick={() => snooze(item)} aria-label={`10 分钟后提醒：${item.title}`}>10 分钟后</button>}
                         <button type="button" onClick={() => moveOrSkip(item)}>
                           {item.kind === "scheduled" ? "改到明天" : item.date === toDateKey(currentTime) ? "今天跳过" : "跳过这次"}
                         </button>
-                      </>}
+                      </>
                     </span>
                   </li>
                 ))}

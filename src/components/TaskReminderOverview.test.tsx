@@ -55,8 +55,9 @@ describe("TaskReminderOverview", () => {
     await user.click(screen.getByRole("button", { name: "完成提醒任务：晨间阅读" }));
 
     expect(repository.state.scheduledTasks.find((task) => task.id === "missed")?.status).toBe("completed");
-    expect(center).toHaveTextContent("今天已完成");
-    expect(center).toHaveTextContent("晨间阅读");
+    expect(center).toHaveTextContent("1 项需要留意");
+    expect(center).not.toHaveTextContent("今天已完成");
+    expect(center).not.toHaveTextContent("晨间阅读");
   });
 
   it("postpones a missed reminder for ten minutes", async () => {
@@ -79,12 +80,13 @@ describe("TaskReminderOverview", () => {
     expect(screen.getByRole("heading", { name: "已推迟" })).toBeVisible();
   });
 
-  it("does not count completed reminders as needing attention", () => {
+  it("does not show completed tasks in the reminder center", async () => {
     const now = new Date(2026, 7, 9, 9);
     const state = createInitialState(now);
     addReminderTask(state, "done", "已经完成的任务", "08:00");
     state.scheduledTasks[0].status = "completed";
     const repository = new MemoryRepository(state);
+    const user = userEvent.setup();
 
     render(
       <AppStateProvider repository={repository}>
@@ -93,10 +95,13 @@ describe("TaskReminderOverview", () => {
     );
 
     const center = screen.getByRole("region", { name: "提醒中心" });
-    expect(center).toHaveTextContent("今天已完成 1 项");
+    expect(center).toHaveTextContent("今天没有待处理提醒");
     expect(center).not.toHaveTextContent("需要留意");
     expect(center).not.toHaveTextContent("0 即将");
     expect(center).not.toHaveTextContent("0 错过");
     expect(center).not.toHaveTextContent("0 推迟");
+    await user.click(screen.getByRole("button", { name: /提醒中心/ }));
+    expect(center).not.toHaveTextContent("已经完成的任务");
+    expect(screen.queryByRole("heading", { name: "今天已完成" })).not.toBeInTheDocument();
   });
 });

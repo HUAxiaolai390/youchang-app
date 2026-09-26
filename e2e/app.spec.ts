@@ -373,8 +373,8 @@ test("summarizes upcoming and missed tasks in the reminder center", async ({ pag
   await expect(center.getByRole("heading", { name: "已错过" })).toBeVisible();
   await expect(center.getByRole("heading", { name: "即将开始" })).toBeVisible();
   await center.getByRole("button", { name: "完成提醒任务：错过的晨读" }).click();
-  await expect(center).toContainText("错过的晨读");
-  await expect(center.getByRole("heading", { name: "今天已完成" })).toBeVisible();
+  await expect(center).not.toContainText("错过的晨读");
+  await expect(center.getByRole("heading", { name: "今天已完成" })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });
 

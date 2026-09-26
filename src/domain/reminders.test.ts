@@ -167,7 +167,7 @@ describe("task reminders", () => {
     ]);
   });
 
-  it("keeps completed reminders in today's overview", () => {
+  it("excludes completed reminders from the actionable overview", () => {
     const state = createInitialState(new Date(2026, 7, 9, 9));
     state.scheduledTasks.push({
       id: "upcoming", title: "稍后复习", categoryId: "study", categoryNameSnapshot: "学习",
@@ -187,12 +187,28 @@ describe("task reminders", () => {
       scheduledDate: "2026-08-09", status: "completed", createdAt: "2026-08-09T00:00:00.000Z",
       plannedStartTime: "08:00", reminderMinutesBefore: 0
     });
+    state.fixedRecords.push({
+      id: "fixed-done", templateId: "daily", date: "2026-08-09", titleSnapshot: "已完成的固定任务",
+      categoryId: "study", categoryNameSnapshot: "学习", plannedStartTime: "08:15",
+      reminderMinutesBefore: 0, completedAt: "2026-08-09T00:30:00.000Z"
+    });
 
     expect(getTaskReminderOverview(state, new Date(2026, 7, 9, 9))).toEqual([
       expect.objectContaining({ id: "missed", status: "missed" }),
-      expect.objectContaining({ id: "done", status: "completed" }),
       expect.objectContaining({ id: "snoozed", status: "snoozed" }),
       expect.objectContaining({ id: "upcoming", status: "upcoming" })
     ]);
+  });
+
+  it("excludes completed tasks even when an old snooze timestamp remains", () => {
+    const state = createInitialState(new Date(2026, 7, 9, 9));
+    state.scheduledTasks.push({
+      id: "old-done", title: "旧任务", categoryId: "study", categoryNameSnapshot: "学习",
+      scheduledDate: "2026-08-08", status: "completed", createdAt: "2026-08-08T00:00:00.000Z",
+      plannedStartTime: "08:00", reminderMinutesBefore: 0,
+      reminderSnoozedUntil: "2026-08-09T01:30:00.000Z"
+    });
+
+    expect(getTaskReminderOverview(state, new Date(2026, 7, 9, 9))).toEqual([]);
   });
 });
