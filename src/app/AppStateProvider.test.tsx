@@ -284,14 +284,14 @@ describe("AppStateProvider", () => {
 
   it("replaces an unknown repository error with a safe message", async () => {
     const repository = new InMemoryRepository(createInitialState(new Date(2026, 6, 31, 9)));
-    repository.saveError = new Error("connection string: postgres://secret");
+    repository.saveError = new Error("connection string: postgres://example.invalid");
     const user = userEvent.setup();
 
     render(<Harness repository={repository}><><AddTaskButton /><ErrorMessage /></></Harness>);
     await user.click(screen.getByRole("button", { name: "添加测试任务" }));
 
     expect(screen.getByRole("button", { name: "操作失败，请稍后重试" })).toBeInTheDocument();
-    expect(screen.queryByText("connection string: postgres://secret")).not.toBeInTheDocument();
+    expect(screen.queryByText("connection string: postgres://example.invalid")).not.toBeInTheDocument();
   });
 
   it("loads the repository only once across rerenders", () => {
