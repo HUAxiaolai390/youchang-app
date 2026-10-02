@@ -705,9 +705,11 @@ test("completes the core task, growth, and backup flow", async ({ page }, testIn
   await page.evaluate(() => window.localStorage.clear());
   await page.reload();
 
-  const expectedViewport = testInfo.project.name === "mobile"
-    ? { width: 390, height: 844 }
-    : { width: 1280, height: 800 };
+  const expectedViewport = testInfo.project.name === "ios"
+    ? { width: 393, height: 852 }
+    : testInfo.project.name === "mobile"
+      ? { width: 390, height: 844 }
+      : { width: 1280, height: 800 };
   expect(page.viewportSize()).toEqual(expectedViewport);
 
   await page.getByRole("button", { name: "添加任务" }).click();
